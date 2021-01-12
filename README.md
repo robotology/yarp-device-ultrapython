@@ -69,7 +69,7 @@ screen /dev/ttyUSB1 115200
 
 ## BASE TEST EXECUTION
 
-Install missing package
+Install missing packages
 ```
 sudo apt-get install mplayer netcat pv ssh
 ```
