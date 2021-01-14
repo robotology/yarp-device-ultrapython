@@ -115,6 +115,7 @@ Test from Enclustra ```ping 8.8.8.8```
 ## BASE TEST EXECUTION
 
 Install missing package on iCub-head
+
 ```
 sudo apt-get install mplayer netcat pv ssh
 ```
