@@ -4,8 +4,8 @@
 
 # -- Board/IP options
 REMOTE_HOME=/home/zus
-REMOTE_HOST=enclustra
-LOCAL_IP=192.168.123.2
+REMOTE_HOST=10.0.1.233
+LOCAL_IP=10.0.1.104
 
 # -- format/crop options
 WIDTH=1280
