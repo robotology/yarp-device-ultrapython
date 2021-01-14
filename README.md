@@ -1,10 +1,24 @@
-# PYTHON-CAMERAS
+<!-- TOC -->
+
+- [1. PYTHON-CAMERAS](#1-python-cameras)
+  - [1.1. MOUNTING](#11-mounting)
+  - [1.2. ACCESS](#12-access)
+    - [1.2.1. IP address](#121-ip-address)
+    - [1.2.2. ssh for user access on Enclustra](#122-ssh-for-user-access-on-enclustra)
+    - [1.2.3. Generate ssh key for root access on Enclustra](#123-generate-ssh-key-for-root-access-on-enclustra)
+  - [1.3. SERIAL ACCESS](#13-serial-access)
+  - [1.4. GIVE INTERNET ACCESS to Enlustra via shorwall](#14-give-internet-access-to-enlustra-via-shorwall)
+  - [1.5. BASE TEST EXECUTION](#15-base-test-execution)
+
+<!-- /TOC -->
+
+# 1. PYTHON-CAMERAS
 With Enclustra board.  
 From now:
 - Local Linux PC = iCub-head
 - Enclustra board with cams = Enclustra
 
-## MOUNTING
+## 1.1. MOUNTING
 
 Check dip switch, jumper and eth connection:
 
@@ -17,9 +31,9 @@ Check dip switch, jumper and eth connection:
 <br><br>
 <img src="img/eth.jpg" width="300px">
 
-## ACCESS
+## 1.2. ACCESS
 
-### IP address
+### 1.2.1. IP address
 Add to iCub-head the wired address 10.0.1.104
 <br><br>
 <img src="img/address002.png" width="300px">
@@ -48,39 +62,41 @@ gateway 10.0.1.104
 
 ```
 
-### ssh for user access on Enclustra
+### 1.2.2. ssh for user access on Enclustra
 
 Usr:zus  
 Pwd:zus
 
-### Generate ssh key for root access on ENclustra
+### 1.2.3. Generate ssh key for root access on Enclustra
 
 Pc settings
-```
+```bash
 su root
 ssh-keygen
 ```
 For ssh-keygen keep all default suggestions.
 
-Copy and paste contents of ```/root/.ssh/id_rsa.pub``` from local Linux machine to 
-```/root/.ssh/authorized_keys``` in SD card (as root user).
+Copy and paste contents of ```/root/.ssh/id_rsa.pub``` from local Linux machine to ```/root/.ssh/authorized_keys```
+ in SD card (as root user).
 
 Note that you can generate the key also for other account on iCub-head.
 
 Add board hostname on iCub-head (not mandatory)
-```
+```bash
 cd ~\.ssh
 mkdir config
 ```
 Paste in file config
-```
+```bash
 Host enclustra
      Hostname 10.0.1.233
      port 22
      user root
 ```
 
-## SERIAL ACCESS
+
+
+## 1.3. SERIAL ACCESS
 Connect iCub-head to the Enclustra board via micro-USB and execute:
 
 ```
@@ -89,7 +105,7 @@ screen /dev/ttyUSB1 115200
 <img src="img/USB.jpg" width="300px">  
 <br><br><br>
 
-## GIVE INTERNET ACCESS to Enlustra via shorwall
+## 1.4. GIVE INTERNET ACCESS to Enlustra via shorwall
 
 On iCub-head
 
@@ -112,7 +128,7 @@ sudo service shorwall start
 Test from Enclustra ```ping 8.8.8.8```
 
 
-## BASE TEST EXECUTION
+## 1.5. BASE TEST EXECUTION
 
 Install missing package on iCub-head
 
@@ -137,4 +153,3 @@ In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
 ./test_mode_right
 ```
 before the script ends.
-
