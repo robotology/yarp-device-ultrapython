@@ -9,6 +9,7 @@
   - [1.3. SERIAL ACCESS](#13-serial-access)
   - [1.4. GIVE INTERNET ACCESS to Enlustra via shorwall](#14-give-internet-access-to-enlustra-via-shorwall)
   - [1.5. BASE TEST EXECUTION](#15-base-test-execution)
+  - [YARP](#yarp)
 
 <!-- /TOC -->
 
@@ -127,6 +128,9 @@ sudo service shorwall start
 
 Test from Enclustra ```ping 8.8.8.8```
 
+Current net configuration:  
+<img src="img/net001.png" width="500px">  
+
 
 ## 1.5. BASE TEST EXECUTION
 
@@ -153,3 +157,22 @@ In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
 ./test_mode_right
 ```
 before the script ends.
+
+## YARP
+
+```
+sudo apt-get install libssl-dev git
+
+wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3.tar.gz
+tar -xvf cmake-3.19.3.tar.gz
+./bootstrap
+make
+make install
+
+git clone https://github.com/robotology/yarp.git
+mkdir build
+cd build
+cmake ..
+make
+
+```
