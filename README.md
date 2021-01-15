@@ -158,9 +158,7 @@ In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
 ```
 before the script ends.
 
-<video width="320" height="240" controls>
-  <source src="video/2cams.mp4" type="video/mp4">
-</video>
+<img src="video/2cams.gif" width="500px">
 
 ## YARP
 
