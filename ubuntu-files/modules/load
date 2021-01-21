@@ -1,0 +1,17 @@
+#!/bin/bash
+
+insmod xilinx_frmbuf.ko
+insmod v4l2-fwnode.ko
+insmod videobuf2-dma-contig.ko
+insmod xilinx-vip.ko
+insmod xilinx-video.ko is_mplane=0
+insmod xilinx-vpss-csc.ko
+insmod xilinx-vtc.ko
+insmod xilinx-tpg.ko
+insmod xilinx-demosaic.ko
+insmod xilinx-python1300-rxif.ko dyndbg==p
+#insmod xilinx-python1300-rxif.ko dyndbg==p python1300_train_debug=1 python1300_autotap_max=150 python1300_autotap_min=130 python1300_autotap_step=3
+
+insmod imgfusion.ko
+insmod python1300.ko python1300_debug=1
+#echo -n "file drivers/media/* +pflm" > /sys/kernel/debug/dynamic_debug/control

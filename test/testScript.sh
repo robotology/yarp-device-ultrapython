@@ -3,7 +3,7 @@
 ######################## user settings #########################
 
 # -- Board/IP options
-REMOTE_HOME=/home/zus
+REMOTE_HOME=/root/icubtech
 REMOTE_HOST=10.0.1.233
 LOCAL_IP=10.0.1.104
 
