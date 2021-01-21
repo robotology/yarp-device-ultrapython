@@ -115,7 +115,7 @@ Use ```gparted``` application to enlarge partition up to 16GB
 ## 2.2. Override Ubuntu Kernel
 :exclamation:<u>To be done on SD card mounted on iCub-head.</u>
 
-Copy from ```python-cameras/ubuntu-files```  to new card ```/system-boot``` (**not /boot**)
+Copy from ```python-cameras/ubuntu-files/system-boot```  to new card ```/system-boot``` (**not /boot**)
 
 The following files can be removed from /system-boot.  
 //TODO
@@ -140,7 +140,7 @@ https://linuxize.com/post/how-to-configure-static-ip-address-on-ubuntu-18-04/
 
 Copy file:
 ```bash
- cp python-cameras/ubuntu-files/01-netcfg.yaml /mount/<mountpoint>/etc/netplan/01-netcfg.yaml
+ cp python-cameras/ubuntu-files/config/01-netcfg.yaml /mount/<mountpoint>/etc/netplan/01-netcfg.yaml
 ```
 
 
@@ -196,7 +196,7 @@ sudo pwd
 
 ```bash
 sudo apt-get install mplayer netcat pv ssh
-cp modules /<SD mount point>/root/icubtech
+cp -r python-cameras/ubuntu-files/modules /<SD mount point>/root/icubtech
 cp -r python-cameras/ubuntu-files/capture /<SD mount point>/root/icubtech
 ``` 
 
@@ -206,7 +206,7 @@ cp -r python-cameras/ubuntu-files/capture /<SD mount point>/root/icubtech
 cd /root/icubtech/capture
 mkdir build
 cd build
-make
+make 
 cp v4l2_capture ../..
 ```
 :exclamation:<u>To be done on iCub-head.</u>
@@ -237,19 +237,7 @@ before the script ends.
 
 ```
 sudo apt-get install libssl-dev git libncurses5-dev libace-dev
-
-wget http://ftp.mirrorservice.org/sites/sourceware.org/pub/gcc/releases/gcc-8.2.0/gcc-8.2.0.tar.gz
-tar zxf gcc-8.2.0.tar.gz
-cd gcc-8.2.0
-./contrib/download_prerequisites
-make -j 4
-make install
-
-wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3.tar.gz
-tar -xvf cmake-3.19.3.tar.gz
-./bootstrap
-make
-make install
+cd icubtech
 
 git clone https://github.com/robotology/ycm.git
 mkdir build
