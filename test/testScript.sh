@@ -92,7 +92,7 @@ else
 fi
 
 MPLAYER_CMD="mplayer - -fps 200 $MPLAYER_OPTS"
-NC_CMD="nc -l -p 1234"
+NC_CMD="nc -l -p 12340"
 
 ############################### helpers #########################
 
@@ -153,7 +153,7 @@ function remote_setup_modules()
 # starts v4l2_capture utility on the boards in order to stream data via network
 function remote_stream()
 {
-    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --gpio --mma --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:1234  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
+    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --gpio --mma --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
     sleep 1
     remote_set_ctrls $VIDEODEV "${CTRLS_POST[*]}"
     fg

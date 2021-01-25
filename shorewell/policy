@@ -13,8 +13,9 @@
 ###############################################################################
 #SOURCE	DEST		POLICY		LOGLEVEL	RATE	CONNLIMIT
 
-$FW        net         ACCEPT
-$FW        loc         ACCEPT
+$FW net     ACCEPT
+$FW loc     ACCEPT
+loc $FW     ACCEPT
 loc	net		ACCEPT
 net	all		DROP		$LOG_LEVEL
 all	all		REJECT		$LOG_LEVEL
