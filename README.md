@@ -176,7 +176,9 @@ Host enclustra
 
 ```bash
 sudo apt update
-sudo atp install g++ build-essential cmake cmake-curses-gui v4l-utils
+sudo atp install g++ build-essential cmake cmake-curses-gui v4l-utils 
+sudo apt remove initramfs-tools cryptsetup
+
 ```
 Never execute ```sudo apt upgrade```
 
@@ -236,7 +238,8 @@ before the script ends.
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```
-sudo apt-get install libssl-dev git libncurses5-dev libace-dev
+sudo apt-get install libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev
+
 cd icubtech
 
 git clone https://github.com/robotology/ycm.git
