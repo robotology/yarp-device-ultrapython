@@ -15,6 +15,7 @@
   - [2.6. Missing package](#26-missing-package)
   - [2.7. Test](#27-test)
   - [2.8. YARP](#28-yarp)
+- [PWD](#pwd)
 
 <!-- /TOC -->
 
@@ -232,6 +233,7 @@ In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
 before the script ends.
 
 <img src="video/2cams.gif" width="500px">
+<img src="video/2cams.mp4" width="500px">
 
 
 ## 2.8. YARP
@@ -254,3 +256,20 @@ cd build
 cmake ..
 make
 ```
+
+Add to .bashrc:
+
+```
+export YARP_DIR=/root/icubtech/yarp/build/bin
+export YARP_DATA_DIRS=$YARP_DIR/../share/yarp
+export PATH=$PATH:YARP_DIR/build/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:YARP_DIR/lib
+
+```
+
+# PWD
+ubuntu
+iCub2021
+
+root
+root
