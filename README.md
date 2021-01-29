@@ -15,8 +15,8 @@
   - [2.6. Missing package](#26-missing-package)
   - [2.7. Test](#27-test)
   - [2.8. YARP](#28-yarp)
-  - [Development environment](#development-environment)
-- [Note](#note)
+  - [2.9. Development environment](#29-development-environment)
+- [3. Note](#3-note)
 
 <!-- /TOC -->
 
@@ -268,7 +268,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:YARP_DIR/lib
 
 ```
 
-## Development environment
+## 2.9. Development environment
 
 :exclamation:<u>To be done on iCub-head with running Enclustra.</u>
 
@@ -292,8 +292,9 @@ then you can open the folder:
 
 <img src="img/dev002.png" width="500px">
 
+A remote terminal is also available.
 
-# Note
+# 3. Note
 usr:ubuntu  
 pwd:iCub2021
 
