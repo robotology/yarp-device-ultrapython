@@ -15,7 +15,8 @@
   - [2.6. Missing package](#26-missing-package)
   - [2.7. Test](#27-test)
   - [2.8. YARP](#28-yarp)
-- [PWD](#pwd)
+  - [Development environment](#development-environment)
+- [Note](#note)
 
 <!-- /TOC -->
 
@@ -267,9 +268,31 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:YARP_DIR/lib
 
 ```
 
-# PWD
-ubuntu
-iCub2021
+## Development environment
 
-root
-root
+:exclamation:<u>To be done on iCub-head with running Enclustra.</u>
+
+Download and install vscode:https://code.visualstudio.com/  
+Install plugin for vscode named:
+- ```ms-vscode-remote.remote-ssh```
+- ```ms-vscode-remote.remote-ssh-edit```
+
+Edit file ~/.ssh/config, add at the end:
+```
+Host 10.0.1.233
+  HostName 10.0.1.233
+  User root
+  ForwardAgent yes
+```
+
+Connect using the correct host among your list:  
+<img src="img/dev001.png" width="500px">
+<img src="img/dev002.png" width="500px">
+
+
+# Note
+usr:ubuntu  
+pwd:iCub2021
+
+usr:root  
+pwd:root
