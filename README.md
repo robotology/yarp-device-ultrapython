@@ -287,6 +287,9 @@ Host 10.0.1.233
 
 Connect using the correct host among your list:  
 <img src="img/dev001.png" width="500px">
+
+then you can open the folder:  
+
 <img src="img/dev002.png" width="500px">
 
 
