@@ -17,6 +17,7 @@
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
 - [3. Note](#3-note)
+- [yarpdev](#yarpdev)
 
 <!-- /TOC -->
 
@@ -300,3 +301,10 @@ pwd:iCub2021
 
 usr:root  
 pwd:root
+
+# yarpdev
+
+Used command:
+```
+/root/icubtech/yarp/build/bin/yarpdev --device usbCamera --d /dev/video0 --name /grabber --width 1280 --height 1024
+```
