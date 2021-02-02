@@ -197,8 +197,8 @@ static void open_pipeline(void)
                 deviceName = udev_device_get_devnode(device);
 
                 //Open main subdevice
-                if ((strcmp(info.name, PIPELINE_VIDEO_NAME) == 0) ||
-                    (strcmp(info.name, PIPELINE_DUMMY_NAME) == 0))
+                if ((str::strcmp(info.name, pipelineVideoName) == 0) ||
+                    (str::strcmp(info.name, pipelineDummyName) == 0))
                 {
                         mainSubdeviceFd_ = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
                         if (mainSubdeviceFd_ == -1)
@@ -212,23 +212,12 @@ static void open_pipeline(void)
                 {
                         //Open other subdevice
 
-/*
-constexpr char pipelineVideoName[]={"vcap_python output 0"};
-constexpr char pipelineDummyName[]={"vcap_dummy output 0"};
-constexpr char pipelinePythonName[]={"PYTHON1300"};
-constexpr char []={"v_tpg"};
-constexpr char []={"v_proc_ss"};
-constexpr char []={"Packet32"};
-constexpr char []={"imgfusion"};
-constexpr char []={"PYTHON1300_RXIF"};
-*/
-
                         /*
 				 * If a python camera is found in pipeline, then that's the
 				 * source. If only a TPG is present, then it's the source.
 				 * In case both are found, stick to camera
 				 */
-                        if (strcmp(info.name, PIPELINE_PYTHON_NAME) == 0)
+                        if (str::strcmp(info.name, pipelinePythonName) == 0)
                         {
                                 if (sourceSubDeviceIndex1_ == -1)
                                         sourceSubDeviceIndex1_ = subdeviceIndex;
