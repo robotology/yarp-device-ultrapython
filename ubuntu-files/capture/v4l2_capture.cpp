@@ -7,6 +7,7 @@
  * see https://linuxtv.org/docs.php for more information
  */
 typedef unsigned long size_t;
+#include <fstream>
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
@@ -15,9 +16,9 @@ typedef unsigned long size_t;
 #include <string.h>
 #include <assert.h>
 
-#include <getopt.h>             /* getopt_long() */
+#include <getopt.h> /* getopt_long() */
 
-#include <fcntl.h>              /* low-level i/o */
+#include <fcntl.h> /* low-level i/o */
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -52,50 +53,71 @@ typedef unsigned long size_t;
 
 #define NUM_BUF 8
 
-enum io_method {
+enum io_method
+{
         IO_METHOD_READ,
         IO_METHOD_MMAP,
         IO_METHOD_USERPTR,
 };
 
-struct buffer {
-        void   *start;
-        size_t  length;
+struct buffer
+{
+        void *start;
+        size_t length;
 };
 
-static int 		pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
-static char            *media_name;
-static int		pipeline_fds[PIPELINE_MAX_LEN] ={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,};
-static int              yuv = 0;
-static int		device_fd = -1;
-static int		source1_idx = -1;
-static int		source2_idx = -1;
-static int		rxif1_idx = -1;
-static int		rxif2_idx = -1;
-static int		csc_idx = -1;
-static int		tpg_idx = -1;
-static int		imgfusion_idx = -1;
-static int		packet32_idx = -1;
-static int		crop_l, crop_t, crop_h, crop_w;
-static int		crop_enable;
-static enum io_method   io = IO_METHOD_MMAP;
-static int              fd = -1;
-static int		fd_tmp = -1;
-struct buffer          *buffers;
-static unsigned int     n_buffers;
-static int              out_buf;
-static int              force_format;
-static int              frame_count = -1;
-static int              network = 0;
-static int		stream_file = 0;
-static int              port = 0;
-static char             ip_addr[24];
-static int              ip_socket;
-static int		grey = 0;
-static int		crop_move = 0;
-static int		subsampling = 0;
-static int		gpio = 0;
-static int		gpio_fd;
+static int pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
+static char *media_name;
+static int pipeline_fds[PIPELINE_MAX_LEN] = {
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+};
+static int yuv = 0;
+static int mainSubdeviceFd_ = -1;
+static int source1_idx = -1;
+static int source2_idx = -1;
+static int rxif1_idx = -1;
+static int rxif2_idx = -1;
+static int csc_idx = -1;
+static int tpg_idx = -1;
+static int imgfusion_idx = -1;
+static int packet32_idx = -1;
+static int crop_l, crop_t, crop_h, crop_w;
+static int crop_enable;
+static enum io_method io = IO_METHOD_MMAP;
+static int fd = -1;
+static int fd_tmp = -1;
+struct buffer *buffers;
+static unsigned int n_buffers;
+static int out_buf;
+static int force_format;
+static int frame_count = -1;
+static int network = 0;
+static int stream_file = 0;
+static int port = 0;
+static char ip_addr[24];
+static int ip_socket;
+static int grey = 0;
+static int crop_move = 0;
+static int subsampling = 0;
+static int gpio = 0;
+static int gpio_fd;
+std::ofstream fs("./log.log");
+std::string methodName{"------------"};
 
 static void errno_exit(const char *s)
 {
@@ -107,7 +129,8 @@ static int xioctl(int fh, int request, void *arg)
 {
         int r;
 
-        do {
+        do
+        {
                 r = ioctl(fh, request, arg);
         } while (-1 == r && EINTR == errno);
 
@@ -116,117 +139,149 @@ static int xioctl(int fh, int request, void *arg)
 
 static void open_pipeline(void)
 {
-	int fd;
-	int ret;
-	struct media_entity_desc info;
-	struct udev *udev;
-	int id;
-	struct udev_device *device;
-	dev_t devnum;
-	const char *p;
-	int i = 0;
-	int *tmp_fd;
+        fs << "open_pipeline" << methodName << std::endl;
 
-	udev = udev_new();
-	if (udev == NULL) {
-		printf("cannot open udev\n");
-		exit(-1);
-	}
+        //Open main device
+        int fd = open(media_name, O_RDWR);
+        if (fd == -1)
+        {
+                fs << "ERROR-cannot open media dev" << std::endl;
+                exit(EXIT_FAILURE);
+        }
+        fs << "open:" << media_name << " fd:" << fd << std::endl;
 
-	fd = open(media_name, O_RDWR);
-	if (fd == -1) {
-		printf("cannot open media dev\n");
-		exit(-1);
-	}
+        struct udev *udev;
+        udev = udev_new();
+        if (udev == NULL)
+        {
+                fs << "ERROR-cannot open udev" << std::endl;
+                exit(EXIT_FAILURE);
+        }
 
-	for (id = 0; ; id = info.id) {
-		memset(&info, 0, sizeof(info));
-		info.id = id | MEDIA_ENT_ID_FLAG_NEXT;
+        struct media_entity_desc info;
+        int subdeviceIndex = 0;
+        for (int id = 0;; id = info.id)
+        {
+                memset(&info, 0, sizeof(info));
+                info.id = id | MEDIA_ENT_ID_FLAG_NEXT;
 
-		ret = ioctl(fd, MEDIA_IOC_ENUM_ENTITIES, &info);
-		if (ret < 0) {
-			ret = errno != EINVAL ? -errno : 0;
-			break;
-		}
-		printf("found entity %d. %s. ", id, info.name);
+                int ret = ioctl(fd, MEDIA_IOC_ENUM_ENTITIES, &info);
+                if (ret < 0)
+                {
+                        ret = errno != EINVAL ? -errno : 0;
+                        fs << "WARNING-cannot open device not media" << std::endl;
+                        break;
+                }
+                fs << "found entity num:" << id << " name:" << info.name << std::endl;
 
-		devnum = makedev(info.v4l.major, info.v4l.minor);
-		device = udev_device_new_from_devnum(udev, 'c', devnum);
-		if (device) {
-			p = udev_device_get_devnode(device);
-			if (p)
-				printf("fd: %s, index: %d", p, i);
+                dev_t devnum = makedev(info.v4l.major, info.v4l.minor);
+                struct udev_device *device;
+                device = udev_device_new_from_devnum(udev, 'c', devnum);
+                if (device == nullptr)
+                {
+                        udev_device_unref(device);
+                        continue;
+                }
 
-			if ((strcmp(info.name, PIPELINE_VIDEO_NAME) == 0) ||
-			    (strcmp(info.name, PIPELINE_DUMMY_NAME) == 0)){
-				tmp_fd = &device_fd;
-			} else {
-				tmp_fd = &pipeline_fds[i];
+                const char *deviceName;
+                deviceName = udev_device_get_devnode(device);
 
-				/*
+                //Open main subdevice
+                if ((strcmp(info.name, PIPELINE_VIDEO_NAME) == 0) ||
+                    (strcmp(info.name, PIPELINE_DUMMY_NAME) == 0))
+                {
+                        mainSubdeviceFd_ = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
+                        if (mainSubdeviceFd_ == -1)
+                        {
+                                fs << "ERROR-cannot open device:" << mainSubdeviceFd_ << std::endl;
+                                exit(EXIT_FAILURE);
+                        }
+                        fs << "open no pipeline:" << deviceName << " fd:" << mainSubdeviceFd_ << " device number:" << devnum << std::endl;
+                }
+                else
+                {
+                        //Open other subdevice
+
+                        /*
 				 * If a python camera is found in pipeline, then that's the
 				 * source. If only a TPG is present, then it's the source.
 				 * In case both are found, stick to camera
 				 */
-				if (strcmp(info.name, PIPELINE_PYTHON_NAME) == 0) {
-					if (source1_idx == -1)
-						source1_idx = i;
-					else
-						source2_idx = i;
-					pipe_camera = 1;
-				} else if (strstr(info.name, PIPELINE_TPG_NAME)) {
-					tpg_idx = i;
-				} else if (strstr(info.name, PIPELINE_CSC_NAME)) {
-					csc_idx = i;
-				} else if (strstr(info.name, PIPELINE_IMGFUSION_NAME)) {
-					imgfusion_idx = i;
-				} else if (strstr(info.name, PIPELINE_PACKET32_NAME)) {
-					packet32_idx = i;
-				} else if (strcmp(info.name, PIPELINE_RXIF_NAME) == 0) {
-					if (rxif1_idx == -1)
-						rxif1_idx = i;
-					else
-						rxif2_idx = i;
-				}
+                        if (strcmp(info.name, PIPELINE_PYTHON_NAME) == 0)
+                        {
+                                if (source1_idx == -1)
+                                        source1_idx = subdeviceIndex;
+                                else
+                                        source2_idx = subdeviceIndex;
+                                pipe_camera = 1;
+                        }
+                        else if (strstr(info.name, PIPELINE_TPG_NAME))
+                        {
+                                tpg_idx = subdeviceIndex;
+                        }
+                        else if (strstr(info.name, PIPELINE_CSC_NAME))
+                        {
+                                csc_idx = subdeviceIndex;
+                        }
+                        else if (strstr(info.name, PIPELINE_IMGFUSION_NAME))
+                        {
+                                imgfusion_idx = subdeviceIndex;
+                        }
+                        else if (strstr(info.name, PIPELINE_PACKET32_NAME))
+                        {
+                                packet32_idx = subdeviceIndex;
+                        }
+                        else if (strcmp(info.name, PIPELINE_RXIF_NAME) == 0)
+                        {
+                                if (rxif1_idx == -1)
+                                        rxif1_idx = subdeviceIndex;
+                                else
+                                        rxif2_idx = subdeviceIndex;
+                        }
+                        pipeline_fds[subdeviceIndex] = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
+                        if (pipeline_fds[subdeviceIndex] == -1)
+                        {
+                                fs << "ERROR-cannot open device:" << deviceName << std::endl;
+                                exit(EXIT_FAILURE);
+                        }
+                        fs << "open pipeline:" << deviceName << " fd:" << pipeline_fds[subdeviceIndex] << " device number:" << devnum << std::endl;
+                        subdeviceIndex++;
+                }
 
-				i++;
-			}
+                udev_device_unref(device);
+        }
+        if (mainSubdeviceFd_ == -1)
+        {
+                fs << "ERROR-Cannot find main pipe V4L2 device" << std::endl;
+                exit(EXIT_FAILURE);
+        }
+        if (source1_idx == -1)
+        {
+                fs << "ERROR-Cannot find source subdev" << std::endl;
+                exit(EXIT_FAILURE);
+        }
 
-			*tmp_fd = open(p, O_RDWR /* required */ | O_NONBLOCK, 0);
-			if (*tmp_fd == -1) {
-				printf("cannot open device %s\n", p);
-				exit(EXIT_FAILURE);
-			}
-		}
-		printf("\n");
-		udev_device_unref(device);
-	}
-	if (device_fd == -1)
-		errno_exit("Cannot find main pipe V4L2 device\n");
-	if (source1_idx == -1)
-		errno_exit("Cannot find source subdev\n");
-
-	fflush(stdout);
+        fs << "final fd:" << mainSubdeviceFd_ << std::endl;
 }
 
 static void process_image(const void *p, int size)
 {
-	int ret;
-	int i;
-	int val = 1;
-	uint8_t *ptr;
+        int ret;
+        int i;
+        int val = 1;
+        uint8_t *ptr;
 
         if (out_buf)
                 fwrite(p, size, 1, stdout);
-	if (stream_file)
-		write(fd_tmp, p, size);
+        if (stream_file)
+                write(fd_tmp, p, size);
 
-	if (network) {
-		ret = send(ip_socket, p, size, MSG_NOSIGNAL);
-		if (ret != size)
-			fprintf(stderr, "Send failed with err %d -- errno: %d\n", ret, errno);
-	}
-
+        if (network)
+        {
+                ret = send(ip_socket, p, size, MSG_NOSIGNAL);
+                if (ret != size)
+                        fprintf(stderr, "Send failed with err %d -- errno: %d\n", ret, errno);
+        }
 
         fflush(stderr);
         fprintf(stderr, ".");
@@ -237,13 +292,16 @@ static int read_frame(void)
 {
         struct v4l2_buffer buf;
         unsigned int i;
-	int seq = 1;
-	static unsigned char dbg = 0;
+        int seq = 1;
+        static unsigned char dbg = 0;
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
-                if (-1 == read(device_fd, buffers[0].start, buffers[0].length)) {
-                        switch (errno) {
+                if (-1 == read(mainSubdeviceFd_, buffers[0].start, buffers[0].length))
+                {
+                        switch (errno)
+                        {
                         case EAGAIN:
                                 return 0;
 
@@ -265,11 +323,13 @@ static int read_frame(void)
 
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_MMAP;
-		//	usleep(5000);
-                if (-1 == xioctl(device_fd, VIDIOC_DQBUF, &buf)) {
-                        switch (errno) {
+                //	usleep(5000);
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
+                {
+                        switch (errno)
+                        {
                         case EAGAIN:
-				errno_exit("VIDIOC_DQBUF eagain");
+                                errno_exit("VIDIOC_DQBUF eagain");
                                 return 0;
 
                         case EIO:
@@ -283,14 +343,14 @@ static int read_frame(void)
                 }
 
                 assert(buf.index < n_buffers);
-		if (buf.flags & V4L2_BUF_FLAG_ERROR)
-			        errno_exit("V4L2_BUF_FLAG_ERROR");
+                if (buf.flags & V4L2_BUF_FLAG_ERROR)
+                        errno_exit("V4L2_BUF_FLAG_ERROR");
 
-		seq = buf.sequence;
+                seq = buf.sequence;
                 process_image(buffers[buf.index].start, buf.bytesused);
-		memset(buffers[buf.index].start, dbg++, buf.bytesused);
+                memset(buffers[buf.index].start, dbg++, buf.bytesused);
 
-                if (-1 == xioctl(device_fd, VIDIOC_QBUF, &buf))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                         errno_exit("VIDIOC_QBUF");
                 break;
 
@@ -300,8 +360,10 @@ static int read_frame(void)
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_USERPTR;
 
-                if (-1 == xioctl(device_fd, VIDIOC_DQBUF, &buf)) {
-                        switch (errno) {
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
+                {
+                        switch (errno)
+                        {
                         case EAGAIN:
                                 return 0;
 
@@ -316,15 +378,14 @@ static int read_frame(void)
                 }
 
                 for (i = 0; i < n_buffers; ++i)
-                        if (buf.m.userptr == (unsigned long)buffers[i].start
-                            && buf.length == buffers[i].length)
+                        if (buf.m.userptr == (unsigned long)buffers[i].start && buf.length == buffers[i].length)
                                 break;
 
                 assert(i < n_buffers);
 
                 process_image((void *)buf.m.userptr, buf.bytesused);
 
-                if (-1 == xioctl(device_fd, VIDIOC_QBUF, &buf))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                         errno_exit("VIDIOC_QBUF");
                 break;
         }
@@ -334,157 +395,172 @@ static int read_frame(void)
 
 unsigned long sub_time_ms(struct timeval *time1, struct timeval *time2)
 {
-	struct timeval res;
+        struct timeval res;
 
-	timersub(time1, time2, &res);
-	return res.tv_sec * 1000 + res.tv_usec / 1000;
+        timersub(time1, time2, &res);
+        return res.tv_sec * 1000 + res.tv_usec / 1000;
 }
 
 static void crop(int top, int left, int w, int h, int mytry);
 static void mainloop(void)
 {
         unsigned int count, frames = 0;
-	struct timeval time1, time2;
-	unsigned long time_delta;
-	int update_roi = 0;
-	int roi_direction_v = 1;
-	int roi_direction_h = 16;
-	int left = 0;
-	int top = 0;
-	int seq, sequence = 0;
+        struct timeval time1, time2;
+        unsigned long time_delta;
+        int update_roi = 0;
+        int roi_direction_v = 1;
+        int roi_direction_h = 16;
+        int left = 0;
+        int top = 0;
+        int seq, sequence = 0;
 
         count = frame_count;
-	gettimeofday(&time1, NULL);
-	time2 = time1;
-        while (count != 0) {
-		if (count > 0 )
-			count--;
-                for (;;) {
+        gettimeofday(&time1, NULL);
+        time2 = time1;
+        while (count != 0)
+        {
+                if (count > 0)
+                        count--;
+                for (;;)
+                {
                         fd_set fds;
                         struct timeval tv;
                         int r;
 
                         FD_ZERO(&fds);
-                        FD_SET(device_fd, &fds);
+                        FD_SET(mainSubdeviceFd_, &fds);
 
                         /* Timeout. */
                         tv.tv_sec = 80;
                         tv.tv_usec = 0;
 
-                        r = select(device_fd + 1,
-				   &fds, NULL, NULL, &tv);
+                        r = select(mainSubdeviceFd_ + 1,
+                                   &fds, NULL, NULL, &tv);
 
-                        if (-1 == r) {
+                        if (-1 == r)
+                        {
                                 if (EINTR == errno)
                                         continue;
                                 errno_exit("select");
                         }
 
-                        if (0 == r) {
+                        if (0 == r)
+                        {
                                 fprintf(stderr, "select timeout\\n");
                                 exit(EXIT_FAILURE);
                         }
 
-                        if (seq = read_frame()) {
-				frames++;
-				if (io == IO_METHOD_MMAP && seq != sequence++) {
-					printf("dropped frame..\n");
-					sequence = seq + 1;
-				}
-				gettimeofday(&time2, NULL);
-				time_delta = sub_time_ms(&time2, &time1);
-				if (time_delta >= 1000) {
-					fprintf(stderr, "fps: %f\n",
-					       ((double)frames / (double)time_delta) * 1000.0);
-					time1 = time2;
-					frames = 0;
-				}
-				break;
-			}
+                        if (seq = read_frame())
+                        {
+                                frames++;
+                                if (io == IO_METHOD_MMAP && seq != sequence++)
+                                {
+                                        printf("dropped frame..\n");
+                                        sequence = seq + 1;
+                                }
+                                gettimeofday(&time2, NULL);
+                                time_delta = sub_time_ms(&time2, &time1);
+                                if (time_delta >= 1000)
+                                {
+                                        fprintf(stderr, "fps: %f\n",
+                                                ((double)frames / (double)time_delta) * 1000.0);
+                                        time1 = time2;
+                                        frames = 0;
+                                }
+                                break;
+                        }
                         /* EAGAIN - continue select loop. */
                 }
 
-		if (crop_move) {
-			update_roi = 0;
+                if (crop_move)
+                {
+                        update_roi = 0;
 
-			if (left + crop_w > (WIDTH - 16)) {
-				roi_direction_h = -16;
-				left = WIDTH - crop_w - 16;
-			}
-			else if (left <= 0) {
-				roi_direction_h = 16;
-				left = 0;
-			}
-			left += roi_direction_h;
+                        if (left + crop_w > (WIDTH - 16))
+                        {
+                                roi_direction_h = -16;
+                                left = WIDTH - crop_w - 16;
+                        }
+                        else if (left <= 0)
+                        {
+                                roi_direction_h = 16;
+                                left = 0;
+                        }
+                        left += roi_direction_h;
 
-			if (top + crop_h > (HEIGHT - 16)) {
-				roi_direction_v = -1;
-				top = HEIGHT - crop_h - 16;
-			}
-			else if (top <= 0) {
-				roi_direction_v = 1;
-				top = 0;
-			}
-			top += roi_direction_v;
+                        if (top + crop_h > (HEIGHT - 16))
+                        {
+                                roi_direction_v = -1;
+                                top = HEIGHT - crop_h - 16;
+                        }
+                        else if (top <= 0)
+                        {
+                                roi_direction_v = 1;
+                                top = 0;
+                        }
+                        top += roi_direction_v;
 
-			crop(top, left, crop_w, crop_h, 0);
-		}
-
+                        crop(top, left, crop_w, crop_h, 0);
+                }
         }
 }
 
 static void crop(int top, int left, int w, int h, int mytry)
 {
-	struct v4l2_subdev_crop _crop;
+        struct v4l2_subdev_crop _crop;
 
-	_crop.rect.left = left;
-	_crop.rect.top = top;
-	_crop.rect.width = w;
-	_crop.rect.height = h;
+        _crop.rect.left = left;
+        _crop.rect.top = top;
+        _crop.rect.width = w;
+        _crop.rect.height = h;
 
-	_crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
-	_crop.pad = 0;
+        _crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
+        _crop.pad = 0;
 
-//	printf("Crop enabled %d %d %d %d, %s\n",
-//	       top, left, w, h, mytry? "TRY" : "ACTIVE");
+        //	printf("Crop enabled %d %d %d %d, %s\n",
+        //	       top, left, w, h, mytry? "TRY" : "ACTIVE");
 
-	if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
-		errno_exit("VIDIOC_SUBDEV_S_CROP");
-	if (source2_idx != -1) {
-		if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
-			errno_exit("VIDIOC_SUBDEV_S_CROP");
-	}
+        if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
+                errno_exit("VIDIOC_SUBDEV_S_CROP");
+        if (source2_idx != -1)
+        {
+                if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
+                        errno_exit("VIDIOC_SUBDEV_S_CROP");
+        }
 }
 
 static void set_subsampling(void)
 {
-	struct v4l2_control ctrl;
+        struct v4l2_control ctrl;
 
-	ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
-	ctrl.value = !!subsampling;
-	if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_S_CTRL, &ctrl))
-		errno_exit("VIDIOC_S_CTRL subsampling");
+        ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
+        ctrl.value = !!subsampling;
+        if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_S_CTRL, &ctrl))
+                errno_exit("VIDIOC_S_CTRL subsampling");
 
-	if (source2_idx != -1) {
-		if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_S_CTRL, &ctrl))
-			errno_exit("VIDIOC_S_CTRL subsampling");
-	}
+        if (source2_idx != -1)
+        {
+                if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_S_CTRL, &ctrl))
+                        errno_exit("VIDIOC_S_CTRL subsampling");
+        }
 
-	ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
-	ctrl.value = subsampling ? 1 : 0;
-	if (-1 == xioctl(pipeline_fds[rxif1_idx], VIDIOC_S_CTRL, &ctrl))
-		errno_exit("VIDIOC_S_CTRL remapper");
-	if (rxif2_idx != -1) {
-		if (-1 == xioctl(pipeline_fds[rxif2_idx], VIDIOC_S_CTRL, &ctrl))
-			errno_exit("VIDIOC_S_CTRL remapper");
-	}
+        ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
+        ctrl.value = subsampling ? 1 : 0;
+        if (-1 == xioctl(pipeline_fds[rxif1_idx], VIDIOC_S_CTRL, &ctrl))
+                errno_exit("VIDIOC_S_CTRL remapper");
+        if (rxif2_idx != -1)
+        {
+                if (-1 == xioctl(pipeline_fds[rxif2_idx], VIDIOC_S_CTRL, &ctrl))
+                        errno_exit("VIDIOC_S_CTRL remapper");
+        }
 }
 
 static void stop_capturing(void)
 {
         enum v4l2_buf_type type;
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
                 /* Nothing to do. */
                 break;
@@ -492,7 +568,7 @@ static void stop_capturing(void)
         case IO_METHOD_MMAP:
         case IO_METHOD_USERPTR:
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(device_fd, VIDIOC_STREAMOFF, &type))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMOFF, &type))
                         errno_exit("VIDIOC_STREAMOFF");
                 break;
         }
@@ -503,13 +579,15 @@ static void start_capturing(void)
         unsigned int i;
         enum v4l2_buf_type type;
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
                 /* Nothing to do. */
                 break;
 
         case IO_METHOD_MMAP:
-                for (i = 0; i < n_buffers; ++i) {
+                for (i = 0; i < n_buffers; ++i)
+                {
                         struct v4l2_buffer buf;
 
                         CLEAR(buf);
@@ -517,16 +595,17 @@ static void start_capturing(void)
                         buf.memory = V4L2_MEMORY_MMAP;
                         buf.index = i;
 
-                        if (-1 == xioctl(device_fd, VIDIOC_QBUF, &buf))
+                        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                                 errno_exit("VIDIOC_QBUF");
                 }
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(device_fd, VIDIOC_STREAMON, &type))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMON, &type))
                         errno_exit("VIDIOC_STREAMON");
                 break;
 
         case IO_METHOD_USERPTR:
-                for (i = 0; i < n_buffers; ++i) {
+                for (i = 0; i < n_buffers; ++i)
+                {
                         struct v4l2_buffer buf;
 
                         CLEAR(buf);
@@ -536,11 +615,11 @@ static void start_capturing(void)
                         buf.m.userptr = (unsigned long)buffers[i].start;
                         buf.length = buffers[i].length;
 
-                        if (-1 == xioctl(device_fd, VIDIOC_QBUF, &buf))
+                        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                                 errno_exit("VIDIOC_QBUF");
                 }
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(device_fd, VIDIOC_STREAMON, &type))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMON, &type))
                         errno_exit("VIDIOC_STREAMON");
                 break;
         }
@@ -548,9 +627,11 @@ static void start_capturing(void)
 
 static void uninit_device(void)
 {
+        fs << "uninit_device" << methodName << std::endl;
         unsigned int i;
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
                 free(buffers[0].start);
                 break;
@@ -572,9 +653,10 @@ static void uninit_device(void)
 
 static void init_read(unsigned int buffer_size)
 {
-        buffers = (struct buffer*)calloc(1, sizeof(*buffers));
+        buffers = (struct buffer *)calloc(1, sizeof(*buffers));
 
-        if (!buffers) {
+        if (!buffers)
+        {
                 fprintf(stderr, "Out of memory\\n");
                 exit(EXIT_FAILURE);
         }
@@ -582,7 +664,8 @@ static void init_read(unsigned int buffer_size)
         buffers[0].length = buffer_size;
         buffers[0].start = malloc(buffer_size);
 
-        if (!buffers[0].start) {
+        if (!buffers[0].start)
+        {
                 fprintf(stderr, "Out of memory\\n");
                 exit(EXIT_FAILURE);
         }
@@ -598,46 +681,53 @@ static void init_mmap(void)
         req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory = V4L2_MEMORY_MMAP;
 
-        if (-1 == xioctl(device_fd, VIDIOC_REQBUFS, &req)) {
-                if (EINVAL == errno) {
+        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
+        {
+                if (EINVAL == errno)
+                {
                         fprintf(stderr, "device does not support memmap\n");
                         exit(EXIT_FAILURE);
-                } else {
+                }
+                else
+                {
                         errno_exit("VIDIOC_REQBUFS");
                 }
         }
 
-        if (req.count < 1) {
+        if (req.count < 1)
+        {
                 fprintf(stderr, "Insufficient buffer memory on \n");
                 exit(EXIT_FAILURE);
         }
 
-        buffers = (struct buffer*)calloc(req.count, sizeof(*buffers));
+        buffers = (struct buffer *)calloc(req.count, sizeof(*buffers));
 
-        if (!buffers) {
+        if (!buffers)
+        {
                 fprintf(stderr, "Out of memory\\n");
                 exit(EXIT_FAILURE);
         }
 
-        for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        for (n_buffers = 0; n_buffers < req.count; ++n_buffers)
+        {
                 struct v4l2_buffer buf;
 
                 CLEAR(buf);
 
-                buf.type        = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                buf.memory      = V4L2_MEMORY_MMAP;
-                buf.index       = n_buffers;
+                buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                buf.memory = V4L2_MEMORY_MMAP;
+                buf.index = n_buffers;
 
-                if (-1 == xioctl(device_fd, VIDIOC_QUERYBUF, &buf))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYBUF, &buf))
                         errno_exit("VIDIOC_QUERYBUF");
 
                 buffers[n_buffers].length = buf.length;
                 buffers[n_buffers].start =
-                        mmap(NULL /* start anywhere */,
-                              buf.length,
-                              PROT_READ | PROT_WRITE /* required */,
-                              MAP_SHARED /* recommended */,
-                              device_fd, buf.m.offset);
+                    mmap(NULL /* start anywhere */,
+                         buf.length,
+                         PROT_READ | PROT_WRITE /* required */,
+                         MAP_SHARED /* recommended */,
+                         mainSubdeviceFd_, buf.m.offset);
 
                 if (MAP_FAILED == buffers[n_buffers].start)
                         errno_exit("mmap");
@@ -650,32 +740,39 @@ static void init_userp(unsigned int buffer_size)
 
         CLEAR(req);
 
-        req.count  = 4;
-        req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        req.count = 4;
+        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory = V4L2_MEMORY_USERPTR;
 
-        if (-1 == xioctl(device_fd, VIDIOC_REQBUFS, &req)) {
-                if (EINVAL == errno) {
+        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
+        {
+                if (EINVAL == errno)
+                {
                         fprintf(stderr, "device does not support "
-                                 "user pointer i/on");
+                                        "user pointer i/on");
                         exit(EXIT_FAILURE);
-                } else {
+                }
+                else
+                {
                         errno_exit("VIDIOC_REQBUFS");
                 }
         }
 
-        buffers = (struct buffer*)calloc(4, sizeof(*buffers));
+        buffers = (struct buffer *)calloc(4, sizeof(*buffers));
 
-        if (!buffers) {
+        if (!buffers)
+        {
                 fprintf(stderr, "Out of memory\\n");
                 exit(EXIT_FAILURE);
         }
 
-        for (n_buffers = 0; n_buffers < 4; ++n_buffers) {
+        for (n_buffers = 0; n_buffers < 4; ++n_buffers)
+        {
                 buffers[n_buffers].length = buffer_size;
                 buffers[n_buffers].start = malloc(buffer_size);
 
-                if (!buffers[n_buffers].start) {
+                if (!buffers[n_buffers].start)
+                {
                         fprintf(stderr, "Out of memory\\n");
                         exit(EXIT_FAILURE);
                 }
@@ -684,59 +781,64 @@ static void init_userp(unsigned int buffer_size)
 
 static void subdevs_set_format(int width, int height)
 {
-	int i, j, n;
-	struct v4l2_subdev_format fmt;
-	char buf[256];
+        int i, j, n;
+        struct v4l2_subdev_format fmt;
+        char buf[256];
 
-	for (i = 0; pipeline_fds[i] != -1; i++) {
-		if (i == imgfusion_idx)
-			n = 3;
-		else
-			n = 2;
-		for (j = 0; j < n; j++) {
-			CLEAR(fmt);
-			fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-			fmt.pad = j;
-			if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_G_FMT, &fmt)) {
-				sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d",
-					i, j);
-				errno_exit(buf);
-			}
+        for (i = 0; pipeline_fds[i] != -1; i++)
+        {
+                if (i == imgfusion_idx)
+                        n = 3;
+                else
+                        n = 2;
+                for (j = 0; j < n; j++)
+                {
+                        CLEAR(fmt);
+                        fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+                        fmt.pad = j;
+                        if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_G_FMT, &fmt))
+                        {
+                                sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d",
+                                        i, j);
+                                errno_exit(buf);
+                        }
 
-			fmt.format.width = width;
-			fmt.format.height = height;
+                        fmt.format.width = width;
+                        fmt.format.height = height;
 
-			/* if yuv is required, then set that on the source PAD of VPSS */
-			if ((i == csc_idx) && (j == 1) && yuv) {
-				fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
-			}
+                        /* if yuv is required, then set that on the source PAD of VPSS */
+                        if ((i == csc_idx) && (j == 1) && yuv)
+                        {
+                                fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
+                        }
 
-			/* csc, when there is an imgfusion IP receives 2x width frames */
-			if ((imgfusion_idx != -1) && (i == csc_idx))
-			    fmt.format.width *= 2;
-			/* packet32, when there is an imgfusion IP receives 2x width frames */
-			if ((imgfusion_idx != -1) && (i == packet32_idx))
-			    fmt.format.width *= 2;
-			/* tpg when there is an imgfusion IP receives 2x width frames */
-			if ((imgfusion_idx != -1) && (i == tpg_idx))
-			    fmt.format.width *= 2;
+                        /* csc, when there is an imgfusion IP receives 2x width frames */
+                        if ((imgfusion_idx != -1) && (i == csc_idx))
+                                fmt.format.width *= 2;
+                        /* packet32, when there is an imgfusion IP receives 2x width frames */
+                        if ((imgfusion_idx != -1) && (i == packet32_idx))
+                                fmt.format.width *= 2;
+                        /* tpg when there is an imgfusion IP receives 2x width frames */
+                        if ((imgfusion_idx != -1) && (i == tpg_idx))
+                                fmt.format.width *= 2;
 
-			/* imgfusion source pad has 2* width */
-			if (j == 2)
-				fmt.format.width *= 2;
+                        /* imgfusion source pad has 2* width */
+                        if (j == 2)
+                                fmt.format.width *= 2;
 
-			fprintf(stderr, "subdev idx:%d, pad %d, setting format %dx%d\n",
-			       i, j, fmt.format.width, fmt.format.height);
+                        fprintf(stderr, "subdev idx:%d, pad %d, setting format %dx%d\n",
+                                i, j, fmt.format.width, fmt.format.height);
 
-			if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_S_FMT, &fmt)) {
-				sprintf(buf, "VIDIOC_SUBDEV_S_FMT. subdev %d, pad %d",
-					i, j);
-				errno_exit(buf);
-			}
-			if ((i == source1_idx) || (i == source2_idx))
-				break; /* only one pad */
-		}
-	}
+                        if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_S_FMT, &fmt))
+                        {
+                                sprintf(buf, "VIDIOC_SUBDEV_S_FMT. subdev %d, pad %d",
+                                        i, j);
+                                errno_exit(buf);
+                        }
+                        if ((i == source1_idx) || (i == source2_idx))
+                                break; /* only one pad */
+                }
+        }
 }
 
 static void init_device(void)
@@ -746,25 +848,32 @@ static void init_device(void)
         struct v4l2_crop _crop;
         struct v4l2_format fmt;
         unsigned int min;
-	int i;
+        int i;
 
-        if (-1 == xioctl(device_fd, VIDIOC_QUERYCAP, &cap)) {
-                if (EINVAL == errno) {
+        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYCAP, &cap))
+        {
+                if (EINVAL == errno)
+                {
                         fprintf(stderr, "device is no V4L2 device\n");
                         exit(EXIT_FAILURE);
-                } else {
+                }
+                else
+                {
                         errno_exit("VIDIOC_QUERYCAP");
                 }
         }
 
-        if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
+        if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
+        {
                 fprintf(stderr, "device is no video capture device\n");
                 exit(EXIT_FAILURE);
         }
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
-                if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
+                if (!(cap.capabilities & V4L2_CAP_READWRITE))
+                {
                         fprintf(stderr, "device does not support read i/o\n");
                         exit(EXIT_FAILURE);
                 }
@@ -772,27 +881,29 @@ static void init_device(void)
 
         case IO_METHOD_MMAP:
         case IO_METHOD_USERPTR:
-                if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+                if (!(cap.capabilities & V4L2_CAP_STREAMING))
+                {
                         fprintf(stderr, "device does not support streaming i/o\n");
-			exit(EXIT_FAILURE);
+                        exit(EXIT_FAILURE);
                 }
                 break;
         }
 
-
         /* Select video input, video standard and tune here. */
-
 
         CLEAR(cropcap);
 
         cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-        if (0 == xioctl(device_fd, VIDIOC_CROPCAP, &cropcap)) {
+        if (0 == xioctl(mainSubdeviceFd_, VIDIOC_CROPCAP, &cropcap))
+        {
                 _crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 _crop.c = cropcap.defrect; /* reset to default */
 
-                if (-1 == xioctl(device_fd, VIDIOC_S_CROP, &_crop)) {
-                        switch (errno) {
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &_crop))
+                {
+                        switch (errno)
+                        {
                         case EINVAL:
                                 /* Cropping not supported. */
                                 break;
@@ -801,65 +912,73 @@ static void init_device(void)
                                 break;
                         }
                 }
-        } else {
+        }
+        else
+        {
                 /* Errors ignored. */
         }
 
-	if (subsampling && !pipe_camera) {
-		printf("subsampling is not supported with dummy pipe");
-	}
+        if (subsampling && !pipe_camera)
+        {
+                printf("subsampling is not supported with dummy pipe");
+        }
 
-	if (pipe_camera) {
-		printf("subsampling is %s\n", subsampling ? "ENABLED" : "DISABLED");
-		set_subsampling();
-	}
+        if (pipe_camera)
+        {
+                printf("subsampling is %s\n", subsampling ? "ENABLED" : "DISABLED");
+                set_subsampling();
+        }
 
         CLEAR(fmt);
 
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (force_format || crop_enable) {
-                fmt.fmt.pix.width       = crop_enable ? crop_w : WIDTH;
-                fmt.fmt.pix.height      = crop_enable ? crop_h : HEIGHT;
+        if (force_format || crop_enable)
+        {
+                fmt.fmt.pix.width = crop_enable ? crop_w : WIDTH;
+                fmt.fmt.pix.height = crop_enable ? crop_h : HEIGHT;
 
-		if (subsampling) {
-			fmt.fmt.pix.width /= 2;
-			fmt.fmt.pix.height /= 2;
-		}
+                if (subsampling)
+                {
+                        fmt.fmt.pix.width /= 2;
+                        fmt.fmt.pix.height /= 2;
+                }
 
+                if (grey)
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
+                else if (yuv)
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+                else
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
 
-		if (grey)
-			fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
-		else if(yuv)
-			fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-		else
-			fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+                fmt.fmt.pix.field = 1;
+                fmt.fmt.pix.colorspace = 8;
 
-                fmt.fmt.pix.field       = 1;
-		fmt.fmt.pix.colorspace  = 8;
+                subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
 
-		subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
+                if (imgfusion_idx != -1)
+                        fmt.fmt.pix.width *= 2;
 
-		if (imgfusion_idx != -1)
-			fmt.fmt.pix.width *= 2;
-
-		if (-1 == xioctl(device_fd, VIDIOC_S_FMT, &fmt))
-			errno_exit("VIDIOC_S_FMT");
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_FMT, &fmt))
+                        errno_exit("VIDIOC_S_FMT");
 
                 /* Note VIDIOC_S_FMT may change width and height. */
-        } else {
+        }
+        else
+        {
                 /* Preserve original settings as set by v4l2-ctl for example */
-                if (-1 == xioctl(device_fd, VIDIOC_G_FMT, &fmt))
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_G_FMT, &fmt))
                         errno_exit("VIDIOC_G_FMT");
         }
 
-	if (crop_enable && !pipe_camera) {
-		crop_enable = 0;
-		printf("crop is not supported on dummy device\n");
-	}
+        if (crop_enable && !pipe_camera)
+        {
+                crop_enable = 0;
+                printf("crop is not supported on dummy device\n");
+        }
 
-	printf("crop is %s\n", crop_enable ? "ENABLED" : "DISABLED");
-	if (crop_enable)
-		crop(crop_t, crop_l, crop_w, crop_h, 0);
+        printf("crop is %s\n", crop_enable ? "ENABLED" : "DISABLED");
+        if (crop_enable)
+                crop(crop_t, crop_l, crop_w, crop_h, 0);
 
         /* Buggy driver paranoia. */
         min = fmt.fmt.pix.width * 2;
@@ -869,7 +988,8 @@ static void init_device(void)
         if (fmt.fmt.pix.sizeimage < min)
                 fmt.fmt.pix.sizeimage = min;
 
-        switch (io) {
+        switch (io)
+        {
         case IO_METHOD_READ:
                 init_read(fmt.fmt.pix.sizeimage);
                 break;
@@ -886,109 +1006,110 @@ static void init_device(void)
 
 static void open_socket(void)
 {
-	struct sockaddr_in addr;
-	int ret;
+        struct sockaddr_in addr;
+        int ret;
 
-	if (!network)
-		return;
+        if (!network)
+                return;
 
-	memset(&addr, 0, sizeof(addr));
+        memset(&addr, 0, sizeof(addr));
 
-	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr(ip_addr);
-	addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        addr.sin_addr.s_addr = inet_addr(ip_addr);
+        addr.sin_family = AF_INET;
 
-	ip_socket = socket(AF_INET, SOCK_STREAM, 0);
+        ip_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (ip_socket == -1) {
-		fprintf(stderr, "Cannot open socket: error %d\n", errno);
-		exit(EXIT_FAILURE);
-	}
-	ret = connect(ip_socket, (struct sockaddr *) &addr, sizeof(struct sockaddr));
-	fprintf(stderr, "connect ret: %d\n", ret);
-	if (ret == -1) {
-		fprintf(stderr, "Cannot connect socket: error %d\n", errno);
-		close(ip_socket);
-		exit(EXIT_FAILURE);
-	}
+        if (ip_socket == -1)
+        {
+                fprintf(stderr, "Cannot open socket: error %d\n", errno);
+                exit(EXIT_FAILURE);
+        }
+        ret = connect(ip_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr));
+        fprintf(stderr, "connect ret: %d\n", ret);
+        if (ret == -1)
+        {
+                fprintf(stderr, "Cannot connect socket: error %d\n", errno);
+                close(ip_socket);
+                exit(EXIT_FAILURE);
+        }
 }
 
 static void close_socket(void)
 {
-	if (!network)
-		return;
-	close(ip_socket);
+        if (!network)
+                return;
+        close(ip_socket);
 }
-
 
 static void close_pipeline(void)
 {
-	int i;
+        int i;
 
-	for (i = 0; pipeline_fds[i] != -1; i++)
-		if (-1 == close(pipeline_fds[i]))
-			errno_exit("close");
+        for (i = 0; pipeline_fds[i] != -1; i++)
+                if (-1 == close(pipeline_fds[i]))
+                        errno_exit("close");
 }
-
 
 static void usage(FILE *fp, int argc, char **argv)
 {
         fprintf(fp,
-                 "Usage: %s [options]\n\n"
-                 "Version 1.3\n"
-                 "Options:\n"
-                 "-d | --device <name>    MEDIA device name [%s]\n"
-                 "-h | --help             Print this message\n"
-                 "-m | --mmap             Use memory mapped buffers [default]\n"
-                 "-r | --read             Use read() calls\n"
-                 "-u | --userp            Use application allocated buffers\n"
-                 "-o | --output           Outputs stream to stdout\n"
-                 "-f | --format           Force format\n"
-		 "-y | --yuv              use VPSS to set YUV422 output\n"
-                 "-c | --count            Number of frames to grab [%i]\n"
-                 "-n | --net <ip:port>    Stream on TCP socket\n"
-		 "-g | --grey             BAYER format\n"
-		 "-p | --crop             crop [top,left,w,h]"
-		 "-v | --move             move crop around"
-		 "-t | --temp             stream in /run/tmpdat"
-		 "-b | --subsampling      enable subsampling"
-		 "-g | --gpio             check for center half-level light, write 1/0 in 'value' file"
-		,
-                 argv[0], media_name, frame_count);
+                "Usage: %s [options]\n\n"
+                "Version 1.3\n"
+                "Options:\n"
+                "-d | --device <name>    MEDIA device name [%s]\n"
+                "-h | --help             Print this message\n"
+                "-m | --mmap             Use memory mapped buffers [default]\n"
+                "-r | --read             Use read() calls\n"
+                "-u | --userp            Use application allocated buffers\n"
+                "-o | --output           Outputs stream to stdout\n"
+                "-f | --format           Force format\n"
+                "-y | --yuv              use VPSS to set YUV422 output\n"
+                "-c | --count            Number of frames to grab [%i]\n"
+                "-n | --net <ip:port>    Stream on TCP socket\n"
+                "-g | --grey             BAYER format\n"
+                "-p | --crop             crop [top,left,w,h]"
+                "-v | --move             move crop around"
+                "-t | --temp             stream in /run/tmpdat"
+                "-b | --subsampling      enable subsampling"
+                "-g | --gpio             check for center half-level light, write 1/0 in 'value' file",
+                argv[0], media_name, frame_count);
 }
 
 static const char short_options[] = "d:hmruofc:n:gp:vtbiy";
 
 static const struct option
-long_options[] = {
-        { "device", required_argument, NULL, 'd' },
-        { "help",   no_argument,       NULL, 'h' },
-        { "mmap",   no_argument,       NULL, 'm' },
-        { "read",   no_argument,       NULL, 'r' },
-        { "userp",  no_argument,       NULL, 'u' },
-        { "output", no_argument,       NULL, 'o' },
-        { "format", no_argument,       NULL, 'f' },
-        { "count",  required_argument, NULL, 'c' },
-	{ "grey",   no_argument,       NULL, 'g' },
-	{ "net",    required_argument, NULL, 'n' },
-	{ "crop",    required_argument, NULL, 'p' },
-	{ "move crop",    no_argument, NULL, 'v' },
-	{ "temp file",    no_argument, NULL, 't' },
-	{ "subsampling",    no_argument, NULL, 'b' },
-	{ "gpio", no_argument, NULL, 'i' },
-	{ "yuv", no_argument, NULL, 'y' },
-        { 0, 0, 0, 0 }
-};
+    long_options[] = {
+        {"device", required_argument, NULL, 'd'},
+        {"help", no_argument, NULL, 'h'},
+        {"mmap", no_argument, NULL, 'm'},
+        {"read", no_argument, NULL, 'r'},
+        {"userp", no_argument, NULL, 'u'},
+        {"output", no_argument, NULL, 'o'},
+        {"format", no_argument, NULL, 'f'},
+        {"count", required_argument, NULL, 'c'},
+        {"grey", no_argument, NULL, 'g'},
+        {"net", required_argument, NULL, 'n'},
+        {"crop", required_argument, NULL, 'p'},
+        {"move crop", no_argument, NULL, 'v'},
+        {"temp file", no_argument, NULL, 't'},
+        {"subsampling", no_argument, NULL, 'b'},
+        {"gpio", no_argument, NULL, 'i'},
+        {"yuv", no_argument, NULL, 'y'},
+        {0, 0, 0, 0}};
 
 int main(int argc, char **argv)
 {
-	int ret;
-	char buf[1024];
-	int i;
-        media_name = "/dev/video0";
-	//subdev_name = "/dev/v4l-subdev1-foo";
+        fs << "main" << methodName << std::endl;
 
-        for (;;) {
+        int ret;
+        char buf[1024];
+        int i;
+        media_name = "/dev/video0";
+        //subdev_name = "/dev/v4l-subdev1-foo";
+
+        for (;;)
+        {
                 int idx;
                 int c;
 
@@ -998,21 +1119,22 @@ int main(int argc, char **argv)
                 if (-1 == c)
                         break;
 
-                switch (c) {
+                switch (c)
+                {
                 case 0: /* getopt_long() flag */
                         break;
-		case 'v':
-			crop_move = 1;
-			break;
+                case 'v':
+                        crop_move = 1;
+                        break;
 
-		case 'p':
-			sscanf(optarg, "%d,%d,%d,%d", &crop_t, &crop_l, &crop_w, &crop_h);
-			crop_enable = 1;
-			break;
+                case 'p':
+                        sscanf(optarg, "%d,%d,%d,%d", &crop_t, &crop_l, &crop_w, &crop_h);
+                        crop_enable = 1;
+                        break;
 
-		case 'g':
-			grey = 1;
-			break;
+                case 'g':
+                        grey = 1;
+                        break;
                 case 'd':
                         media_name = optarg;
                         break;
@@ -1047,29 +1169,29 @@ int main(int argc, char **argv)
                         if (errno)
                                 errno_exit(optarg);
                         break;
-		case 'n':
-			network = 1;
-			for (i = 0; i < strlen(optarg); i++)
-				if (optarg[i] == ':')
-					break;
-			sscanf(optarg + i, ":%d", &port);
-			optarg[i] = '\0';
-			strcpy(ip_addr, optarg);
-			break;
-		case 't':
-			stream_file = 1;
-			break;
+                case 'n':
+                        network = 1;
+                        for (i = 0; i < strlen(optarg); i++)
+                                if (optarg[i] == ':')
+                                        break;
+                        sscanf(optarg + i, ":%d", &port);
+                        optarg[i] = '\0';
+                        strcpy(ip_addr, optarg);
+                        break;
+                case 't':
+                        stream_file = 1;
+                        break;
 
-		case 'b':
-			subsampling = 1;
-			break;
+                case 'b':
+                        subsampling = 1;
+                        break;
 
-		case 'i':
-			gpio = 1;
-			break;
-		case 'y':
-			yuv = 1;
-			break;
+                case 'i':
+                        gpio = 1;
+                        break;
+                case 'y':
+                        yuv = 1;
+                        break;
 
                 default:
                         usage(stderr, argc, argv);
@@ -1077,28 +1199,30 @@ int main(int argc, char **argv)
                 }
         }
 
-	if (crop_move && !crop_enable) {
-		printf("crop not enabled, ignoring move crop\n");
-		crop_move = 0;
-	}
+        if (crop_move && !crop_enable)
+        {
+                printf("crop not enabled, ignoring move crop\n");
+                crop_move = 0;
+        }
 
-	open_pipeline();
+        open_pipeline();
         init_device();
-	fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
-	if (gpio)
-		gpio_fd = open("value", O_WRONLY);
-	if (gpio_fd < 0) {
-		fprintf(stderr, "--gpio option specified, but cannot open 'value' file. Disabling\n");
-		gpio = 0;
-	}
-	open_socket();
+        fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
+        if (gpio)
+                gpio_fd = open("value", O_WRONLY);
+        if (gpio_fd < 0)
+        {
+                fprintf(stderr, "--gpio option specified, but cannot open 'value' file. Disabling\n");
+                gpio = 0;
+        }
+        open_socket();
         start_capturing();
         mainloop();
         stop_capturing();
         uninit_device();
         close_pipeline();
-	close_socket();
-	close(fd_tmp);
+        close_socket();
+        close(fd_tmp);
         fprintf(stderr, "\\n");
         return 0;
 }
