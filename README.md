@@ -13,7 +13,7 @@
   - [2.4. Network config](#24-network-config)
   - [2.5. Generate ssh key for root access on Enclustra](#25-generate-ssh-key-for-root-access-on-enclustra)
   - [2.6. Missing package](#26-missing-package)
-  - [2.7. Test](#27-test)
+  - [2.7. Merello test](#27-merello-test)
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
 - [3. Note](#3-note)
@@ -199,23 +199,28 @@ Add root pwd:
 sudo pwd
 ```
 
-## 2.7. Test
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
+## 2.7. Merello test
+:exclamation:<u>To be done on iCub-head.</u>
 
 ```bash
 sudo apt-get install mplayer netcat pv ssh
-cp -r python-cameras/ubuntu-files/modules /<SD mount point>/root/icubtech
-cp -r python-cameras/ubuntu-files/capture /<SD mount point>/root/icubtech
+git clone https://github.com/icub-tech-iit/python-cameras.git
 ``` 
 
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```bash
-cd /root/icubtech/capture
+cd /root/icubtech
+git clone https://github.com/icub-tech-iit/python-cameras.git
 mkdir build
 cd build
-make 
-cp v4l2_capture ../..
+ccmake ..
+```
+Select install dir:```/root/icubtech```
+Generate, then:
+
+```
+make install 
 ```
 :exclamation:<u>To be done on iCub-head.</u>
 
@@ -238,7 +243,6 @@ In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
 before the script ends.
 
 <img src="video/2cams.gif" width="500px">
-<img src="video/2cams.mp4" width="500px">
 
 
 ## 2.8. YARP
