@@ -38,15 +38,7 @@ typedef unsigned long size_t;
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-#define PIPELINE_MAX_LEN 16
-#define PIPELINE_VIDEO_NAME "vcap_python output 0"
-#define PIPELINE_DUMMY_NAME "vcap_dummy output 0"
-#define PIPELINE_PYTHON_NAME "PYTHON1300"
-#define PIPELINE_TPG_NAME "v_tpg"
-#define PIPELINE_CSC_NAME "v_proc_ss"
-#define PIPELINE_PACKET32_NAME "Packet32"
-#define PIPELINE_IMGFUSION_NAME "imgfusion"
-#define PIPELINE_RXIF_NAME "PYTHON1300_RXIF"
+constexpr unsigned int pipelineMaxLen={16};
 
 constexpr char pipelineVideoName[]={"vcap_python output 0"};
 constexpr char pipelineDummyName[]={"vcap_dummy output 0"};
@@ -78,7 +70,7 @@ struct buffer
 
 static int pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
 static char *media_name;
-static int pipelineSubdeviceFd_[PIPELINE_MAX_LEN] = {
+static int pipelineSubdeviceFd_[pipelineMaxLen] = {
     -1,
     -1,
     -1,
@@ -147,9 +139,9 @@ static int xioctl(int fh, int request, void *arg)
         return r;
 }
 
-static void open_pipeline(void)
+static void openPipeline(void)
 {
-        fs << "open_pipeline" << methodName << std::endl;
+        fs << "openPipeline" << methodName << std::endl;
 
         //Open main device
         int fd = open(media_name, O_RDWR);
@@ -168,6 +160,7 @@ static void open_pipeline(void)
                 exit(EXIT_FAILURE);
         }
 
+        //find subdevice
         struct media_entity_desc info;
         int subdeviceIndex = 0;
         for (int id = 0;; id = info.id)
@@ -1215,7 +1208,7 @@ int main(int argc, char **argv)
                 crop_move = 0;
         }
 
-        open_pipeline();
+        openPipeline();
         init_device();
         fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
         if (gpio)
