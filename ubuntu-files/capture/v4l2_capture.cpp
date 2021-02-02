@@ -47,6 +47,15 @@ typedef unsigned long size_t;
 #define PIPELINE_IMGFUSION_NAME "imgfusion"
 #define PIPELINE_RXIF_NAME "PYTHON1300_RXIF"
 
+constexpr char pipelineVideoName[]={"vcap_python output 0"};
+constexpr char pipelineDummyName[]={"vcap_dummy output 0"};
+constexpr char pipelinePythonName[]={"PYTHON1300"};
+constexpr char pipelineTpgName[]={"v_tpg"};
+constexpr char pipelineCscName[]={"v_proc_ss"};
+constexpr char pipelinePacket32Name[]={"Packet32"};
+constexpr char pipelineImgfusionName[]={"imgfusion"};
+constexpr char pipelineRxifName[]={"PYTHON1300_RXIF"};
+
 /* max width for roi end */
 #define WIDTH 1280
 #define HEIGHT 1024
@@ -68,7 +77,7 @@ struct buffer
 
 static int pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
 static char *media_name;
-static int pipeline_fds[PIPELINE_MAX_LEN] = {
+static int pipelineSubdeviceFd_[PIPELINE_MAX_LEN] = {
     -1,
     -1,
     -1,
@@ -88,8 +97,8 @@ static int pipeline_fds[PIPELINE_MAX_LEN] = {
 };
 static int yuv = 0;
 static int mainSubdeviceFd_ = -1;
-static int source1_idx = -1;
-static int source2_idx = -1;
+static int sourceSubDeviceIndex1_ = -1;
+static int sourceSubDeviceIndex2_ = -1;
 static int rxif1_idx = -1;
 static int rxif2_idx = -1;
 static int csc_idx = -1;
@@ -209,10 +218,10 @@ static void open_pipeline(void)
 				 */
                         if (strcmp(info.name, PIPELINE_PYTHON_NAME) == 0)
                         {
-                                if (source1_idx == -1)
-                                        source1_idx = subdeviceIndex;
+                                if (sourceSubDeviceIndex1_ == -1)
+                                        sourceSubDeviceIndex1_ = subdeviceIndex;
                                 else
-                                        source2_idx = subdeviceIndex;
+                                        sourceSubDeviceIndex2_ = subdeviceIndex;
                                 pipe_camera = 1;
                         }
                         else if (strstr(info.name, PIPELINE_TPG_NAME))
@@ -238,13 +247,13 @@ static void open_pipeline(void)
                                 else
                                         rxif2_idx = subdeviceIndex;
                         }
-                        pipeline_fds[subdeviceIndex] = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
-                        if (pipeline_fds[subdeviceIndex] == -1)
+                        pipelineSubdeviceFd_[subdeviceIndex] = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
+                        if (pipelineSubdeviceFd_[subdeviceIndex] == -1)
                         {
                                 fs << "ERROR-cannot open device:" << deviceName << std::endl;
                                 exit(EXIT_FAILURE);
                         }
-                        fs << "open pipeline:" << deviceName << " fd:" << pipeline_fds[subdeviceIndex] << " device number:" << devnum << std::endl;
+                        fs << "open pipeline:" << deviceName << " fd:" << pipelineSubdeviceFd_[subdeviceIndex] << " device number:" << devnum << std::endl;
                         subdeviceIndex++;
                 }
 
@@ -255,7 +264,7 @@ static void open_pipeline(void)
                 fs << "ERROR-Cannot find main pipe V4L2 device" << std::endl;
                 exit(EXIT_FAILURE);
         }
-        if (source1_idx == -1)
+        if (sourceSubDeviceIndex1_ == -1)
         {
                 fs << "ERROR-Cannot find source subdev" << std::endl;
                 exit(EXIT_FAILURE);
@@ -520,11 +529,11 @@ static void crop(int top, int left, int w, int h, int mytry)
         //	printf("Crop enabled %d %d %d %d, %s\n",
         //	       top, left, w, h, mytry? "TRY" : "ACTIVE");
 
-        if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
+        if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_SUBDEV_S_CROP, &_crop))
                 errno_exit("VIDIOC_SUBDEV_S_CROP");
-        if (source2_idx != -1)
+        if (sourceSubDeviceIndex2_ != -1)
         {
-                if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
+                if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex2_], VIDIOC_SUBDEV_S_CROP, &_crop))
                         errno_exit("VIDIOC_SUBDEV_S_CROP");
         }
 }
@@ -535,22 +544,22 @@ static void set_subsampling(void)
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
         ctrl.value = !!subsampling;
-        if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_S_CTRL, &ctrl))
+        if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_S_CTRL, &ctrl))
                 errno_exit("VIDIOC_S_CTRL subsampling");
 
-        if (source2_idx != -1)
+        if (sourceSubDeviceIndex2_ != -1)
         {
-                if (-1 == xioctl(pipeline_fds[source2_idx], VIDIOC_S_CTRL, &ctrl))
+                if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex2_], VIDIOC_S_CTRL, &ctrl))
                         errno_exit("VIDIOC_S_CTRL subsampling");
         }
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
         ctrl.value = subsampling ? 1 : 0;
-        if (-1 == xioctl(pipeline_fds[rxif1_idx], VIDIOC_S_CTRL, &ctrl))
+        if (-1 == xioctl(pipelineSubdeviceFd_[rxif1_idx], VIDIOC_S_CTRL, &ctrl))
                 errno_exit("VIDIOC_S_CTRL remapper");
         if (rxif2_idx != -1)
         {
-                if (-1 == xioctl(pipeline_fds[rxif2_idx], VIDIOC_S_CTRL, &ctrl))
+                if (-1 == xioctl(pipelineSubdeviceFd_[rxif2_idx], VIDIOC_S_CTRL, &ctrl))
                         errno_exit("VIDIOC_S_CTRL remapper");
         }
 }
@@ -785,7 +794,7 @@ static void subdevs_set_format(int width, int height)
         struct v4l2_subdev_format fmt;
         char buf[256];
 
-        for (i = 0; pipeline_fds[i] != -1; i++)
+        for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
         {
                 if (i == imgfusion_idx)
                         n = 3;
@@ -796,7 +805,7 @@ static void subdevs_set_format(int width, int height)
                         CLEAR(fmt);
                         fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
                         fmt.pad = j;
-                        if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_G_FMT, &fmt))
+                        if (-1 == xioctl(pipelineSubdeviceFd_[i], VIDIOC_SUBDEV_G_FMT, &fmt))
                         {
                                 sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d",
                                         i, j);
@@ -829,13 +838,13 @@ static void subdevs_set_format(int width, int height)
                         fprintf(stderr, "subdev idx:%d, pad %d, setting format %dx%d\n",
                                 i, j, fmt.format.width, fmt.format.height);
 
-                        if (-1 == xioctl(pipeline_fds[i], VIDIOC_SUBDEV_S_FMT, &fmt))
+                        if (-1 == xioctl(pipelineSubdeviceFd_[i], VIDIOC_SUBDEV_S_FMT, &fmt))
                         {
                                 sprintf(buf, "VIDIOC_SUBDEV_S_FMT. subdev %d, pad %d",
                                         i, j);
                                 errno_exit(buf);
                         }
-                        if ((i == source1_idx) || (i == source2_idx))
+                        if ((i == sourceSubDeviceIndex1_) || (i == sourceSubDeviceIndex2_))
                                 break; /* only one pad */
                 }
         }
@@ -1046,8 +1055,8 @@ static void close_pipeline(void)
 {
         int i;
 
-        for (i = 0; pipeline_fds[i] != -1; i++)
-                if (-1 == close(pipeline_fds[i]))
+        for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
+                if (-1 == close(pipelineSubdeviceFd_[i]))
                         errno_exit("close");
 }
 
