@@ -17,7 +17,10 @@
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
 - [3. Note](#3-note)
-- [yarpdev](#yarpdev)
+  - [3.1. Passord and users](#31-passord-and-users)
+  - [3.2. Reboot](#32-reboot)
+  - [3.3. Filesystem](#33-filesystem)
+- [4. yarpdev](#4-yarpdev)
 
 <!-- /TOC -->
 
@@ -295,16 +298,32 @@ then you can open the folder:
 
 A remote terminal is also available.
 
+:exclamation:If vscode won't connect try to check Enclustra file-system as below shown. Then restart boot Enclustra and vscode.
 # 3. Note
+
+## 3.1. Passord and users
 usr:ubuntu  
 pwd:iCub2021
 
 usr:root  
 pwd:root
 
-# yarpdev
+## 3.2. Reboot
+It doesn't work.
+
+## 3.3. Filesystem
+
+Sometimes happens that the file system became read-only . It has been corrupted:
+
+```
+fsck / -y
+```
+Would resolve the problem.
+
+# 4. yarpdev
 
 Used command:
 ```
 /root/icubtech/yarp/build/bin/yarpdev --device usbCamera --d /dev/video0 --name /grabber --width 1280 --height 1024
 ```
+

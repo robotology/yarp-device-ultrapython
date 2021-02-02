@@ -3,7 +3,7 @@
 ######################## user settings #########################
 
 # -- Board/IP options
-REMOTE_HOME=/root/icubtech/build
+REMOTE_HOME=/root/icubtech
 REMOTE_HOST=10.0.1.233
 LOCAL_IP=10.0.1.104
 
@@ -178,7 +178,7 @@ function do_all_watch()
 # setup the remote end to run the acquisition but throw away the data
 function do_all_null()
 {
-    ##    remote_run "cd $REMOTE_HOME/capture; ./v4l2_capture --mma --format $GREY --device /dev/video$VIDEO_DEV  --subdev '/dev/v4l-subdev$VIDEO_SUBDEV' --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
+    ##    remote_run "cd $REMOTE_HOME/capture; ./v4l2_capture --mma --format $GREY --device /dev/media$VIDEO_DEV  --subdev '/dev/v4l-subdev$VIDEO_SUBDEV' --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
 
         remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/capture/v4l2_capture --gpio --m --format $FORMAT --device /dev/media$MEDIA_DEV  --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
 }

@@ -65,8 +65,7 @@ struct buffer {
 
 static int 		pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
 static char            *media_name;
-static int		pipeline_fds[PIPELINE_MAX_LEN] =
-				{ [0 ... PIPELINE_MAX_LEN -1] = -1 };
+static int		pipeline_fds[PIPELINE_MAX_LEN] ={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,};
 static int              yuv = 0;
 static int		device_fd = -1;
 static int		source1_idx = -1;
@@ -217,17 +216,6 @@ static void process_image(const void *p, int size)
 	int val = 1;
 	uint8_t *ptr;
 
-	if (gpio) {
-		for (i = 0; i < 4; i++) {
-			ptr = (void*)p + (size/2) + i * 3;
-			val *= ((*ptr & 0xff) > 128) ? 1 : 0;
-//			printf("val %d\n", (*ptr & 0xff));
-		}
-//		printf("wr gpio %d\n", !!val);
-		write(gpio_fd, val ? "1\n" : "0\n", 2);
-		fsync(gpio_fd);
-	}
-
         if (out_buf)
                 fwrite(p, size, 1, stdout);
 	if (stream_file)
@@ -352,7 +340,7 @@ unsigned long sub_time_ms(struct timeval *time1, struct timeval *time2)
 	return res.tv_sec * 1000 + res.tv_usec / 1000;
 }
 
-static void crop(int top, int left, int w, int h, int try);
+static void crop(int top, int left, int w, int h, int mytry);
 static void mainloop(void)
 {
         unsigned int count, frames = 0;
@@ -445,7 +433,7 @@ static void mainloop(void)
         }
 }
 
-static void crop(int top, int left, int w, int h, int try)
+static void crop(int top, int left, int w, int h, int mytry)
 {
 	struct v4l2_subdev_crop _crop;
 
@@ -454,11 +442,11 @@ static void crop(int top, int left, int w, int h, int try)
 	_crop.rect.width = w;
 	_crop.rect.height = h;
 
-	_crop.which = try ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
+	_crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
 	_crop.pad = 0;
 
 //	printf("Crop enabled %d %d %d %d, %s\n",
-//	       top, left, w, h, try? "TRY" : "ACTIVE");
+//	       top, left, w, h, mytry? "TRY" : "ACTIVE");
 
 	if (-1 == xioctl(pipeline_fds[source1_idx], VIDIOC_SUBDEV_S_CROP, &_crop))
 		errno_exit("VIDIOC_SUBDEV_S_CROP");
@@ -584,7 +572,7 @@ static void uninit_device(void)
 
 static void init_read(unsigned int buffer_size)
 {
-        buffers = calloc(1, sizeof(*buffers));
+        buffers = (struct buffer*)calloc(1, sizeof(*buffers));
 
         if (!buffers) {
                 fprintf(stderr, "Out of memory\\n");
@@ -624,7 +612,7 @@ static void init_mmap(void)
                 exit(EXIT_FAILURE);
         }
 
-        buffers = calloc(req.count, sizeof(*buffers));
+        buffers = (struct buffer*)calloc(req.count, sizeof(*buffers));
 
         if (!buffers) {
                 fprintf(stderr, "Out of memory\\n");
@@ -676,7 +664,7 @@ static void init_userp(unsigned int buffer_size)
                 }
         }
 
-        buffers = calloc(4, sizeof(*buffers));
+        buffers = (struct buffer*)calloc(4, sizeof(*buffers));
 
         if (!buffers) {
                 fprintf(stderr, "Out of memory\\n");
@@ -997,7 +985,7 @@ int main(int argc, char **argv)
 	int ret;
 	char buf[1024];
 	int i;
-        media_name = "/dev/media0";
+        media_name = "/dev/video0";
 	//subdev_name = "/dev/v4l-subdev1-foo";
 
         for (;;) {
