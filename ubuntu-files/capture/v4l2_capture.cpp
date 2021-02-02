@@ -197,8 +197,8 @@ static void open_pipeline(void)
                 deviceName = udev_device_get_devnode(device);
 
                 //Open main subdevice
-                if ((str::strcmp(info.name, pipelineVideoName) == 0) ||
-                    (str::strcmp(info.name, pipelineDummyName) == 0))
+                if ((std::strcmp(info.name, pipelineVideoName) == 0) ||
+                    (std::strcmp(info.name, pipelineDummyName) == 0))
                 {
                         mainSubdeviceFd_ = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
                         if (mainSubdeviceFd_ == -1)
@@ -217,7 +217,7 @@ static void open_pipeline(void)
 				 * source. If only a TPG is present, then it's the source.
 				 * In case both are found, stick to camera
 				 */
-                        if (str::strcmp(info.name, pipelinePythonName) == 0)
+                        if (std::strcmp(info.name, pipelinePythonName) == 0)
                         {
                                 if (sourceSubDeviceIndex1_ == -1)
                                         sourceSubDeviceIndex1_ = subdeviceIndex;
