@@ -8,6 +8,7 @@
  */
 typedef unsigned long size_t;
 #include <fstream>
+#include <cstring>
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
@@ -211,6 +212,17 @@ static void open_pipeline(void)
                 {
                         //Open other subdevice
 
+/*
+constexpr char pipelineVideoName[]={"vcap_python output 0"};
+constexpr char pipelineDummyName[]={"vcap_dummy output 0"};
+constexpr char pipelinePythonName[]={"PYTHON1300"};
+constexpr char []={"v_tpg"};
+constexpr char []={"v_proc_ss"};
+constexpr char []={"Packet32"};
+constexpr char []={"imgfusion"};
+constexpr char []={"PYTHON1300_RXIF"};
+*/
+
                         /*
 				 * If a python camera is found in pipeline, then that's the
 				 * source. If only a TPG is present, then it's the source.
@@ -224,23 +236,23 @@ static void open_pipeline(void)
                                         sourceSubDeviceIndex2_ = subdeviceIndex;
                                 pipe_camera = 1;
                         }
-                        else if (strstr(info.name, PIPELINE_TPG_NAME))
+                        else if (std::strstr(info.name,pipelineTpgName))
                         {
                                 tpg_idx = subdeviceIndex;
                         }
-                        else if (strstr(info.name, PIPELINE_CSC_NAME))
+                        else if (std::strstr(info.name, pipelineCscName))
                         {
                                 csc_idx = subdeviceIndex;
                         }
-                        else if (strstr(info.name, PIPELINE_IMGFUSION_NAME))
+                        else if (std::strstr(info.name, pipelineImgfusionName))
                         {
                                 imgfusion_idx = subdeviceIndex;
                         }
-                        else if (strstr(info.name, PIPELINE_PACKET32_NAME))
+                        else if (std::strstr(info.name, pipelinePacket32Name))
                         {
                                 packet32_idx = subdeviceIndex;
                         }
-                        else if (strcmp(info.name, PIPELINE_RXIF_NAME) == 0)
+                        else if (std::strcmp(info.name, pipelineRxifName)==0)
                         {
                                 if (rxif1_idx == -1)
                                         rxif1_idx = subdeviceIndex;
