@@ -18,8 +18,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ")
 
 set(v4l2_captureSrc  v4l2_capture.cpp
+                        PythonCameraHelper.cpp
                         )
-set(v4l2_captureHdr  
+set(v4l2_captureHdr  PythonCameraHelper.h
+
                         )
 
 add_executable(${PROJECT_NAME} ${v4l2_captureSrc} ${v4l2_captureHdr} )

@@ -38,84 +38,19 @@ typedef unsigned long size_t;
 #include <libudev.h>
 #include "xilinx-v4l2-controls.h"
 
+#include "PythonCameraHelper.h"
+
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-enum io_method
-{
-        IO_METHOD_READ,
-        IO_METHOD_MMAP,
-        IO_METHOD_USERPTR,
-};
+
 
 constexpr unsigned int pipelineMaxLen = {16};
 
-//Pipeline string
-constexpr char pipelineVideoName[] = {"vcap_python output 0"};
-constexpr char pipelineDummyName[] = {"vcap_dummy output 0"};
-constexpr char pipelinePythonName[] = {"PYTHON1300"};
-constexpr char pipelineTpgName[] = {"v_tpg"};
-constexpr char pipelineCscName[] = {"v_proc_ss"};
-constexpr char pipelinePacket32Name[] = {"Packet32"};
-constexpr char pipelineImgfusionName[] = {"imgfusion"};
-constexpr char pipelineRxifName[] = {"PYTHON1300_RXIF"};
+PythonCameraHelper pythonHelper;
 
-//Options
-bool subsamplingEnabledProperty_{false};
-bool cropEnabledProperty_{false};
-bool forceFormatProperty_{true};
-enum io_method ioMethod_ = IO_METHOD_MMAP;
-
-//Crop size
-unsigned int cropLeft_{0};
-unsigned int cropTop_{0};
-unsigned int cropHeight_{0};
-unsigned int cropWidth_{0};
-
-//Native resolution for cam
-constexpr unsigned int nativeWidth_{1280};
-constexpr unsigned int nativeHeight_{1024};
-
-#define NUM_BUF 8
-
-struct buffer
-{
-        void *start;
-        size_t length;
-};
-
-static char *media_name;
-std::array<int,pipelineMaxLen> pipelineSubdeviceFd_ = {
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-};
-static int yuv = 0;
-static int mainSubdeviceFd_ = -1;
-static int sourceSubDeviceIndex1_ = -1;
-static int sourceSubDeviceIndex2_ = -1;
-static int rxif1Index_ = -1;
-static int rxif2Index_ = -1;
-static int cscIndex_ = -1;
-static int tpgIndex_ = -1;
-static int imgfusionIndex_ = -1;
-static int packet32Index_ = -1;
 static int fd = -1;
 static int fd_tmp = -1;
-struct buffer *buffers;
-static unsigned int n_buffers;
+
 static int out_buf;
 static int frame_count = -1;
 static int network = 0;
@@ -123,13 +58,8 @@ static int stream_file = 0;
 static int port = 0;
 static char ip_addr[24];
 static int ip_socket;
-static int grey = 0;
 static int crop_move = 0;
 
-static int gpio = 0;
-static int gpio_fd;
-std::ofstream fs("./log.log");
-std::string methodName{"------------"};
 
 static void errno_exit(const char *s)
 {
@@ -149,132 +79,6 @@ static int xioctl(int fh, int request, void *arg)
         return r;
 }
 
-static void openPipeline(void)
-{
-        fs << "openPipeline" << methodName << std::endl;
-
-        //Open main device
-        int fd = open(media_name, O_RDWR);
-        if (fd == -1)
-        {
-                fs << "ERROR-cannot open media dev" << std::endl;
-                exit(EXIT_FAILURE);
-        }
-        fs << "open:" << media_name << " fd:" << fd << std::endl;
-
-        struct udev *udev;
-        udev = udev_new();
-        if (udev == NULL)
-        {
-                fs << "ERROR-cannot open udev" << std::endl;
-                exit(EXIT_FAILURE);
-        }
-
-        //find subdevice
-        struct media_entity_desc info;
-        int subdeviceIndex = 0;
-        for (int id = 0;; id = info.id)
-        {
-                memset(&info, 0, sizeof(info));
-                info.id = id | MEDIA_ENT_ID_FLAG_NEXT;
-
-                int ret = ioctl(fd, MEDIA_IOC_ENUM_ENTITIES, &info);
-                if (ret < 0)
-                {
-                        ret = errno != EINVAL ? -errno : 0;
-                        fs << "WARNING-cannot open device not media" << std::endl;
-                        break;
-                }
-                fs << "found entity num:" << id << " name:" << info.name << std::endl;
-
-                dev_t devnum = makedev(info.v4l.major, info.v4l.minor);
-                struct udev_device *device;
-                device = udev_device_new_from_devnum(udev, 'c', devnum);
-                if (device == nullptr)
-                {
-                        udev_device_unref(device);
-                        continue;
-                }
-
-                const char *deviceName;
-                deviceName = udev_device_get_devnode(device);
-
-                //Open main subdevice
-                if ((std::strcmp(info.name, pipelineVideoName) == 0) ||
-                    (std::strcmp(info.name, pipelineDummyName) == 0))
-                {
-                        mainSubdeviceFd_ = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
-                        if (mainSubdeviceFd_ == -1)
-                        {
-                                fs << "ERROR-cannot open device:" << mainSubdeviceFd_ << std::endl;
-                                exit(EXIT_FAILURE);
-                        }
-                        fs << "open no pipeline:" << deviceName << " fd:" << mainSubdeviceFd_ << " device number:" << devnum << std::endl;
-                }
-                else
-                {
-                        //Open other subdevice
-
-                        /*
-				 * If a python camera is found in pipeline, then that's the
-				 * source. If only a TPG is present, then it's the source.
-				 * In case both are found, stick to camera
-				 */
-                        if (std::strcmp(info.name, pipelinePythonName) == 0)
-                        {
-                                if (sourceSubDeviceIndex1_ == -1)
-                                        sourceSubDeviceIndex1_ = subdeviceIndex;
-                                else
-                                        sourceSubDeviceIndex2_ = subdeviceIndex;
-                        }
-                        else if (std::strstr(info.name, pipelineTpgName))
-                        {
-                                tpgIndex_ = subdeviceIndex;
-                        }
-                        else if (std::strstr(info.name, pipelineCscName))
-                        {
-                                cscIndex_ = subdeviceIndex;
-                        }
-                        else if (std::strstr(info.name, pipelineImgfusionName))
-                        {
-                                imgfusionIndex_ = subdeviceIndex;
-                        }
-                        else if (std::strstr(info.name, pipelinePacket32Name))
-                        {
-                                packet32Index_ = subdeviceIndex;
-                        }
-                        else if (std::strcmp(info.name, pipelineRxifName) == 0)
-                        {
-                                if (rxif1Index_ == -1)
-                                        rxif1Index_ = subdeviceIndex;
-                                else
-                                        rxif2Index_ = subdeviceIndex;
-                        }
-                        pipelineSubdeviceFd_[subdeviceIndex] = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
-                        if (pipelineSubdeviceFd_[subdeviceIndex] == -1)
-                        {
-                                fs << "ERROR-cannot open device:" << deviceName << std::endl;
-                                exit(EXIT_FAILURE);
-                        }
-                        fs << "open pipeline:" << deviceName << " fd:" << pipelineSubdeviceFd_[subdeviceIndex] << " device number:" << devnum << std::endl;
-                        subdeviceIndex++;
-                }
-
-                udev_device_unref(device);
-        }
-        if (mainSubdeviceFd_ == -1)
-        {
-                fs << "ERROR-Cannot find main pipe V4L2 device" << std::endl;
-                exit(EXIT_FAILURE);
-        }
-        if (sourceSubDeviceIndex1_ == -1)
-        {
-                fs << "ERROR-Cannot find source subdev" << std::endl;
-                exit(EXIT_FAILURE);
-        }
-
-        fs << "final fd:" << mainSubdeviceFd_ << std::endl;
-}
 
 static void process_image(const void *p, int size)
 {
@@ -307,10 +111,10 @@ static int read_frame(void)
         int seq = 1;
         static unsigned char dbg = 0;
 
-        switch (ioMethod_)
+        switch (pythonHelper.ioMethod_)
         {
         case IO_METHOD_READ:
-                if (-1 == read(mainSubdeviceFd_, buffers[0].start, buffers[0].length))
+                if (-1 == read(pythonHelper.mainSubdeviceFd_, pythonHelper.buffers[0].start, pythonHelper.buffers[0].length))
                 {
                         switch (errno)
                         {
@@ -327,7 +131,7 @@ static int read_frame(void)
                         }
                 }
 
-                process_image(buffers[0].start, buffers[0].length);
+                process_image(pythonHelper.buffers[0].start, pythonHelper.buffers[0].length);
                 break;
 
         case IO_METHOD_MMAP:
@@ -336,7 +140,7 @@ static int read_frame(void)
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_MMAP;
                 //	usleep(5000);
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
                 {
                         switch (errno)
                         {
@@ -354,15 +158,15 @@ static int read_frame(void)
                         }
                 }
 
-                assert(buf.index < n_buffers);
+                assert(buf.index < pythonHelper.n_buffers);
                 if (buf.flags & V4L2_BUF_FLAG_ERROR)
                         errno_exit("V4L2_BUF_FLAG_ERROR");
 
                 seq = buf.sequence;
-                process_image(buffers[buf.index].start, buf.bytesused);
-                memset(buffers[buf.index].start, dbg++, buf.bytesused);
+                process_image(pythonHelper.buffers[buf.index].start, buf.bytesused);
+                memset(pythonHelper.buffers[buf.index].start, dbg++, buf.bytesused);
 
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                         errno_exit("VIDIOC_QBUF");
                 break;
 
@@ -372,7 +176,7 @@ static int read_frame(void)
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_USERPTR;
 
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_DQBUF, &buf))
                 {
                         switch (errno)
                         {
@@ -389,15 +193,15 @@ static int read_frame(void)
                         }
                 }
 
-                for (i = 0; i < n_buffers; ++i)
-                        if (buf.m.userptr == (unsigned long)buffers[i].start && buf.length == buffers[i].length)
+                for (i = 0; i < pythonHelper.n_buffers; ++i)
+                        if (buf.m.userptr == (unsigned long)pythonHelper.buffers[i].start && buf.length == pythonHelper.buffers[i].length)
                                 break;
 
-                assert(i < n_buffers);
+                assert(i < pythonHelper.n_buffers);
 
                 process_image((void *)buf.m.userptr, buf.bytesused);
 
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                         errno_exit("VIDIOC_QBUF");
                 break;
         }
@@ -440,13 +244,13 @@ static void mainloop(void)
                         int r;
 
                         FD_ZERO(&fds);
-                        FD_SET(mainSubdeviceFd_, &fds);
+                        FD_SET(pythonHelper.mainSubdeviceFd_, &fds);
 
                         /* Timeout. */
                         tv.tv_sec = 80;
                         tv.tv_usec = 0;
 
-                        r = select(mainSubdeviceFd_ + 1,
+                        r = select(pythonHelper.mainSubdeviceFd_ + 1,
                                    &fds, NULL, NULL, &tv);
 
                         if (-1 == r)
@@ -465,7 +269,7 @@ static void mainloop(void)
                         if (seq = read_frame())
                         {
                                 frames++;
-                                if (ioMethod_ == IO_METHOD_MMAP && seq != sequence++)
+                                if (pythonHelper.ioMethod_ == IO_METHOD_MMAP && seq != sequence++)
                                 {
                                         printf("dropped frame..\n");
                                         sequence = seq + 1;
@@ -488,10 +292,10 @@ static void mainloop(void)
                 {
                         update_roi = 0;
 
-                        if (left + cropWidth_ > (nativeWidth_ - 16))
+                        if (left + pythonHelper.cropWidth_ > (pythonHelper.nativeWidth_ - 16))
                         {
                                 roi_direction_h = -16;
-                                left = nativeWidth_ - cropWidth_ - 16;
+                                left = pythonHelper.nativeWidth_ - pythonHelper.cropWidth_ - 16;
                         }
                         else if (left <= 0)
                         {
@@ -500,10 +304,10 @@ static void mainloop(void)
                         }
                         left += roi_direction_h;
 
-                        if (top + cropHeight_ > (nativeHeight_ - 16))
+                        if (top + pythonHelper.cropHeight_ > (pythonHelper.nativeHeight_ - 16))
                         {
                                 roi_direction_v = -1;
-                                top = nativeHeight_ - cropHeight_ - 16;
+                                top = pythonHelper.nativeHeight_ - pythonHelper.cropHeight_ - 16;
                         }
                         else if (top <= 0)
                         {
@@ -512,79 +316,7 @@ static void mainloop(void)
                         }
                         top += roi_direction_v;
 
-                        crop(top, left, cropWidth_, cropHeight_, 0);
-                }
-        }
-}
-
-static void crop(int top, int left, int w, int h, int mytry)
-{
-        fs << "crop is" << (cropEnabledProperty_ ? "ENABLED" : "DISABLED") << std::endl;
-        if (!cropEnabledProperty_)
-                return;
-
-        struct v4l2_subdev_crop _crop;
-
-        _crop.rect.left = left;
-        _crop.rect.top = top;
-        _crop.rect.width = w;
-        _crop.rect.height = h;
-
-        _crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
-        _crop.pad = 0;
-
-        //	printf("Crop enabled %d %d %d %d, %s\n",
-        //	       top, left, w, h, mytry? "TRY" : "ACTIVE");
-
-        if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_SUBDEV_S_CROP, &_crop))
-                errno_exit("VIDIOC_SUBDEV_S_CROP");
-        if (sourceSubDeviceIndex2_ != -1)
-        {
-                if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex2_], VIDIOC_SUBDEV_S_CROP, &_crop))
-                        errno_exit("VIDIOC_SUBDEV_S_CROP");
-        }
-}
-
-static void setSubsampling(void)
-{
-        fs << "subsampling is" << (subsamplingEnabledProperty_ ? "ENABLED" : "DISABLED") << std::endl;
-        if (!subsamplingEnabledProperty_)
-                return;
-
-        fs << "setSubsampling" << methodName << std::endl;
-        struct v4l2_control ctrl;
-
-        ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
-        ctrl.value = 1;
-        if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_S_CTRL, &ctrl))
-        {
-                fs << "ERROR-setSubsampling" << std::endl;
-                errno_exit("VIDIOC_S_CTRL subsampling1");
-        }
-
-        if (sourceSubDeviceIndex2_ != -1)
-        {
-                if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex2_], VIDIOC_S_CTRL, &ctrl))
-                {
-                        fs << "ERROR-setSubsampling" << std::endl;
-                        errno_exit("VIDIOC_S_CTRL subsampling2");
-                }
-        }
-
-        ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
-        ctrl.value = 1;
-        if (-1 == xioctl(pipelineSubdeviceFd_[rxif1Index_], VIDIOC_S_CTRL, &ctrl))
-        {
-                fs << "ERROR-setSubsampling remapper" << std::endl;
-                errno_exit("VIDIOC_S_CTRL subsampling");
-        }
-
-        if (rxif2Index_ != -1)
-        {
-                if (-1 == xioctl(pipelineSubdeviceFd_[rxif2Index_], VIDIOC_S_CTRL, &ctrl))
-                {
-                        fs << "ERROR-setSubsampling remapper2" << std::endl;
-                        errno_exit("VIDIOC_S_CTRL subsampling");
+                        pythonHelper.crop(top, left, pythonHelper.cropWidth_, pythonHelper.cropHeight_, 0);
                 }
         }
 }
@@ -593,7 +325,7 @@ static void stop_capturing(void)
 {
         enum v4l2_buf_type type;
 
-        switch (ioMethod_)
+        switch (pythonHelper.ioMethod_)
         {
         case IO_METHOD_READ:
                 /* Nothing to do. */
@@ -602,7 +334,7 @@ static void stop_capturing(void)
         case IO_METHOD_MMAP:
         case IO_METHOD_USERPTR:
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMOFF, &type))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_STREAMOFF, &type))
                         errno_exit("VIDIOC_STREAMOFF");
                 break;
         }
@@ -613,14 +345,14 @@ static void start_capturing(void)
         unsigned int i;
         enum v4l2_buf_type type;
 
-        switch (ioMethod_)
+        switch (pythonHelper.ioMethod_)
         {
         case IO_METHOD_READ:
                 /* Nothing to do. */
                 break;
 
         case IO_METHOD_MMAP:
-                for (i = 0; i < n_buffers; ++i)
+                for (i = 0; i < pythonHelper.n_buffers; ++i)
                 {
                         struct v4l2_buffer buf;
 
@@ -629,16 +361,16 @@ static void start_capturing(void)
                         buf.memory = V4L2_MEMORY_MMAP;
                         buf.index = i;
 
-                        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
+                        if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                                 errno_exit("VIDIOC_QBUF");
                 }
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMON, &type))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_STREAMON, &type))
                         errno_exit("VIDIOC_STREAMON");
                 break;
 
         case IO_METHOD_USERPTR:
-                for (i = 0; i < n_buffers; ++i)
+                for (i = 0; i < pythonHelper.n_buffers; ++i)
                 {
                         struct v4l2_buffer buf;
 
@@ -646,14 +378,14 @@ static void start_capturing(void)
                         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                         buf.memory = V4L2_MEMORY_USERPTR;
                         buf.index = i;
-                        buf.m.userptr = (unsigned long)buffers[i].start;
-                        buf.length = buffers[i].length;
+                        buf.m.userptr = (unsigned long)pythonHelper.buffers[i].start;
+                        buf.length = pythonHelper.buffers[i].length;
 
-                        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf))
+                        if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
                                 errno_exit("VIDIOC_QBUF");
                 }
                 type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMON, &type))
+                if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_STREAMON, &type))
                         errno_exit("VIDIOC_STREAMON");
                 break;
         }
@@ -661,373 +393,28 @@ static void start_capturing(void)
 
 static void uninit_device(void)
 {
-        fs << "uninit_device" << methodName << std::endl;
+        pythonHelper.fs << "uninit_device" << pythonHelper.methodName << std::endl;
         unsigned int i;
 
-        switch (ioMethod_)
+        switch (pythonHelper.ioMethod_)
         {
         case IO_METHOD_READ:
-                free(buffers[0].start);
+                free(pythonHelper.buffers[0].start);
                 break;
 
         case IO_METHOD_MMAP:
-                for (i = 0; i < n_buffers; ++i)
-                        if (-1 == munmap(buffers[i].start, buffers[i].length))
+                for (i = 0; i < pythonHelper.n_buffers; ++i)
+                        if (-1 == munmap(pythonHelper.buffers[i].start, pythonHelper.buffers[i].length))
                                 errno_exit("munmap");
                 break;
 
         case IO_METHOD_USERPTR:
-                for (i = 0; i < n_buffers; ++i)
-                        free(buffers[i].start);
+                for (i = 0; i < pythonHelper.n_buffers; ++i)
+                        free(pythonHelper.buffers[i].start);
                 break;
         }
 
-        free(buffers);
-}
-
-static void init_read(unsigned int buffer_size)
-{
-        buffers = (struct buffer *)calloc(1, sizeof(*buffers));
-
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-
-        buffers[0].length = buffer_size;
-        buffers[0].start = malloc(buffer_size);
-
-        if (!buffers[0].start)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-}
-
-static void init_mmap(void)
-{
-        struct v4l2_requestbuffers req;
-
-        CLEAR(req);
-
-        req.count = NUM_BUF;
-        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        req.memory = V4L2_MEMORY_MMAP;
-
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
-        {
-                if (EINVAL == errno)
-                {
-                        fprintf(stderr, "device does not support memmap\n");
-                        exit(EXIT_FAILURE);
-                }
-                else
-                {
-                        errno_exit("VIDIOC_REQBUFS");
-                }
-        }
-
-        if (req.count < 1)
-        {
-                fprintf(stderr, "Insufficient buffer memory on \n");
-                exit(EXIT_FAILURE);
-        }
-
-        buffers = (struct buffer *)calloc(req.count, sizeof(*buffers));
-
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-
-        for (n_buffers = 0; n_buffers < req.count; ++n_buffers)
-        {
-                struct v4l2_buffer buf;
-
-                CLEAR(buf);
-
-                buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                buf.memory = V4L2_MEMORY_MMAP;
-                buf.index = n_buffers;
-
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYBUF, &buf))
-                        errno_exit("VIDIOC_QUERYBUF");
-
-                buffers[n_buffers].length = buf.length;
-                buffers[n_buffers].start =
-                    mmap(NULL /* start anywhere */,
-                         buf.length,
-                         PROT_READ | PROT_WRITE /* required */,
-                         MAP_SHARED /* recommended */,
-                         mainSubdeviceFd_, buf.m.offset);
-
-                if (MAP_FAILED == buffers[n_buffers].start)
-                        errno_exit("mmap");
-        }
-}
-
-static void init_userp(unsigned int buffer_size)
-{
-        struct v4l2_requestbuffers req;
-
-        CLEAR(req);
-
-        req.count = 4;
-        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        req.memory = V4L2_MEMORY_USERPTR;
-
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
-        {
-                if (EINVAL == errno)
-                {
-                        fprintf(stderr, "device does not support "
-                                        "user pointer i/on");
-                        exit(EXIT_FAILURE);
-                }
-                else
-                {
-                        errno_exit("VIDIOC_REQBUFS");
-                }
-        }
-
-        buffers = (struct buffer *)calloc(4, sizeof(*buffers));
-
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-
-        for (n_buffers = 0; n_buffers < 4; ++n_buffers)
-        {
-                buffers[n_buffers].length = buffer_size;
-                buffers[n_buffers].start = malloc(buffer_size);
-
-                if (!buffers[n_buffers].start)
-                {
-                        fprintf(stderr, "Out of memory\\n");
-                        exit(EXIT_FAILURE);
-                }
-        }
-}
-
-static void setSubDevFormat(int width, int height)
-{
-        int i, j, n;
-        struct v4l2_subdev_format fmt;
-        char buf[256];
-
-        for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
-        {
-                if (i == imgfusionIndex_)
-                        n = 3;
-                else
-                        n = 2;
-                for (j = 0; j < n; j++)
-                {
-                        CLEAR(fmt);
-                        fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-                        fmt.pad = j;
-                        if (-1 == xioctl(pipelineSubdeviceFd_[i], VIDIOC_SUBDEV_G_FMT, &fmt))
-                        {
-                                sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d", i, j);
-                                fs << "ERROR-VIDIOC_SUBDEV_G_FMT. subdev:" << i << " pad:" << j << std::endl;
-                                errno_exit(buf);
-                        }
-
-                        fmt.format.width = width;
-                        fmt.format.height = height;
-
-                        /* if yuv is required, then set that on the source PAD of VPSS */
-                        if ((i == cscIndex_) && (j == 1) && yuv)
-                        {
-                                fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
-                        }
-
-                        /* csc, when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusionIndex_ != -1) && (i == cscIndex_))
-                                fmt.format.width *= 2;
-                        /* packet32, when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusionIndex_ != -1) && (i == packet32Index_))
-                                fmt.format.width *= 2;
-                        /* tpg when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusionIndex_ != -1) && (i == tpgIndex_))
-                                fmt.format.width *= 2;
-
-                        /* imgfusion source pad has 2* width */
-                        if (j == 2)
-                                fmt.format.width *= 2;
-
-                        fprintf(stderr, "subdev idx:%d, pad %d, setting format %dx%d\n",
-                                i, j, fmt.format.width, fmt.format.height);
-
-                        if (-1 == xioctl(pipelineSubdeviceFd_[i], VIDIOC_SUBDEV_S_FMT, &fmt))
-                        {
-                                sprintf(buf, "VIDIOC_SUBDEV_S_FMT. subdev %d, pad %d",
-                                        i, j);
-                                fs << "ERROR-VIDIOC_SUBDEV_S_FMT. subdev:" << i << " pad:" << j << std::endl;
-                                errno_exit(buf);
-                        }
-                        if ((i == sourceSubDeviceIndex1_) || (i == sourceSubDeviceIndex2_))
-                                break; /* only one pad */
-                }
-        }
-}
-
-void setFormat(struct v4l2_format &fmt)
-{
-        //todo check dimensions correctness
-        CLEAR(fmt);
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-        if (forceFormatProperty_ || cropEnabledProperty_)
-        {
-                fmt.fmt.pix.width = cropEnabledProperty_ ? cropWidth_ : nativeWidth_;
-                fmt.fmt.pix.height = cropEnabledProperty_ ? cropHeight_ : nativeHeight_;
-
-                if (subsamplingEnabledProperty_)
-                {
-                        fmt.fmt.pix.width /= 2;
-                        fmt.fmt.pix.height /= 2;
-                }
-
-                if (grey)
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
-                else if (yuv)
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-                else
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-
-                fmt.fmt.pix.field = 1;
-                fmt.fmt.pix.colorspace = 8;
-
-                setSubDevFormat(fmt.fmt.pix.width, fmt.fmt.pix.height);
-
-                if (imgfusionIndex_ != -1)
-                        fmt.fmt.pix.width *= 2;
-
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_FMT, &fmt))
-                        errno_exit("VIDIOC_S_FMT");
-
-                /* Note VIDIOC_S_FMT may change width and height. */
-                return;
-        }
-        /* Preserve original settings as set by v4l2-ctl for example */
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_G_FMT, &fmt))
-                errno_exit("VIDIOC_G_FMT");
-}
-
-bool checkDevice(int mainSubdeviceFd)
-{
-        struct v4l2_capability cap;
-        if (-1 == xioctl(mainSubdeviceFd, VIDIOC_QUERYCAP, &cap))
-        {
-                if (EINVAL == errno)
-                {
-                        fs << "ERROR-initDevice:device is no V4L2 device" << std::endl;
-                        exit(EXIT_FAILURE);
-                }
-                else
-                {
-                        errno_exit("VIDIOC_QUERYCAP");
-                }
-        }
-
-        if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
-        {
-                fs << "ERROR-initDevice:device is no video capture device" << std::endl;
-                exit(EXIT_FAILURE);
-        }
-
-        switch (ioMethod_)
-        {
-        case IO_METHOD_READ:
-                if (!(cap.capabilities & V4L2_CAP_READWRITE))
-                {
-                        fs << "ERROR-device does not support read i/o" << std::endl;
-                        exit(EXIT_FAILURE);
-                }
-                break;
-
-        case IO_METHOD_MMAP:
-        case IO_METHOD_USERPTR:
-                if (!(cap.capabilities & V4L2_CAP_STREAMING))
-                {
-                        fs << "ERROR-device does not support streaming i/o" << std::endl;
-                        exit(EXIT_FAILURE);
-                }
-                break;
-        }
-
-        return true;
-}
-
-static void initDevice(void)
-{
-        fs << "initDevice" << methodName << std::endl;
-
-        checkDevice(mainSubdeviceFd_);
-
-        struct v4l2_cropcap cropcap;
-        struct v4l2_crop _crop;
-        CLEAR(cropcap);
-
-        cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (0 == xioctl(mainSubdeviceFd_, VIDIOC_CROPCAP, &cropcap))
-        {
-                _crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                _crop.c = cropcap.defrect; /* reset to default */
-
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &_crop))
-                {
-                        switch (errno)
-                        {
-                        case EINVAL:
-                                fs << "ERROR-cropping not supported" << std::endl;
-                                break;
-                        default:
-                                fs << "ERROR-cropping" << std::endl;
-                                break;
-                        }
-                }
-        }
-        else
-        {
-                fs << "ERROR-cropping-2 ??" << std::endl;
-        }
-
-        setSubsampling();
-
-        struct v4l2_format fmt;
-        setFormat(fmt);
-
-        crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
-
-        /* Buggy driver paranoia. */
-        unsigned int min;
-        min = fmt.fmt.pix.width * 2;
-        if (fmt.fmt.pix.bytesperline < min)
-                fmt.fmt.pix.bytesperline = min;
-        min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-        if (fmt.fmt.pix.sizeimage < min)
-                fmt.fmt.pix.sizeimage = min;
-
-        switch (ioMethod_)
-        {
-        case IO_METHOD_READ:
-                init_read(fmt.fmt.pix.sizeimage);
-                break;
-
-        case IO_METHOD_MMAP:
-                init_mmap();
-                break;
-
-        case IO_METHOD_USERPTR:
-                init_userp(fmt.fmt.pix.sizeimage);
-                break;
-        }
+        free(pythonHelper.buffers);
 }
 
 static void open_socket(void)
@@ -1072,8 +459,8 @@ static void close_pipeline(void)
 {
         int i;
 
-        for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
-                if (-1 == close(pipelineSubdeviceFd_[i]))
+        for (i = 0; pythonHelper.pipelineSubdeviceFd_[i] != -1; i++)
+                if (-1 == close(pythonHelper.pipelineSubdeviceFd_[i]))
                         errno_exit("close");
 }
 
@@ -1099,7 +486,7 @@ static void usage(FILE *fp, int argc, char **argv)
                 "-t | --temp             stream in /run/tmpdat"
                 "-b | --subsampling      enable subsampling"
                 "-g | --gpio             check for center half-level light, write 1/0 in 'value' file",
-                argv[0], media_name, frame_count);
+                argv[0], pythonHelper.mediaName_, frame_count);
 }
 
 static const char short_options[] = "d:hmruofc:n:gp:vtbiy";
@@ -1126,12 +513,12 @@ static const struct option
 
 int main(int argc, char **argv)
 {
-        fs << "main" << methodName << std::endl;
+        pythonHelper.fs << "main" << pythonHelper.methodName << std::endl;
 
         int ret;
         char buf[1024];
         int i;
-        media_name = "/dev/video0";
+        pythonHelper.mediaName_ = "/dev/video0";
         //subdev_name = "/dev/v4l-subdev1-foo";
 
         for (;;)
@@ -1154,16 +541,16 @@ int main(int argc, char **argv)
                         break;
 
                 case 'p':
-                        sscanf(optarg, "%d,%d,%d,%d", &cropTop_, &cropLeft_, &cropWidth_, &cropHeight_);
-                        cropEnabledProperty_ = true;
+                        sscanf(optarg, "%d,%d,%d,%d", &pythonHelper.cropTop_, &pythonHelper.cropLeft_, &pythonHelper.cropWidth_, &pythonHelper.cropHeight_);
+                        pythonHelper.cropEnabledProperty_ = true;
                         break;
 
                 case 'g':
-                        grey = 1;
-                        fs << "SETINGS-grey" << grey << std::endl;
+                        pythonHelper.grey = 1;
+                        pythonHelper.fs << "SETINGS-grey" << pythonHelper.grey << std::endl;
                         break;
                 case 'd':
-                        media_name = optarg;
+                        pythonHelper.mediaName_ = optarg;
                         break;
 
                 case 'h':
@@ -1171,15 +558,15 @@ int main(int argc, char **argv)
                         exit(EXIT_SUCCESS);
 
                 case 'm':
-                        ioMethod_ = IO_METHOD_MMAP;
+                        pythonHelper.ioMethod_ = IO_METHOD_MMAP;
                         break;
 
                 case 'r':
-                        ioMethod_ = IO_METHOD_READ;
+                        pythonHelper.ioMethod_ = IO_METHOD_READ;
                         break;
 
                 case 'u':
-                        ioMethod_ = IO_METHOD_USERPTR;
+                        pythonHelper.ioMethod_ = IO_METHOD_USERPTR;
                         break;
 
                 case 'o':
@@ -1187,8 +574,8 @@ int main(int argc, char **argv)
                         break;
 
                 case 'f':
-                        forceFormatProperty_ = true;
-                        fs << "SETINGS-forceFormatProperty_" << forceFormatProperty_ << std::endl;
+                        pythonHelper.forceFormatProperty_ = true;
+                        pythonHelper.fs << "SETINGS-forceFormatProperty_" << pythonHelper.forceFormatProperty_ << std::endl;
                         break;
 
                 case 'c':
@@ -1211,15 +598,15 @@ int main(int argc, char **argv)
                         break;
 
                 case 'b':
-                        subsamplingEnabledProperty_ = true;
+                        pythonHelper.subsamplingEnabledProperty_ = true;
                         break;
 
                 case 'i':
-                        gpio = 1;
+                      
                         break;
                 case 'y':
-                        yuv = 1;
-                        fs << "SETINGS-yov" << yuv << std::endl;
+                        pythonHelper.yuv = 1;
+                        pythonHelper.fs << "SETINGS-yov" << pythonHelper.yuv << std::endl;
                         break;
 
                 default:
@@ -1228,23 +615,17 @@ int main(int argc, char **argv)
                 }
         }
 
-        if (crop_move && !cropEnabledProperty_)
+        if (crop_move && !pythonHelper.cropEnabledProperty_)
         {
                 printf("crop not enabled, ignoring move crop\n");
                 crop_move = 0;
         }
 
-        openPipeline();
+        pythonHelper.openPipeline();
 
-        initDevice();
+        pythonHelper.initDevice();
         fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
-        if (gpio)
-                gpio_fd = open("value", O_WRONLY);
-        if (gpio_fd < 0)
-        {
-                fprintf(stderr, "--gpio option specified, but cannot open 'value' file. Disabling\n");
-                gpio = 0;
-        }
+        
         open_socket();
         start_capturing();
         mainloop();
