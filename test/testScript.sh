@@ -17,7 +17,7 @@ HEIGHT=1024
 IMGFUSION=1
 # set to 1 to cause moving ROI
 MOVE=0
-SUBSAMPLING=1
+SUBSAMPLING=0
 # set to 1 for YUV, RGB24 otherwise
 COLOR_YUV=1
 SW_DEBAYER=0
@@ -154,7 +154,7 @@ function remote_setup_modules()
 function remote_stream()
 {
     remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --mma --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
-    sleep 1
+    sleep 0.2
     remote_set_ctrls $VIDEODEV "${CTRLS_POST[*]}"
     fg
 

@@ -38,16 +38,20 @@ typedef unsigned long size_t;
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-constexpr unsigned int pipelineMaxLen={16};
+constexpr unsigned int pipelineMaxLen = {16};
 
-constexpr char pipelineVideoName[]={"vcap_python output 0"};
-constexpr char pipelineDummyName[]={"vcap_dummy output 0"};
-constexpr char pipelinePythonName[]={"PYTHON1300"};
-constexpr char pipelineTpgName[]={"v_tpg"};
-constexpr char pipelineCscName[]={"v_proc_ss"};
-constexpr char pipelinePacket32Name[]={"Packet32"};
-constexpr char pipelineImgfusionName[]={"imgfusion"};
-constexpr char pipelineRxifName[]={"PYTHON1300_RXIF"};
+//Pipeline string
+constexpr char pipelineVideoName[] = {"vcap_python output 0"};
+constexpr char pipelineDummyName[] = {"vcap_dummy output 0"};
+constexpr char pipelinePythonName[] = {"PYTHON1300"};
+constexpr char pipelineTpgName[] = {"v_tpg"};
+constexpr char pipelineCscName[] = {"v_proc_ss"};
+constexpr char pipelinePacket32Name[] = {"Packet32"};
+constexpr char pipelineImgfusionName[] = {"imgfusion"};
+constexpr char pipelineRxifName[] = {"PYTHON1300_RXIF"};
+
+//Options
+bool subsamplingProperty_{false};
 
 /* max width for roi end */
 #define WIDTH 1280
@@ -68,7 +72,6 @@ struct buffer
         size_t length;
 };
 
-static int pipe_camera = 0; /* 1 for pipeline with real camera, 0 for dummy pipeline */
 static char *media_name;
 static int pipelineSubdeviceFd_[pipelineMaxLen] = {
     -1,
@@ -92,12 +95,12 @@ static int yuv = 0;
 static int mainSubdeviceFd_ = -1;
 static int sourceSubDeviceIndex1_ = -1;
 static int sourceSubDeviceIndex2_ = -1;
-static int rxif1_idx = -1;
-static int rxif2_idx = -1;
-static int csc_idx = -1;
-static int tpg_idx = -1;
-static int imgfusion_idx = -1;
-static int packet32_idx = -1;
+static int rxif1Index_ = -1;
+static int rxif2Index_ = -1;
+static int cscIndex_ = -1;
+static int tpgIndex_ = -1;
+static int imgfusionIndex_ = -1;
+static int packet32Index_ = -1;
 static int crop_l, crop_t, crop_h, crop_w;
 static int crop_enable;
 static enum io_method io = IO_METHOD_MMAP;
@@ -115,7 +118,7 @@ static char ip_addr[24];
 static int ip_socket;
 static int grey = 0;
 static int crop_move = 0;
-static int subsampling = 0;
+
 static int gpio = 0;
 static int gpio_fd;
 std::ofstream fs("./log.log");
@@ -216,30 +219,29 @@ static void openPipeline(void)
                                         sourceSubDeviceIndex1_ = subdeviceIndex;
                                 else
                                         sourceSubDeviceIndex2_ = subdeviceIndex;
-                                pipe_camera = 1;
                         }
-                        else if (std::strstr(info.name,pipelineTpgName))
+                        else if (std::strstr(info.name, pipelineTpgName))
                         {
-                                tpg_idx = subdeviceIndex;
+                                tpgIndex_ = subdeviceIndex;
                         }
                         else if (std::strstr(info.name, pipelineCscName))
                         {
-                                csc_idx = subdeviceIndex;
+                                cscIndex_ = subdeviceIndex;
                         }
                         else if (std::strstr(info.name, pipelineImgfusionName))
                         {
-                                imgfusion_idx = subdeviceIndex;
+                                imgfusionIndex_ = subdeviceIndex;
                         }
                         else if (std::strstr(info.name, pipelinePacket32Name))
                         {
-                                packet32_idx = subdeviceIndex;
+                                packet32Index_ = subdeviceIndex;
                         }
-                        else if (std::strcmp(info.name, pipelineRxifName)==0)
+                        else if (std::strcmp(info.name, pipelineRxifName) == 0)
                         {
-                                if (rxif1_idx == -1)
-                                        rxif1_idx = subdeviceIndex;
+                                if (rxif1Index_ == -1)
+                                        rxif1Index_ = subdeviceIndex;
                                 else
-                                        rxif2_idx = subdeviceIndex;
+                                        rxif2Index_ = subdeviceIndex;
                         }
                         pipelineSubdeviceFd_[subdeviceIndex] = open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
                         if (pipelineSubdeviceFd_[subdeviceIndex] == -1)
@@ -532,29 +534,43 @@ static void crop(int top, int left, int w, int h, int mytry)
         }
 }
 
-static void set_subsampling(void)
+static void setSubsampling(void)
 {
+        fs << "setSubsampling" << methodName << std::endl;
         struct v4l2_control ctrl;
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
-        ctrl.value = !!subsampling;
+        ctrl.value = !!subsamplingProperty_;
         if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_S_CTRL, &ctrl))
-                errno_exit("VIDIOC_S_CTRL subsampling");
+        {
+                fs << "ERROR-setSubsampling" << std::endl;
+                errno_exit("VIDIOC_S_CTRL subsampling1");
+        }
 
         if (sourceSubDeviceIndex2_ != -1)
         {
                 if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex2_], VIDIOC_S_CTRL, &ctrl))
-                        errno_exit("VIDIOC_S_CTRL subsampling");
+                {
+                        fs << "ERROR-setSubsampling" << std::endl;
+                        errno_exit("VIDIOC_S_CTRL subsampling2");
+                }
         }
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
-        ctrl.value = subsampling ? 1 : 0;
-        if (-1 == xioctl(pipelineSubdeviceFd_[rxif1_idx], VIDIOC_S_CTRL, &ctrl))
-                errno_exit("VIDIOC_S_CTRL remapper");
-        if (rxif2_idx != -1)
+        ctrl.value = subsamplingProperty_ ? 1 : 0;
+        if (-1 == xioctl(pipelineSubdeviceFd_[rxif1Index_], VIDIOC_S_CTRL, &ctrl))
         {
-                if (-1 == xioctl(pipelineSubdeviceFd_[rxif2_idx], VIDIOC_S_CTRL, &ctrl))
-                        errno_exit("VIDIOC_S_CTRL remapper");
+                fs << "ERROR-setSubsampling remapper" << std::endl;
+                errno_exit("VIDIOC_S_CTRL subsampling");
+        }
+
+        if (rxif2Index_ != -1)
+        {
+                if (-1 == xioctl(pipelineSubdeviceFd_[rxif2Index_], VIDIOC_S_CTRL, &ctrl))
+                {
+                        fs << "ERROR-setSubsampling remapper2" << std::endl;
+                        errno_exit("VIDIOC_S_CTRL subsampling");
+                }
         }
 }
 
@@ -790,7 +806,7 @@ static void subdevs_set_format(int width, int height)
 
         for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
         {
-                if (i == imgfusion_idx)
+                if (i == imgfusionIndex_)
                         n = 3;
                 else
                         n = 2;
@@ -810,19 +826,19 @@ static void subdevs_set_format(int width, int height)
                         fmt.format.height = height;
 
                         /* if yuv is required, then set that on the source PAD of VPSS */
-                        if ((i == csc_idx) && (j == 1) && yuv)
+                        if ((i == cscIndex_) && (j == 1) && yuv)
                         {
                                 fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
                         }
 
                         /* csc, when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusion_idx != -1) && (i == csc_idx))
+                        if ((imgfusionIndex_ != -1) && (i == cscIndex_))
                                 fmt.format.width *= 2;
                         /* packet32, when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusion_idx != -1) && (i == packet32_idx))
+                        if ((imgfusionIndex_ != -1) && (i == packet32Index_))
                                 fmt.format.width *= 2;
                         /* tpg when there is an imgfusion IP receives 2x width frames */
-                        if ((imgfusion_idx != -1) && (i == tpg_idx))
+                        if ((imgfusionIndex_ != -1) && (i == tpgIndex_))
                                 fmt.format.width *= 2;
 
                         /* imgfusion source pad has 2* width */
@@ -844,20 +860,20 @@ static void subdevs_set_format(int width, int height)
         }
 }
 
-static void init_device(void)
+static void initDevice(void)
 {
-        struct v4l2_capability cap;
-        struct v4l2_cropcap cropcap;
-        struct v4l2_crop _crop;
+        fs << "initDevice" << methodName << std::endl;
+
         struct v4l2_format fmt;
         unsigned int min;
         int i;
 
+        struct v4l2_capability cap;
         if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYCAP, &cap))
         {
                 if (EINVAL == errno)
                 {
-                        fprintf(stderr, "device is no V4L2 device\n");
+                        fs << "ERROR-initDevice:device is no V4L2 device" << std::endl;
                         exit(EXIT_FAILURE);
                 }
                 else
@@ -868,7 +884,7 @@ static void init_device(void)
 
         if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
         {
-                fprintf(stderr, "device is no video capture device\n");
+                fs << "ERROR-initDevice:device is no video capture device" << std::endl;
                 exit(EXIT_FAILURE);
         }
 
@@ -877,7 +893,7 @@ static void init_device(void)
         case IO_METHOD_READ:
                 if (!(cap.capabilities & V4L2_CAP_READWRITE))
                 {
-                        fprintf(stderr, "device does not support read i/o\n");
+                        fs << "ERROR-device does not support read i/o" << std::endl;
                         exit(EXIT_FAILURE);
                 }
                 break;
@@ -886,7 +902,7 @@ static void init_device(void)
         case IO_METHOD_USERPTR:
                 if (!(cap.capabilities & V4L2_CAP_STREAMING))
                 {
-                        fprintf(stderr, "device does not support streaming i/o\n");
+                        fs << "ERROR-device does not support streaming i/o" << std::endl;
                         exit(EXIT_FAILURE);
                 }
                 break;
@@ -894,6 +910,8 @@ static void init_device(void)
 
         /* Select video input, video standard and tune here. */
 
+        struct v4l2_cropcap cropcap;
+        struct v4l2_crop _crop;
         CLEAR(cropcap);
 
         cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -908,29 +926,22 @@ static void init_device(void)
                         switch (errno)
                         {
                         case EINVAL:
-                                /* Cropping not supported. */
+                                fs << "ERROR-cropping not supported" << std::endl;
                                 break;
                         default:
-                                /* Errors ignored. */
+                                fs << "ERROR-cropping" << std::endl;
                                 break;
                         }
                 }
         }
         else
         {
-                /* Errors ignored. */
+                fs << "ERROR-cropping-2 ??" << std::endl;
         }
 
-        if (subsampling && !pipe_camera)
-        {
-                printf("subsampling is not supported with dummy pipe");
-        }
-
-        if (pipe_camera)
-        {
-                printf("subsampling is %s\n", subsampling ? "ENABLED" : "DISABLED");
-                set_subsampling();
-        }
+        fs << "subsampling is" << (subsamplingProperty_ ? "ENABLED" : "DISABLED") << std::endl;
+        if (subsamplingProperty_)
+                setSubsampling();
 
         CLEAR(fmt);
 
@@ -940,7 +951,7 @@ static void init_device(void)
                 fmt.fmt.pix.width = crop_enable ? crop_w : WIDTH;
                 fmt.fmt.pix.height = crop_enable ? crop_h : HEIGHT;
 
-                if (subsampling)
+                if (subsamplingProperty_)
                 {
                         fmt.fmt.pix.width /= 2;
                         fmt.fmt.pix.height /= 2;
@@ -958,7 +969,7 @@ static void init_device(void)
 
                 subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
 
-                if (imgfusion_idx != -1)
+                if (imgfusionIndex_ != -1)
                         fmt.fmt.pix.width *= 2;
 
                 if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_FMT, &fmt))
@@ -973,13 +984,7 @@ static void init_device(void)
                         errno_exit("VIDIOC_G_FMT");
         }
 
-        if (crop_enable && !pipe_camera)
-        {
-                crop_enable = 0;
-                printf("crop is not supported on dummy device\n");
-        }
-
-        printf("crop is %s\n", crop_enable ? "ENABLED" : "DISABLED");
+        fs << "crop is" << (crop_enable ? "ENABLED" : "DISABLED") << std::endl;
         if (crop_enable)
                 crop(crop_t, crop_l, crop_w, crop_h, 0);
 
@@ -1186,7 +1191,7 @@ int main(int argc, char **argv)
                         break;
 
                 case 'b':
-                        subsampling = 1;
+                        //subsampling = 1; Removed luca
                         break;
 
                 case 'i':
@@ -1209,7 +1214,8 @@ int main(int argc, char **argv)
         }
 
         openPipeline();
-        init_device();
+
+        initDevice();
         fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
         if (gpio)
                 gpio_fd = open("value", O_WRONLY);
