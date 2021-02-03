@@ -8,7 +8,9 @@
  */
 typedef unsigned long size_t;
 #include <fstream>
+#include <array>
 #include <cstring>
+
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
@@ -38,6 +40,13 @@ typedef unsigned long size_t;
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
+enum io_method
+{
+        IO_METHOD_READ,
+        IO_METHOD_MMAP,
+        IO_METHOD_USERPTR,
+};
+
 constexpr unsigned int pipelineMaxLen = {16};
 
 //Pipeline string
@@ -54,6 +63,7 @@ constexpr char pipelineRxifName[] = {"PYTHON1300_RXIF"};
 bool subsamplingEnabledProperty_{false};
 bool cropEnabledProperty_{false};
 bool forceFormatProperty_{true};
+enum io_method ioMethod_ = IO_METHOD_MMAP;
 
 //Crop size
 unsigned int cropLeft_{0};
@@ -67,13 +77,6 @@ constexpr unsigned int nativeHeight_{1024};
 
 #define NUM_BUF 8
 
-enum io_method
-{
-        IO_METHOD_READ,
-        IO_METHOD_MMAP,
-        IO_METHOD_USERPTR,
-};
-
 struct buffer
 {
         void *start;
@@ -81,7 +84,7 @@ struct buffer
 };
 
 static char *media_name;
-static int pipelineSubdeviceFd_[pipelineMaxLen] = {
+std::array<int,pipelineMaxLen> pipelineSubdeviceFd_ = {
     -1,
     -1,
     -1,
@@ -109,7 +112,6 @@ static int cscIndex_ = -1;
 static int tpgIndex_ = -1;
 static int imgfusionIndex_ = -1;
 static int packet32Index_ = -1;
-static enum io_method io = IO_METHOD_MMAP;
 static int fd = -1;
 static int fd_tmp = -1;
 struct buffer *buffers;
@@ -305,7 +307,7 @@ static int read_frame(void)
         int seq = 1;
         static unsigned char dbg = 0;
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 if (-1 == read(mainSubdeviceFd_, buffers[0].start, buffers[0].length))
@@ -463,7 +465,7 @@ static void mainloop(void)
                         if (seq = read_frame())
                         {
                                 frames++;
-                                if (io == IO_METHOD_MMAP && seq != sequence++)
+                                if (ioMethod_ == IO_METHOD_MMAP && seq != sequence++)
                                 {
                                         printf("dropped frame..\n");
                                         sequence = seq + 1;
@@ -591,7 +593,7 @@ static void stop_capturing(void)
 {
         enum v4l2_buf_type type;
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 /* Nothing to do. */
@@ -611,7 +613,7 @@ static void start_capturing(void)
         unsigned int i;
         enum v4l2_buf_type type;
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 /* Nothing to do. */
@@ -662,7 +664,7 @@ static void uninit_device(void)
         fs << "uninit_device" << methodName << std::endl;
         unsigned int i;
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 free(buffers[0].start);
@@ -811,7 +813,7 @@ static void init_userp(unsigned int buffer_size)
         }
 }
 
-static void subdevs_set_format(int width, int height)
+static void setSubDevFormat(int width, int height)
 {
         int i, j, n;
         struct v4l2_subdev_format fmt;
@@ -830,8 +832,8 @@ static void subdevs_set_format(int width, int height)
                         fmt.pad = j;
                         if (-1 == xioctl(pipelineSubdeviceFd_[i], VIDIOC_SUBDEV_G_FMT, &fmt))
                         {
-                                sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d",
-                                        i, j);
+                                sprintf(buf, "VIDIOC_SUBDEV_G_FMT. subdev %d, pad %d", i, j);
+                                fs << "ERROR-VIDIOC_SUBDEV_G_FMT. subdev:" << i << " pad:" << j << std::endl;
                                 errno_exit(buf);
                         }
 
@@ -865,6 +867,7 @@ static void subdevs_set_format(int width, int height)
                         {
                                 sprintf(buf, "VIDIOC_SUBDEV_S_FMT. subdev %d, pad %d",
                                         i, j);
+                                fs << "ERROR-VIDIOC_SUBDEV_S_FMT. subdev:" << i << " pad:" << j << std::endl;
                                 errno_exit(buf);
                         }
                         if ((i == sourceSubDeviceIndex1_) || (i == sourceSubDeviceIndex2_))
@@ -872,7 +875,6 @@ static void subdevs_set_format(int width, int height)
                 }
         }
 }
-
 
 void setFormat(struct v4l2_format &fmt)
 {
@@ -901,7 +903,7 @@ void setFormat(struct v4l2_format &fmt)
                 fmt.fmt.pix.field = 1;
                 fmt.fmt.pix.colorspace = 8;
 
-                subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
+                setSubDevFormat(fmt.fmt.pix.width, fmt.fmt.pix.height);
 
                 if (imgfusionIndex_ != -1)
                         fmt.fmt.pix.width *= 2;
@@ -917,16 +919,10 @@ void setFormat(struct v4l2_format &fmt)
                 errno_exit("VIDIOC_G_FMT");
 }
 
-
-static void initDevice(void)
+bool checkDevice(int mainSubdeviceFd)
 {
-        fs << "initDevice" << methodName << std::endl;
-
-        unsigned int min;
-        int i;
-
         struct v4l2_capability cap;
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYCAP, &cap))
+        if (-1 == xioctl(mainSubdeviceFd, VIDIOC_QUERYCAP, &cap))
         {
                 if (EINVAL == errno)
                 {
@@ -945,7 +941,7 @@ static void initDevice(void)
                 exit(EXIT_FAILURE);
         }
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 if (!(cap.capabilities & V4L2_CAP_READWRITE))
@@ -965,14 +961,20 @@ static void initDevice(void)
                 break;
         }
 
-        /* Select video input, video standard and tune here. */
+        return true;
+}
+
+static void initDevice(void)
+{
+        fs << "initDevice" << methodName << std::endl;
+
+        checkDevice(mainSubdeviceFd_);
 
         struct v4l2_cropcap cropcap;
         struct v4l2_crop _crop;
         CLEAR(cropcap);
 
         cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
         if (0 == xioctl(mainSubdeviceFd_, VIDIOC_CROPCAP, &cropcap))
         {
                 _crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -1004,6 +1006,7 @@ static void initDevice(void)
         crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
 
         /* Buggy driver paranoia. */
+        unsigned int min;
         min = fmt.fmt.pix.width * 2;
         if (fmt.fmt.pix.bytesperline < min)
                 fmt.fmt.pix.bytesperline = min;
@@ -1011,7 +1014,7 @@ static void initDevice(void)
         if (fmt.fmt.pix.sizeimage < min)
                 fmt.fmt.pix.sizeimage = min;
 
-        switch (io)
+        switch (ioMethod_)
         {
         case IO_METHOD_READ:
                 init_read(fmt.fmt.pix.sizeimage);
@@ -1168,15 +1171,15 @@ int main(int argc, char **argv)
                         exit(EXIT_SUCCESS);
 
                 case 'm':
-                        io = IO_METHOD_MMAP;
+                        ioMethod_ = IO_METHOD_MMAP;
                         break;
 
                 case 'r':
-                        io = IO_METHOD_READ;
+                        ioMethod_ = IO_METHOD_READ;
                         break;
 
                 case 'u':
-                        io = IO_METHOD_USERPTR;
+                        ioMethod_ = IO_METHOD_USERPTR;
                         break;
 
                 case 'o':
@@ -1184,7 +1187,7 @@ int main(int argc, char **argv)
                         break;
 
                 case 'f':
-                        forceFormatProperty_=true;
+                        forceFormatProperty_ = true;
                         fs << "SETINGS-forceFormatProperty_" << forceFormatProperty_ << std::endl;
                         break;
 
