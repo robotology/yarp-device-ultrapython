@@ -51,11 +51,19 @@ constexpr char pipelineImgfusionName[] = {"imgfusion"};
 constexpr char pipelineRxifName[] = {"PYTHON1300_RXIF"};
 
 //Options
-bool subsamplingProperty_{false};
+bool subsamplingEnabledProperty_{false};
+bool cropEnabledProperty_{false};
+bool forceFormatProperty_{true};
 
-/* max width for roi end */
-#define WIDTH 1280
-#define HEIGHT 1024
+//Crop size
+unsigned int cropLeft_{0};
+unsigned int cropTop_{0};
+unsigned int cropHeight_{0};
+unsigned int cropWidth_{0};
+
+//Native resolution for cam
+constexpr unsigned int nativeWidth_{1280};
+constexpr unsigned int nativeHeight_{1024};
 
 #define NUM_BUF 8
 
@@ -101,15 +109,12 @@ static int cscIndex_ = -1;
 static int tpgIndex_ = -1;
 static int imgfusionIndex_ = -1;
 static int packet32Index_ = -1;
-static int crop_l, crop_t, crop_h, crop_w;
-static int crop_enable;
 static enum io_method io = IO_METHOD_MMAP;
 static int fd = -1;
 static int fd_tmp = -1;
 struct buffer *buffers;
 static unsigned int n_buffers;
 static int out_buf;
-static int force_format;
 static int frame_count = -1;
 static int network = 0;
 static int stream_file = 0;
@@ -481,10 +486,10 @@ static void mainloop(void)
                 {
                         update_roi = 0;
 
-                        if (left + crop_w > (WIDTH - 16))
+                        if (left + cropWidth_ > (nativeWidth_ - 16))
                         {
                                 roi_direction_h = -16;
-                                left = WIDTH - crop_w - 16;
+                                left = nativeWidth_ - cropWidth_ - 16;
                         }
                         else if (left <= 0)
                         {
@@ -493,10 +498,10 @@ static void mainloop(void)
                         }
                         left += roi_direction_h;
 
-                        if (top + crop_h > (HEIGHT - 16))
+                        if (top + cropHeight_ > (nativeHeight_ - 16))
                         {
                                 roi_direction_v = -1;
-                                top = HEIGHT - crop_h - 16;
+                                top = nativeHeight_ - cropHeight_ - 16;
                         }
                         else if (top <= 0)
                         {
@@ -505,13 +510,17 @@ static void mainloop(void)
                         }
                         top += roi_direction_v;
 
-                        crop(top, left, crop_w, crop_h, 0);
+                        crop(top, left, cropWidth_, cropHeight_, 0);
                 }
         }
 }
 
 static void crop(int top, int left, int w, int h, int mytry)
 {
+        fs << "crop is" << (cropEnabledProperty_ ? "ENABLED" : "DISABLED") << std::endl;
+        if (!cropEnabledProperty_)
+                return;
+
         struct v4l2_subdev_crop _crop;
 
         _crop.rect.left = left;
@@ -536,11 +545,15 @@ static void crop(int top, int left, int w, int h, int mytry)
 
 static void setSubsampling(void)
 {
+        fs << "subsampling is" << (subsamplingEnabledProperty_ ? "ENABLED" : "DISABLED") << std::endl;
+        if (!subsamplingEnabledProperty_)
+                return;
+
         fs << "setSubsampling" << methodName << std::endl;
         struct v4l2_control ctrl;
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_SUBSAMPLING;
-        ctrl.value = !!subsamplingProperty_;
+        ctrl.value = 1;
         if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_], VIDIOC_S_CTRL, &ctrl))
         {
                 fs << "ERROR-setSubsampling" << std::endl;
@@ -557,7 +570,7 @@ static void setSubsampling(void)
         }
 
         ctrl.id = V4L2_CID_XILINX_PYTHON1300_RXIF_REMAPPER_MODE;
-        ctrl.value = subsamplingProperty_ ? 1 : 0;
+        ctrl.value = 1;
         if (-1 == xioctl(pipelineSubdeviceFd_[rxif1Index_], VIDIOC_S_CTRL, &ctrl))
         {
                 fs << "ERROR-setSubsampling remapper" << std::endl;
@@ -860,11 +873,55 @@ static void subdevs_set_format(int width, int height)
         }
 }
 
+
+void setFormat(struct v4l2_format &fmt)
+{
+        //todo check dimensions correctness
+        CLEAR(fmt);
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+        if (forceFormatProperty_ || cropEnabledProperty_)
+        {
+                fmt.fmt.pix.width = cropEnabledProperty_ ? cropWidth_ : nativeWidth_;
+                fmt.fmt.pix.height = cropEnabledProperty_ ? cropHeight_ : nativeHeight_;
+
+                if (subsamplingEnabledProperty_)
+                {
+                        fmt.fmt.pix.width /= 2;
+                        fmt.fmt.pix.height /= 2;
+                }
+
+                if (grey)
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
+                else if (yuv)
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+                else
+                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+
+                fmt.fmt.pix.field = 1;
+                fmt.fmt.pix.colorspace = 8;
+
+                subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
+
+                if (imgfusionIndex_ != -1)
+                        fmt.fmt.pix.width *= 2;
+
+                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_FMT, &fmt))
+                        errno_exit("VIDIOC_S_FMT");
+
+                /* Note VIDIOC_S_FMT may change width and height. */
+                return;
+        }
+        /* Preserve original settings as set by v4l2-ctl for example */
+        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_G_FMT, &fmt))
+                errno_exit("VIDIOC_G_FMT");
+}
+
+
 static void initDevice(void)
 {
         fs << "initDevice" << methodName << std::endl;
 
-        struct v4l2_format fmt;
         unsigned int min;
         int i;
 
@@ -939,54 +996,12 @@ static void initDevice(void)
                 fs << "ERROR-cropping-2 ??" << std::endl;
         }
 
-        fs << "subsampling is" << (subsamplingProperty_ ? "ENABLED" : "DISABLED") << std::endl;
-        if (subsamplingProperty_)
-                setSubsampling();
+        setSubsampling();
 
-        CLEAR(fmt);
+        struct v4l2_format fmt;
+        setFormat(fmt);
 
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (force_format || crop_enable)
-        {
-                fmt.fmt.pix.width = crop_enable ? crop_w : WIDTH;
-                fmt.fmt.pix.height = crop_enable ? crop_h : HEIGHT;
-
-                if (subsamplingProperty_)
-                {
-                        fmt.fmt.pix.width /= 2;
-                        fmt.fmt.pix.height /= 2;
-                }
-
-                if (grey)
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
-                else if (yuv)
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-                else
-                        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-
-                fmt.fmt.pix.field = 1;
-                fmt.fmt.pix.colorspace = 8;
-
-                subdevs_set_format(fmt.fmt.pix.width, fmt.fmt.pix.height);
-
-                if (imgfusionIndex_ != -1)
-                        fmt.fmt.pix.width *= 2;
-
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_FMT, &fmt))
-                        errno_exit("VIDIOC_S_FMT");
-
-                /* Note VIDIOC_S_FMT may change width and height. */
-        }
-        else
-        {
-                /* Preserve original settings as set by v4l2-ctl for example */
-                if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_G_FMT, &fmt))
-                        errno_exit("VIDIOC_G_FMT");
-        }
-
-        fs << "crop is" << (crop_enable ? "ENABLED" : "DISABLED") << std::endl;
-        if (crop_enable)
-                crop(crop_t, crop_l, crop_w, crop_h, 0);
+        crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
 
         /* Buggy driver paranoia. */
         min = fmt.fmt.pix.width * 2;
@@ -1136,12 +1151,13 @@ int main(int argc, char **argv)
                         break;
 
                 case 'p':
-                        sscanf(optarg, "%d,%d,%d,%d", &crop_t, &crop_l, &crop_w, &crop_h);
-                        crop_enable = 1;
+                        sscanf(optarg, "%d,%d,%d,%d", &cropTop_, &cropLeft_, &cropWidth_, &cropHeight_);
+                        cropEnabledProperty_ = true;
                         break;
 
                 case 'g':
                         grey = 1;
+                        fs << "SETINGS-grey" << grey << std::endl;
                         break;
                 case 'd':
                         media_name = optarg;
@@ -1168,7 +1184,8 @@ int main(int argc, char **argv)
                         break;
 
                 case 'f':
-                        force_format++;
+                        forceFormatProperty_=true;
+                        fs << "SETINGS-forceFormatProperty_" << forceFormatProperty_ << std::endl;
                         break;
 
                 case 'c':
@@ -1191,7 +1208,7 @@ int main(int argc, char **argv)
                         break;
 
                 case 'b':
-                        //subsampling = 1; Removed luca
+                        subsamplingEnabledProperty_ = true;
                         break;
 
                 case 'i':
@@ -1199,6 +1216,7 @@ int main(int argc, char **argv)
                         break;
                 case 'y':
                         yuv = 1;
+                        fs << "SETINGS-yov" << yuv << std::endl;
                         break;
 
                 default:
@@ -1207,7 +1225,7 @@ int main(int argc, char **argv)
                 }
         }
 
-        if (crop_move && !crop_enable)
+        if (crop_move && !cropEnabledProperty_)
         {
                 printf("crop not enabled, ignoring move crop\n");
                 crop_move = 0;

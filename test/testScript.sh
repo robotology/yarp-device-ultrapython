@@ -17,7 +17,7 @@ HEIGHT=1024
 IMGFUSION=1
 # set to 1 to cause moving ROI
 MOVE=0
-SUBSAMPLING=0
+SUBSAMPLING=1
 # set to 1 for YUV, RGB24 otherwise
 COLOR_YUV=1
 SW_DEBAYER=0
@@ -153,7 +153,7 @@ function remote_setup_modules()
 # starts v4l2_capture utility on the boards in order to stream data via network
 function remote_stream()
 {
-    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --mma --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
+    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --m --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
     sleep 0.2
     remote_set_ctrls $VIDEODEV "${CTRLS_POST[*]}"
     fg
@@ -180,7 +180,7 @@ function do_all_null()
 {
     ##    remote_run "cd $REMOTE_HOME/capture; ./v4l2_capture --mma --format $GREY --device /dev/media$VIDEO_DEV  --subdev '/dev/v4l-subdev$VIDEO_SUBDEV' --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
 
-        remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/capture/v4l2_capture --gpio --m --format $FORMAT --device /dev/media$MEDIA_DEV  --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
+        remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/capture/v4l2_capture --m --format $FORMAT --device /dev/media$MEDIA_DEV  --crop 0,0,$WIDTH,$HEIGHT $_SUBSAMPLING"
 }
 
 # make sure there are no old instances of anything on both local and remote ends.
