@@ -27,5 +27,6 @@ set(v4l2_captureHdr  PythonCameraHelper.h
 add_executable(${PROJECT_NAME} ${v4l2_captureSrc} ${v4l2_captureHdr} )
 target_include_directories(${PROJECT_NAME} PRIVATE /usr/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC udev)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
 install (TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
