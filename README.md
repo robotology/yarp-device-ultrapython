@@ -110,13 +110,15 @@ Download prebuild Ubuntu 20.04.1 for Arm64:
 ```bash
 wget https://cdimage.ubuntu.com/releases/20.04.1/release/ubuntu-20.04.1-preinstalled-server-arm64+raspi.img.xz?_ga=2.193426350.2036444557.1610970210-2073042528.1610970210  
 
+https://ubuntu.com/download/raspberry-pi/thank-you?version=20.04.1&architecture=server-arm64+raspi
+
 unxz ubuntu-20.04.1-preinstalled-server-arm64+raspi.img.xz
 
 ```
 
 Use https://www.balena.io/etcher/ application to flash SD card with the above file.
 
-Use ```gparted``` application to enlarge partition up to 16GB
+:exclamation:Use ```gparted``` application to enlarge partition up to 16GB
 
 ## 2.2. Override Ubuntu Kernel
 :exclamation:<u>To be done on SD card mounted on iCub-head.</u>
@@ -180,44 +182,42 @@ Host enclustra
 ## 2.6. Missing package
 :exclamation:<u>To be done on running Enclustra.</u>
 
+Use the serial connection if ssh won't work.
+
 ```bash
-sudo apt update
-sudo atp install g++ build-essential cmake cmake-curses-gui v4l-utils 
-sudo apt remove initramfs-tools cryptsetup
+apt update
+apt remove initramfs-tools cryptsetup snapd
+install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev
 
 ```
-Never execute ```sudo apt upgrade```
+Execute:
+```apt upgrade```
+It can give some errors, you can ignore and in the case again:
+```apt remove initramfs-tools cryptsetup```
 
-Also:
-```bash
-sudo atp install libudev-dev
-```
-:exclamation:This at the moment breaks apt system. So ignore errors and keep on. For ```apt``` again you should start again from the beginning.
-  
 Add root pwd:
 ```bash
-sudo pwd
+pwd
 ```
 
 ## 2.7. Merello test
 :exclamation:<u>To be done on iCub-head.</u>
 
 ```bash
-sudo apt-get install mplayer netcat pv ssh
 git clone https://github.com/icub-tech-iit/python-cameras.git
 ``` 
 
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```bash
-cd /root/icubtech
+cd /root/icubtech/python-camera/
 git clone https://github.com/icub-tech-iit/python-cameras.git
 mkdir build
 cd build
 ccmake ..
 ```
-Select install dir:```/root/icubtech```
-Generate, then:
+Select install dir:```/root/icubtech/python-cameras/ubuntu-files```  
+Then press ```c``` and ```g```. Exit and:
 
 ```
 make install 
@@ -230,18 +230,6 @@ cd test
 ./testScript.sh
 ```
 
-In case you need only one cam (left on SPI0) on board ```/home/zus``` execute
-```
-./test_mode_left
-```
-before the script ends.
-
-In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
-```
-./test_mode_right
-```
-before the script ends.
-
 <img src="video/2cams.gif" width="500px">
 
 
@@ -249,8 +237,6 @@ before the script ends.
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```
-sudo apt-get install libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev
-
 cd icubtech
 
 git clone https://github.com/robotology/ycm.git
@@ -284,6 +270,7 @@ Download and install vscode:https://code.visualstudio.com/
 Install plugin for vscode named:
 - ```ms-vscode-remote.remote-ssh```
 - ```ms-vscode-remote.remote-ssh-edit```
+- ```xaver.clang-format```
 
 Edit file ~/.ssh/config, add at the end:
 ```
@@ -302,7 +289,16 @@ then you can open the folder:
 
 A remote terminal is also available.
 
-:exclamation:If vscode won't connect try to check Enclustra file-system as below shown. Then restart boot Enclustra and vscode.
+:exclamation:*Troubleshooting*  
+1. If vscode won't connect try to check Enclustra file-system. Then restart boot Enclustra and vscode.
+  ```
+  fsck / -y
+``` 
+  
+2. If vscode still won't connect try to delete, on Enclustra, the following files:
+  ```
+  rm /root/.vscode-server/.*
+  ```
 # 3. Note
 
 ## 3.1. Passord and users

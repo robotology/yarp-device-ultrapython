@@ -3,7 +3,7 @@
 ######################## user settings #########################
 
 # -- Board/IP options
-REMOTE_HOME=/root/icubtech
+REMOTE_HOME=/root/icubtech/python-cameras/ubuntu-files
 REMOTE_HOST=10.0.1.233
 LOCAL_IP=10.0.1.104
 
@@ -153,7 +153,7 @@ function remote_setup_modules()
 # starts v4l2_capture utility on the boards in order to stream data via network
 function remote_stream()
 {
-    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --m --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
+    remote_run "cd /sys/class/gpio/$GPIO; $REMOTE_HOME/v4l2_capture --mmap --format $FORMAT --device /dev/media$MEDIA_DEV --net $LOCAL_IP:12340  --crop 0,0,$WIDTH,$HEIGHT $_MOVE $_SUBSAMPLING" &
     sleep 0.2
     remote_set_ctrls $VIDEODEV "${CTRLS_POST[*]}"
     fg
