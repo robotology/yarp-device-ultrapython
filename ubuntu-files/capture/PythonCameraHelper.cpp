@@ -305,21 +305,9 @@ bool PythonCameraHelper::checkDevice(int mainSubdeviceFd) {
     exit(EXIT_FAILURE);
   }
 
-  switch (ioMethod_) {
-  case IO_METHOD_READ:
-    if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-      fs << "ERROR-device does not support read i/o" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    break;
-
-  case IO_METHOD_MMAP:
-  case IO_METHOD_USERPTR:
-    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-      fs << "ERROR-device does not support streaming i/o" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    break;
+  if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+    fs << "ERROR-device does not support streaming i/o" << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   return true;
@@ -369,21 +357,7 @@ void PythonCameraHelper::initDevice(void) {
   if (fmt.fmt.pix.sizeimage < min)
     fmt.fmt.pix.sizeimage = min;
 
-  switch (ioMethod_) {
-  case IO_METHOD_READ:
-    fs << "ERROR-no mor support for IO_METHOD_READ" << std::endl;
-    // init_read(fmt.fmt.pix.sizeimage);
-    break;
-
-  case IO_METHOD_MMAP:
-    init_mmap();
-    break;
-
-  case IO_METHOD_USERPTR:
-    fs << "ERROR-no mor support for IO_METHOD_USERPTR" << std::endl;
-    // init_userp(fmt.fmt.pix.sizeimage);
-    break;
-  }
+  init_mmap();
 }
 
 int PythonCameraHelper::xioctl(int fh, int request, void *arg) {
@@ -448,70 +422,3 @@ void PythonCameraHelper::init_mmap(void) {
       exit(EXIT_FAILURE);
   }
 }
-/*
-
-static void init_read(unsigned int buffer_size)
-{
-        buffers = (struct buffer *)calloc(1, sizeof(*buffers));
-
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-
-        buffers[0].length = buffer_size;
-        buffers[0].start = malloc(buffer_size);
-
-        if (!buffers[0].start)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-}
-
-static void init_userp(unsigned int buffer_size)
-{
-        struct v4l2_requestbuffers req;
-
-        CLEAR(req);
-
-        req.count = 4;
-        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        req.memory = V4L2_MEMORY_USERPTR;
-
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
-        {
-                if (EINVAL == errno)
-                {
-                        fprintf(stderr, "device does not support "
-                                        "user pointer i/on");
-                        exit(EXIT_FAILURE);
-                }
-                else
-                {
-                        errno_exit("VIDIOC_REQBUFS");
-                }
-        }
-
-        buffers = (struct buffer *)calloc(4, sizeof(*buffers));
-
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
-
-        for (n_buffers = 0; n_buffers < 4; ++n_buffers)
-        {
-                buffers[n_buffers].length = buffer_size;
-                buffers[n_buffers].start = malloc(buffer_size);
-
-                if (!buffers[n_buffers].start)
-                {
-                        fprintf(stderr, "Out of memory\\n");
-                        exit(EXIT_FAILURE);
-                }
-        }
-}
-*/

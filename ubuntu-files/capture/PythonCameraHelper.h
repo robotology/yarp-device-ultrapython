@@ -6,13 +6,6 @@
 
 struct v4l2_format;
 
-enum io_method
-{
-    IO_METHOD_READ,
-    IO_METHOD_MMAP,
-    IO_METHOD_USERPTR,
-};
-
 struct buffer
 {
     void *start;
@@ -73,12 +66,7 @@ public:
     int imgfusionIndex_ = -1;
     int packet32Index_ = -1;
 
-    std::string mediaName_;
-
-    enum io_method ioMethod_
-    {
-        IO_METHOD_MMAP
-    };
+    std::string mediaName_{"/dev/video0"};
 
     //Crop size
     unsigned int cropLeft_{0};
@@ -97,7 +85,7 @@ public:
     unsigned int n_buffers;
 
     std::ofstream fs{"./log.log"};
-    inline static constexpr char *methodName[] = {"------------"};
+    inline static constexpr char *methodName[] {"------------"};
 
 private:
     void setSubDevFormat(int width, int height);
