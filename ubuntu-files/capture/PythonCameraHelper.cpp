@@ -222,6 +222,9 @@ void PythonCameraHelper::setFormat() {
 }
 
 void PythonCameraHelper::crop(int top, int left, int w, int h, int mytry) {
+
+  cropCheck();
+
   fs << "crop is" << (cropEnabledProperty_ ? "ENABLED" : "DISABLED")
      << std::endl;
   if (!cropEnabledProperty_)
@@ -236,9 +239,6 @@ void PythonCameraHelper::crop(int top, int left, int w, int h, int mytry) {
 
   _crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
   _crop.pad = 0;
-
-  //	printf("Crop enabled %d %d %d %d, %s\n",
-  //	       top, left, w, h, mytry? "TRY" : "ACTIVE");
 
   if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_],
                    VIDIOC_SUBDEV_S_CROP, &_crop))
@@ -319,6 +319,13 @@ void PythonCameraHelper::initDevice(void) {
 
   checkDevice(mainSubdeviceFd_);
 
+  setSubsampling();
+  setFormat();
+  crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
+  initMmap();
+}
+
+bool PythonCameraHelper::cropCheck() {
   struct v4l2_cropcap cropcap;
   struct v4l2_crop tmpCrop;
   CLEAR(cropcap);
@@ -341,11 +348,7 @@ void PythonCameraHelper::initDevice(void) {
   } else {
     fs << "ERROR-cropping-2 ??" << std::endl;
   }
-
-  setSubsampling();
-  setFormat();
-  crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
-  initMmap();
+  return true;
 }
 
 int PythonCameraHelper::xioctl(int fh, int request, void *arg) {

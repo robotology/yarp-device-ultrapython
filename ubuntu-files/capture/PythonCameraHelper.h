@@ -97,4 +97,5 @@ private:
 
     int xioctl(int fh, int request, void *arg);
     void initMmap(void);
+    bool cropCheck();
 };
