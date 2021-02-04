@@ -180,7 +180,8 @@ void PythonCameraHelper::setSubDevFormat(int width, int height) {
   }
 }
 
-void PythonCameraHelper::setFormat(struct v4l2_format &fmt) {
+void PythonCameraHelper::setFormat() {
+  struct v4l2_format fmt;
   // todo check dimensions correctness
   CLEAR(fmt);
   fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -319,15 +320,15 @@ void PythonCameraHelper::initDevice(void) {
   checkDevice(mainSubdeviceFd_);
 
   struct v4l2_cropcap cropcap;
-  struct v4l2_crop _crop;
+  struct v4l2_crop tmpCrop;
   CLEAR(cropcap);
 
   cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (0 == xioctl(mainSubdeviceFd_, VIDIOC_CROPCAP, &cropcap)) {
-    _crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    _crop.c = cropcap.defrect; /* reset to default */
+    tmpCrop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    tmpCrop.c = cropcap.defrect; /* reset to default */
 
-    if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &_crop)) {
+    if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &tmpCrop)) {
       switch (errno) {
       case EINVAL:
         fs << "ERROR-cropping not supported" << std::endl;
@@ -342,22 +343,9 @@ void PythonCameraHelper::initDevice(void) {
   }
 
   setSubsampling();
-
-  struct v4l2_format fmt;
-  setFormat(fmt);
-
+  setFormat();
   crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
-
-  /* Buggy driver paranoia. */
-  unsigned int min;
-  min = fmt.fmt.pix.width * 2;
-  if (fmt.fmt.pix.bytesperline < min)
-    fmt.fmt.pix.bytesperline = min;
-  min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-  if (fmt.fmt.pix.sizeimage < min)
-    fmt.fmt.pix.sizeimage = min;
-
-  init_mmap();
+  initMmap();
 }
 
 int PythonCameraHelper::xioctl(int fh, int request, void *arg) {
@@ -370,7 +358,7 @@ int PythonCameraHelper::xioctl(int fh, int request, void *arg) {
   return r;
 }
 
-void PythonCameraHelper::init_mmap(void) {
+void PythonCameraHelper::initMmap(void) {
   struct v4l2_requestbuffers req;
 
   CLEAR(req);
@@ -381,22 +369,23 @@ void PythonCameraHelper::init_mmap(void) {
 
   if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req)) {
     if (EINVAL == errno) {
-      fprintf(stderr, "device does not support memmap\n");
+      fs << "ERROR-device does not support memmap" << std::endl;
       exit(EXIT_FAILURE);
     } else {
+      fs << "ERROR-device does not support memmap" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
   if (req.count < 1) {
-    fprintf(stderr, "Insufficient buffer memory on \n");
+    fs << "ERROR-Insufficient buffer memory on" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   buffers = (struct buffer *)calloc(req.count, sizeof(*buffers));
 
   if (!buffers) {
-    fprintf(stderr, "Out of memory\\n");
+    fs << "ERROR-Out of memory" << std::endl;
     exit(EXIT_FAILURE);
   }
 

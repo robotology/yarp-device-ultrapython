@@ -89,12 +89,12 @@ public:
 
 private:
     void setSubDevFormat(int width, int height);
-    void setFormat(struct v4l2_format &fmt);
+    void setFormat();
 
     bool checkDevice(int mainSubdeviceFd);
 
     void setSubsampling(void);
 
     int xioctl(int fh, int request, void *arg);
-    void init_mmap(void);
+    void initMmap(void);
 };
