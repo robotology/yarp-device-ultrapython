@@ -210,14 +210,14 @@ git clone https://github.com/icub-tech-iit/python-cameras.git
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```bash
-cd /root/icubtech
+cd /root/icubtech/python-camera/
 git clone https://github.com/icub-tech-iit/python-cameras.git
 mkdir build
 cd build
 ccmake ..
 ```
-Select install dir:```/root/icubtech```
-Generate, then:
+Select install dir:```/root/icubtech/python-cameras/ubuntu-files```  
+Then press ```c``` and ```g```. Exit and:
 
 ```
 make install 
@@ -229,18 +229,6 @@ In folder test execute:
 cd test
 ./testScript.sh
 ```
-
-In case you need only one cam (left on SPI0) on board ```/home/zus``` execute
-```
-./test_mode_left
-```
-before the script ends.
-
-In case you need only one cam (right on SPI1) on board ```/home/zus``` execute
-```
-./test_mode_right
-```
-before the script ends.
 
 <img src="video/2cams.gif" width="500px">
 
