@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <fcntl.h>
 #include <libudev.h>
 #include <linux/media.h>
@@ -384,9 +385,9 @@ void PythonCameraHelper::initMmap(void) {
     exit(EXIT_FAILURE);
   }
 
-  buffers = (struct buffer *)calloc(req.count, sizeof(*buffers));
+  mMapBuffers_ = (MmapBuffer *)calloc(req.count, sizeof(*mMapBuffers_));
 
-  if (!buffers) {
+  if (!mMapBuffers_) {
     fs << "ERROR-Out of memory" << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -404,13 +405,13 @@ void PythonCameraHelper::initMmap(void) {
     if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYBUF, &buf))
       exit(EXIT_FAILURE);
 
-    buffers[currentUsedBufferIndex].length = buf.length;
-    buffers[currentUsedBufferIndex].start =
+    mMapBuffers_[currentUsedBufferIndex].length = buf.length;
+    mMapBuffers_[currentUsedBufferIndex].start =
         mmap(NULL /* start anywhere */, buf.length,
              PROT_READ | PROT_WRITE /* required */,
              MAP_SHARED /* recommended */, mainSubdeviceFd_, buf.m.offset);
 
-    if (MAP_FAILED == buffers[currentUsedBufferIndex].start)
+    if (MAP_FAILED == mMapBuffers_[currentUsedBufferIndex].start)
       exit(EXIT_FAILURE);
   }
 }
@@ -441,7 +442,7 @@ void PythonCameraHelper::startCapturing() {
 
 void PythonCameraHelper::mainLoop() {
   fs << "mainLoop" << std::endl;
-  unsigned int count, frames = 0;
+  unsigned int  frames = 0;
   struct timeval time1, time2;
   unsigned long time_delta;
   int seq, sequence = 0;
@@ -531,9 +532,9 @@ int PythonCameraHelper::readFrame(void) {
   }
 
   seq = buf.sequence;
-  processImage(buffers[buf.index].start, buf.bytesused);
+  processImage(mMapBuffers_[buf.index].start, buf.bytesused);
   static unsigned char dbg = 0;
-  memset(buffers[buf.index].start, dbg++, buf.bytesused);
+  memset(mMapBuffers_[buf.index].start, dbg++, buf.bytesused);
 
   if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf)) {
     fs << "ERROR-VIDIOC_QBUF" << std::endl;
@@ -555,16 +556,41 @@ void PythonCameraHelper::processImage(const void *p, int size) {
   injectedProcessImage_(p, size);
 }
 
-void PythonCameraHelper::closeAll() { unInitDevice(); }
+void PythonCameraHelper::closeAll() {
+  stopCapturing();
+  unInitDevice();
+  closePipeline();
+}
 
 void PythonCameraHelper::unInitDevice() {
   fs << "uninit_device" << methodName << std::endl;
   unsigned int i;
 
   for (i = 0; i < requestBufferNumber_; ++i)
-    if (-1 == munmap(buffers[i].start, buffers[i].length)) {
+    if (-1 == munmap(mMapBuffers_[i].start, mMapBuffers_[i].length)) {
       fs << "ERROR-munmap" << std::endl;
       exit(EXIT_FAILURE);
     }
-  free(buffers);
+  free(mMapBuffers_);
+}
+
+void PythonCameraHelper::stopCapturing() {
+  enum v4l2_buf_type type;
+
+  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMOFF, &type)) {
+    fs << "ERROR-VIDIOC_STREAMOFF" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+void PythonCameraHelper::closePipeline() {
+  int i;
+
+  for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
+    if (-1 == close(pipelineSubdeviceFd_[i]))
+    {
+    fs << "ERROR-close pipeline" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 }

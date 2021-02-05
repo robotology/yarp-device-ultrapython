@@ -7,7 +7,7 @@
 
 struct v4l2_format;
 
-struct buffer {
+struct MmapBuffer {
   void *start;
   size_t length;
 };
@@ -27,6 +27,12 @@ private:
   static constexpr unsigned int requestBufferNumber_ = {8};
   static constexpr unsigned int pipelineMaxLen = {16};
 
+  // Native resolution for cam
+  inline static constexpr unsigned int nativeWidth_{1280};
+  inline static constexpr unsigned int nativeHeight_{1024};
+
+  inline static constexpr char *methodName[]{"------------"};
+
 public:
   void openPipeline();
   void initDevice();
@@ -36,12 +42,13 @@ public:
 
   bool subsamplingEnabledProperty_{false};
   bool cropEnabledProperty_{false};
-  bool forceFormatProperty_{true};
+  bool forceFormatProperty_{true}; // Overwrite preesistent format
 
   std::array<int, pipelineMaxLen> pipelineSubdeviceFd_ = {
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   };
 
+  // File descriptor
   int mainSubdeviceFd_ = -1;
   int sourceSubDeviceIndex1_ = -1;
   int sourceSubDeviceIndex2_ = -1;
@@ -52,7 +59,10 @@ public:
   int imgfusionIndex_ = -1;
   int packet32Index_ = -1;
 
+  // Loop is active
   bool keepCapturing_{true};
+
+  MmapBuffer *mMapBuffers_;
 
   std::string mediaName_{"/dev/video0"};
 
@@ -62,19 +72,13 @@ public:
   unsigned int cropHeight_{0};
   unsigned int cropWidth_{0};
 
-  // Native resolution for cam
-  inline static constexpr unsigned int nativeWidth_{1280};
-  inline static constexpr unsigned int nativeHeight_{1024};
-
   // Process image external
   std::function<void(const void *, int)> injectedProcessImage_;
   // TODO change
   int grey = 0;
   int yuv = 0;
-  struct buffer *buffers;
 
   std::ofstream fs{"./log.log"};
-  inline static constexpr char *methodName[]{"------------"};
 
 private:
   void setSubDevFormat(int width, int height);
@@ -85,7 +89,8 @@ private:
   int readFrame();
   void processImage(const void *p, int size);
   void unInitDevice(void);
-
+  void stopCapturing();
+  void closePipeline();
   int xioctl(int fh, int request, void *arg);
   void initMmap(void);
   bool cropCheck();

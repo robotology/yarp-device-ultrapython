@@ -98,16 +98,6 @@ static void process_image(const void *p, int size) {
   fflush(stdout);
 }
 
-
-
-static void stop_capturing(void) {
-  enum v4l2_buf_type type;
-
-  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_STREAMOFF, &type))
-    errno_exit("VIDIOC_STREAMOFF");
-}
-
 static void open_socket(void) {
   struct sockaddr_in addr;
   int ret;
@@ -140,14 +130,6 @@ static void close_socket(void) {
   if (!network)
     return;
   close(ip_socket);
-}
-
-static void close_pipeline(void) {
-  int i;
-
-  for (i = 0; pythonHelper.pipelineSubdeviceFd_[i] != -1; i++)
-    if (-1 == close(pythonHelper.pipelineSubdeviceFd_[i]))
-      errno_exit("close");
 }
 
 static void usage(FILE *fp, int argc, char **argv) {
@@ -197,7 +179,6 @@ static const struct option long_options[] = {
     {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
-  pythonHelper.fs << "main" << pythonHelper.methodName << std::endl;
 
   int ret;
   char buf[1024];
@@ -298,19 +279,16 @@ int main(int argc, char **argv) {
   }
 
   pythonHelper.injectedProcessImage_=process_image;
+  fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
+
 
   pythonHelper.openPipeline();
   pythonHelper.initDevice();
-  fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
-
   open_socket();
   pythonHelper.startCapturing();
   pythonHelper.mainLoop();
-  stop_capturing();
   pythonHelper.closeAll();
-  close_pipeline();
   close_socket();
   close(fd_tmp);
-  fprintf(stderr, "\\n");
   return 0;
 }
