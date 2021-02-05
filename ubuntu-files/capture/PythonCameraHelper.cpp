@@ -7,12 +7,14 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+
+#include <chrono>
 
 #include "PythonCameraHelper.h"
 #include "xilinx-v4l2-controls.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
-#define NUM_BUF 8
 
 void PythonCameraHelper::openPipeline(void) {
   fs << "openPipeline" << methodName << std::endl;
@@ -147,7 +149,7 @@ void PythonCameraHelper::setSubDevFormat(int width, int height) {
       fmt.format.height = height;
 
       /* if yuv is required, then set that on the source PAD of VPSS */
-      if ((i == cscIndex_) && (j == 1) && yuv) {
+      if ((i == cscIndex_) && (j == 1) && spaceColor_==SpaceColor::yuv) {
         fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
       }
 
@@ -180,7 +182,8 @@ void PythonCameraHelper::setSubDevFormat(int width, int height) {
   }
 }
 
-void PythonCameraHelper::setFormat(struct v4l2_format &fmt) {
+void PythonCameraHelper::setFormat() {
+  struct v4l2_format fmt;
   // todo check dimensions correctness
   CLEAR(fmt);
   fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -194,11 +197,11 @@ void PythonCameraHelper::setFormat(struct v4l2_format &fmt) {
       fmt.fmt.pix.height /= 2;
     }
 
-    if (grey)
+    if (spaceColor_==SpaceColor::grgb)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
-    else if (yuv)
+    else if (spaceColor_==SpaceColor::yuv)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    else
+    else if (spaceColor_==SpaceColor::rgb)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
 
     fmt.fmt.pix.field = 1;
@@ -221,6 +224,9 @@ void PythonCameraHelper::setFormat(struct v4l2_format &fmt) {
 }
 
 void PythonCameraHelper::crop(int top, int left, int w, int h, int mytry) {
+
+  cropCheck();
+
   fs << "crop is" << (cropEnabledProperty_ ? "ENABLED" : "DISABLED")
      << std::endl;
   if (!cropEnabledProperty_)
@@ -235,9 +241,6 @@ void PythonCameraHelper::crop(int top, int left, int w, int h, int mytry) {
 
   _crop.which = mytry ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
   _crop.pad = 0;
-
-  //	printf("Crop enabled %d %d %d %d, %s\n",
-  //	       top, left, w, h, mytry? "TRY" : "ACTIVE");
 
   if (-1 == xioctl(pipelineSubdeviceFd_[sourceSubDeviceIndex1_],
                    VIDIOC_SUBDEV_S_CROP, &_crop))
@@ -305,21 +308,9 @@ bool PythonCameraHelper::checkDevice(int mainSubdeviceFd) {
     exit(EXIT_FAILURE);
   }
 
-  switch (ioMethod_) {
-  case IO_METHOD_READ:
-    if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-      fs << "ERROR-device does not support read i/o" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    break;
-
-  case IO_METHOD_MMAP:
-  case IO_METHOD_USERPTR:
-    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-      fs << "ERROR-device does not support streaming i/o" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    break;
+  if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+    fs << "ERROR-device does not support streaming i/o" << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   return true;
@@ -329,17 +320,23 @@ void PythonCameraHelper::initDevice(void) {
   fs << "initDevice" << methodName << std::endl;
 
   checkDevice(mainSubdeviceFd_);
+  setSubsampling();
+  setFormat();
+  crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
+  initMmap();
+}
 
+bool PythonCameraHelper::cropCheck() {
   struct v4l2_cropcap cropcap;
-  struct v4l2_crop _crop;
+  struct v4l2_crop tmpCrop;
   CLEAR(cropcap);
 
   cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (0 == xioctl(mainSubdeviceFd_, VIDIOC_CROPCAP, &cropcap)) {
-    _crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    _crop.c = cropcap.defrect; /* reset to default */
+    tmpCrop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    tmpCrop.c = cropcap.defrect; /* reset to default */
 
-    if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &_crop)) {
+    if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_S_CROP, &tmpCrop)) {
       switch (errno) {
       case EINVAL:
         fs << "ERROR-cropping not supported" << std::endl;
@@ -352,38 +349,7 @@ void PythonCameraHelper::initDevice(void) {
   } else {
     fs << "ERROR-cropping-2 ??" << std::endl;
   }
-
-  setSubsampling();
-
-  struct v4l2_format fmt;
-  setFormat(fmt);
-
-  crop(cropTop_, cropLeft_, cropWidth_, cropHeight_, 0);
-
-  /* Buggy driver paranoia. */
-  unsigned int min;
-  min = fmt.fmt.pix.width * 2;
-  if (fmt.fmt.pix.bytesperline < min)
-    fmt.fmt.pix.bytesperline = min;
-  min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-  if (fmt.fmt.pix.sizeimage < min)
-    fmt.fmt.pix.sizeimage = min;
-
-  switch (ioMethod_) {
-  case IO_METHOD_READ:
-    fs << "ERROR-no mor support for IO_METHOD_READ" << std::endl;
-    // init_read(fmt.fmt.pix.sizeimage);
-    break;
-
-  case IO_METHOD_MMAP:
-    init_mmap();
-    break;
-
-  case IO_METHOD_USERPTR:
-    fs << "ERROR-no mor support for IO_METHOD_USERPTR" << std::endl;
-    // init_userp(fmt.fmt.pix.sizeimage);
-    break;
-  }
+  return true;
 }
 
 int PythonCameraHelper::xioctl(int fh, int request, void *arg) {
@@ -396,122 +362,227 @@ int PythonCameraHelper::xioctl(int fh, int request, void *arg) {
   return r;
 }
 
-void PythonCameraHelper::init_mmap(void) {
+void PythonCameraHelper::initMmap(void) {
+  fs << "initMmap" << std::endl;
   struct v4l2_requestbuffers req;
 
   CLEAR(req);
 
-  req.count = NUM_BUF;
+  req.count = requestBufferNumber_;
   req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   req.memory = V4L2_MEMORY_MMAP;
 
   if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req)) {
     if (EINVAL == errno) {
-      fprintf(stderr, "device does not support memmap\n");
+      fs << "ERROR-device does not support memmap" << std::endl;
       exit(EXIT_FAILURE);
     } else {
+      fs << "ERROR-device does not support memmap" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
   if (req.count < 1) {
-    fprintf(stderr, "Insufficient buffer memory on \n");
+    fs << "ERROR-Insufficient buffer memory on" << std::endl;
     exit(EXIT_FAILURE);
   }
 
-  buffers = (struct buffer *)calloc(req.count, sizeof(*buffers));
-
-  if (!buffers) {
-    fprintf(stderr, "Out of memory\\n");
-    exit(EXIT_FAILURE);
-  }
-
-  for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+  for (unsigned int currentUsedBufferIndex = 0;
+       currentUsedBufferIndex < req.count; ++currentUsedBufferIndex) {
     struct v4l2_buffer buf;
 
     CLEAR(buf);
 
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    buf.index = n_buffers;
+    buf.index = currentUsedBufferIndex;
 
     if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYBUF, &buf))
       exit(EXIT_FAILURE);
 
-    buffers[n_buffers].length = buf.length;
-    buffers[n_buffers].start =
+    mMapBuffers_[currentUsedBufferIndex].length = buf.length;
+    mMapBuffers_[currentUsedBufferIndex].start =
         mmap(NULL /* start anywhere */, buf.length,
              PROT_READ | PROT_WRITE /* required */,
              MAP_SHARED /* recommended */, mainSubdeviceFd_, buf.m.offset);
 
-    if (MAP_FAILED == buffers[n_buffers].start)
+    if (MAP_FAILED == mMapBuffers_[currentUsedBufferIndex].start)
       exit(EXIT_FAILURE);
   }
 }
-/*
 
-static void init_read(unsigned int buffer_size)
-{
-        buffers = (struct buffer *)calloc(1, sizeof(*buffers));
+void PythonCameraHelper::startCapturing() {
+  fs << "startCapturing" << std::endl;
+  enum v4l2_buf_type type;
 
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
+  for (size_t i = 0; i < requestBufferNumber_; ++i) {
+    struct v4l2_buffer buf;
 
-        buffers[0].length = buffer_size;
-        buffers[0].start = malloc(buffer_size);
+    CLEAR(buf);
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index = i;
 
-        if (!buffers[0].start)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
+    if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf)) {
+      fs << "ERROR-VIDIOC_QBUF" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMON, &type)) {
+    fs << "ERROR-VIDIOC_STREAMON" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 }
 
-static void init_userp(unsigned int buffer_size)
-{
-        struct v4l2_requestbuffers req;
+void PythonCameraHelper::mainLoop() {
 
-        CLEAR(req);
+  static int seq = 0;
+  static int sequence = 0;
 
-        req.count = 4;
-        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        req.memory = V4L2_MEMORY_USERPTR;
+  fd_set fds;
+  struct timeval tv{80,0};//Timeout
+  int ret;
 
-        if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_REQBUFS, &req))
-        {
-                if (EINVAL == errno)
-                {
-                        fprintf(stderr, "device does not support "
-                                        "user pointer i/on");
-                        exit(EXIT_FAILURE);
-                }
-                else
-                {
-                        errno_exit("VIDIOC_REQBUFS");
-                }
-        }
+  FD_ZERO(&fds);
+  FD_SET(mainSubdeviceFd_, &fds);
 
-        buffers = (struct buffer *)calloc(4, sizeof(*buffers));
+  ret = select(mainSubdeviceFd_ + 1, &fds, NULL, NULL, &tv);
 
-        if (!buffers)
-        {
-                fprintf(stderr, "Out of memory\\n");
-                exit(EXIT_FAILURE);
-        }
+  if (-1 == ret) {
+    if (EINTR == errno)
+      return;
+    fs << "ERROR-select" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-        for (n_buffers = 0; n_buffers < 4; ++n_buffers)
-        {
-                buffers[n_buffers].length = buffer_size;
-                buffers[n_buffers].start = malloc(buffer_size);
+  if (0 == ret) {
+    fs << "ERROR-select timeout" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-                if (!buffers[n_buffers].start)
-                {
-                        fprintf(stderr, "Out of memory\\n");
-                        exit(EXIT_FAILURE);
-                }
-        }
+  seq = readFrame();
+  if (seq != sequence++) {
+    fs << "WANNING-dropped frame.." << std::endl;
+    sequence = seq + 1;
+  }
+  if (seq) {
+    fpsCalculus();
+  }
 }
-*/
+
+int PythonCameraHelper::readFrame(void) {
+  struct v4l2_buffer buf;
+  int seq = 1;
+  CLEAR(buf);
+
+  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  buf.memory = V4L2_MEMORY_MMAP;
+  //	usleep(5000);
+  if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_DQBUF, &buf)) {
+    switch (errno) {
+    case EAGAIN:
+
+      fs << "ERROR-VIDIOC_DQBUF eagain" << std::endl;
+      exit(EXIT_FAILURE);
+
+    case EIO:
+    default:
+      fs << "ERROR-VIDIOC_DQBUF" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if (buf.index >= requestBufferNumber_) {
+    fs << "ERROR-readframe" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (buf.flags & V4L2_BUF_FLAG_ERROR) {
+    fs << "ERROR-V4L2_BUF_FLAG_ERROR" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  seq = buf.sequence;
+  processImage(mMapBuffers_[buf.index].start, buf.bytesused);
+  static unsigned char dbg = 0;
+  memset(mMapBuffers_[buf.index].start, dbg++, buf.bytesused);
+
+  if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf)) {
+    fs << "ERROR-VIDIOC_QBUF" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  return seq;
+}
+
+unsigned long PythonCameraHelper::subTimeMs(struct timeval *time1,
+                                            struct timeval *time2) {
+  struct timeval res;
+
+  timersub(time1, time2, &res);
+  return res.tv_sec * 1000 + res.tv_usec / 1000;
+}
+
+void PythonCameraHelper::processImage(const void *p, int size) {
+  injectedProcessImage_(p, size);
+}
+
+void PythonCameraHelper::closeAll() {
+  stopCapturing();
+  unInitDevice();
+  closePipeline();
+}
+
+void PythonCameraHelper::unInitDevice() {
+  fs << "uninit_device" << methodName << std::endl;
+  unsigned int i;
+
+  for (i = 0; i < requestBufferNumber_; ++i)
+    if (-1 == munmap(mMapBuffers_[i].start, mMapBuffers_[i].length)) {
+      fs << "ERROR-munmap" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+}
+
+void PythonCameraHelper::stopCapturing() {
+  enum v4l2_buf_type type;
+
+  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_STREAMOFF, &type)) {
+    fs << "ERROR-VIDIOC_STREAMOFF" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+void PythonCameraHelper::closePipeline() {
+  int i;
+
+  for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
+    if (-1 == close(pipelineSubdeviceFd_[i])) {
+      fs << "ERROR-close pipeline" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+}
+
+void PythonCameraHelper::fpsCalculus() {
+  static unsigned int frames = 0;
+  static std::chrono::steady_clock::time_point current;
+  static std::chrono::steady_clock::time_point prev =
+      std::chrono::steady_clock::now();
+
+  current = std::chrono::steady_clock::now();
+  frames++;
+  unsigned int time_delta =
+      std::chrono::duration_cast<std::chrono::milliseconds>(current - prev)
+          .count();
+
+  if (time_delta >= 1000) {
+    fps_ = (((double)frames / (double)time_delta) * 1000.0);
+    fs << "FPS:" << fps_ << std::endl;
+    prev = current;
+    frames = 0;
+  }
+}
+
+double PythonCameraHelper::getCurrentFps() { return fps_; }
