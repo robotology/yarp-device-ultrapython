@@ -391,26 +391,26 @@ void PythonCameraHelper::initMmap(void) {
     exit(EXIT_FAILURE);
   }
 
-  for (usedBufferNumber_ = 0; usedBufferNumber_ < req.count;
-       ++usedBufferNumber_) {
+  for (unsigned int currentUsedBufferIndex = 0;
+       currentUsedBufferIndex < req.count; ++currentUsedBufferIndex) {
     struct v4l2_buffer buf;
 
     CLEAR(buf);
 
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    buf.index = usedBufferNumber_;
+    buf.index = currentUsedBufferIndex;
 
     if (-1 == xioctl(mainSubdeviceFd_, VIDIOC_QUERYBUF, &buf))
       exit(EXIT_FAILURE);
 
-    buffers[usedBufferNumber_].length = buf.length;
-    buffers[usedBufferNumber_].start =
+    buffers[currentUsedBufferIndex].length = buf.length;
+    buffers[currentUsedBufferIndex].start =
         mmap(NULL /* start anywhere */, buf.length,
              PROT_READ | PROT_WRITE /* required */,
              MAP_SHARED /* recommended */, mainSubdeviceFd_, buf.m.offset);
 
-    if (MAP_FAILED == buffers[usedBufferNumber_].start)
+    if (MAP_FAILED == buffers[currentUsedBufferIndex].start)
       exit(EXIT_FAILURE);
   }
 }
@@ -419,7 +419,7 @@ void PythonCameraHelper::startCapturing() {
   fs << "startCapturing" << std::endl;
   enum v4l2_buf_type type;
 
-  for (size_t i = 0; i < usedBufferNumber_; ++i) {
+  for (size_t i = 0; i < requestBufferNumber_; ++i) {
     struct v4l2_buffer buf;
 
     CLEAR(buf);
@@ -444,19 +444,11 @@ void PythonCameraHelper::mainLoop() {
   unsigned int count, frames = 0;
   struct timeval time1, time2;
   unsigned long time_delta;
-  int update_roi = 0;
-  int roi_direction_v = 1;
-  int roi_direction_h = 16;
-  int left = 0;
-  int top = 0;
   int seq, sequence = 0;
 
-  count = frame_count;
   gettimeofday(&time1, NULL);
   time2 = time1;
-  while (count != 0) {
-    if (count > 0)
-      count--;
+  while (keepCapturing_) {
     for (;;) {
       fd_set fds;
       struct timeval tv;
@@ -528,7 +520,7 @@ int PythonCameraHelper::readFrame(void) {
     }
   }
 
-  if (buf.index >= usedBufferNumber_) {
+  if (buf.index >= requestBufferNumber_) {
     fs << "ERROR-readframe" << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -561,4 +553,18 @@ unsigned long PythonCameraHelper::subTimeMs(struct timeval *time1,
 
 void PythonCameraHelper::processImage(const void *p, int size) {
   injectedProcessImage_(p, size);
+}
+
+void PythonCameraHelper::closeAll() { unInitDevice(); }
+
+void PythonCameraHelper::unInitDevice() {
+  fs << "uninit_device" << methodName << std::endl;
+  unsigned int i;
+
+  for (i = 0; i < requestBufferNumber_; ++i)
+    if (-1 == munmap(buffers[i].start, buffers[i].length)) {
+      fs << "ERROR-munmap" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  free(buffers);
 }

@@ -108,18 +108,6 @@ static void stop_capturing(void) {
     errno_exit("VIDIOC_STREAMOFF");
 }
 
-static void uninit_device(void) {
-  pythonHelper.fs << "uninit_device" << pythonHelper.methodName << std::endl;
-  unsigned int i;
-
-  for (i = 0; i < pythonHelper.usedBufferNumber_; ++i)
-    if (-1 ==
-        munmap(pythonHelper.buffers[i].start, pythonHelper.buffers[i].length))
-      errno_exit("munmap");
-
-  free(pythonHelper.buffers);
-}
-
 static void open_socket(void) {
   struct sockaddr_in addr;
   int ret;
@@ -319,7 +307,7 @@ int main(int argc, char **argv) {
   pythonHelper.startCapturing();
   pythonHelper.mainLoop();
   stop_capturing();
-  uninit_device();
+  pythonHelper.closeAll();
   close_pipeline();
   close_socket();
   close(fd_tmp);

@@ -28,10 +28,11 @@ private:
   static constexpr unsigned int pipelineMaxLen = {16};
 
 public:
-  void openPipeline(void);
-  void initDevice(void);
+  void openPipeline();
+  void initDevice();
   void startCapturing();
   void mainLoop();
+  void closeAll();
 
   bool subsamplingEnabledProperty_{false};
   bool cropEnabledProperty_{false};
@@ -51,6 +52,8 @@ public:
   int imgfusionIndex_ = -1;
   int packet32Index_ = -1;
 
+  bool keepCapturing_{true};
+
   std::string mediaName_{"/dev/video0"};
 
   // Crop size
@@ -69,8 +72,6 @@ public:
   int grey = 0;
   int yuv = 0;
   struct buffer *buffers;
-  unsigned int usedBufferNumber_;
-  int frame_count = -1;
 
   std::ofstream fs{"./log.log"};
   inline static constexpr char *methodName[]{"------------"};
@@ -83,6 +84,7 @@ private:
   bool checkDevice(int mainSubdeviceFd);
   int readFrame();
   void processImage(const void *p, int size);
+  void unInitDevice(void);
 
   int xioctl(int fh, int request, void *arg);
   void initMmap(void);
