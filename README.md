@@ -252,6 +252,14 @@ cmake ..
 make
 ```
 
+In ```ccmake``` for Yarp enable:
+```
+ ENABLE_yarpmod_usbCamera  
+ ENABLE_yarpmod_usbCameraRaw
+```
+Select as ```CMAKE_INSTALL_PREFIX```
+```/root/icubtech/bin```
+
 Add to .bashrc:
 
 ```

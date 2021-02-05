@@ -11,15 +11,15 @@ LOCAL_IP=10.0.1.104
 WIDTH=1280
 HEIGHT=1024
 
-#WIDTH=640
-#HEIGHT=512
+//WIDTH=640
+//HEIGHT=512
 
 IMGFUSION=1
 # set to 1 to cause moving ROI
 MOVE=0
-SUBSAMPLING=1
+SUBSAMPLING=0
 # set to 1 for YUV, RGB24 otherwise
-COLOR_YUV=1
+COLOR_YUV=0
 SW_DEBAYER=0
 
 # -- general behaviour cfg
@@ -36,8 +36,6 @@ SUBDEV_CAM_L="/dev/v4l-subdev7"
 VIDEODEV="/dev/video0"
 
 ### vivid
-#WIDTH=1280
-#HEIGHT=720
 #MOVE=""
 
 #CTRLS=(test_pattern=0 gain=3 analogue_gain=4 exposure=20 brightness=500)
