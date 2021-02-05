@@ -1,4 +1,3 @@
-#include <unistd.h>
 #include <fcntl.h>
 #include <libudev.h>
 #include <linux/media.h>
@@ -8,6 +7,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+
+#include <chrono>
 
 #include "PythonCameraHelper.h"
 #include "xilinx-v4l2-controls.h"
@@ -147,7 +149,7 @@ void PythonCameraHelper::setSubDevFormat(int width, int height) {
       fmt.format.height = height;
 
       /* if yuv is required, then set that on the source PAD of VPSS */
-      if ((i == cscIndex_) && (j == 1) && yuv) {
+      if ((i == cscIndex_) && (j == 1) && spaceColor_==SpaceColor::yuv) {
         fmt.format.code = MEDIA_BUS_FMT_UYVY8_1X16;
       }
 
@@ -195,11 +197,11 @@ void PythonCameraHelper::setFormat() {
       fmt.fmt.pix.height /= 2;
     }
 
-    if (grey)
+    if (spaceColor_==SpaceColor::grgb)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB8;
-    else if (yuv)
+    else if (spaceColor_==SpaceColor::yuv)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    else
+    else if (spaceColor_==SpaceColor::rgb)
       fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
 
     fmt.fmt.pix.field = 1;
@@ -385,13 +387,6 @@ void PythonCameraHelper::initMmap(void) {
     exit(EXIT_FAILURE);
   }
 
-  mMapBuffers_ = (MmapBuffer *)calloc(req.count, sizeof(*mMapBuffers_));
-
-  if (!mMapBuffers_) {
-    fs << "ERROR-Out of memory" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
   for (unsigned int currentUsedBufferIndex = 0;
        currentUsedBufferIndex < req.count; ++currentUsedBufferIndex) {
     struct v4l2_buffer buf;
@@ -441,61 +436,38 @@ void PythonCameraHelper::startCapturing() {
 }
 
 void PythonCameraHelper::mainLoop() {
-  fs << "mainLoop" << std::endl;
-  unsigned int  frames = 0;
-  struct timeval time1, time2;
-  unsigned long time_delta;
-  int seq, sequence = 0;
 
-  gettimeofday(&time1, NULL);
-  time2 = time1;
-  while (keepCapturing_) {
-    for (;;) {
-      fd_set fds;
-      struct timeval tv;
-      int r;
+  static int seq = 0;
+  static int sequence = 0;
 
-      FD_ZERO(&fds);
-      FD_SET(mainSubdeviceFd_, &fds);
+  fd_set fds;
+  struct timeval tv{80,0};//Timeout
+  int ret;
 
-      /* Timeout. */
-      tv.tv_sec = 80;
-      tv.tv_usec = 0;
+  FD_ZERO(&fds);
+  FD_SET(mainSubdeviceFd_, &fds);
 
-      r = select(mainSubdeviceFd_ + 1, &fds, NULL, NULL, &tv);
+  ret = select(mainSubdeviceFd_ + 1, &fds, NULL, NULL, &tv);
 
-      if (-1 == r) {
-        if (EINTR == errno)
-          continue;
-        fs << "ERROR-select" << std::endl;
-        exit(EXIT_FAILURE);
-      }
+  if (-1 == ret) {
+    if (EINTR == errno)
+      return;
+    fs << "ERROR-select" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-      if (0 == r) {
-        fs << "ERROR-select timeout" << std::endl;
-        exit(EXIT_FAILURE);
-      }
+  if (0 == ret) {
+    fs << "ERROR-select timeout" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-      seq = readFrame();
-      if (seq) {
-        frames++;
-        if (seq != sequence++) {
-          printf("dropped frame..\n");
-          sequence = seq + 1;
-        }
-        gettimeofday(&time2, NULL);
-        time_delta = subTimeMs(&time2, &time1);
-        if (time_delta >= 1000) {
-          fprintf(stderr, "fps: %f\n",
-                  ((double)frames / (double)time_delta) * 1000.0);
-          time1 = time2;
-          frames = 0;
-        }
-      }
-
-      if (seq)
-        break;
-    }
+  seq = readFrame();
+  if (seq != sequence++) {
+    fs << "WANNING-dropped frame.." << std::endl;
+    sequence = seq + 1;
+  }
+  if (seq) {
+    fpsCalculus();
   }
 }
 
@@ -571,7 +543,6 @@ void PythonCameraHelper::unInitDevice() {
       fs << "ERROR-munmap" << std::endl;
       exit(EXIT_FAILURE);
     }
-  free(mMapBuffers_);
 }
 
 void PythonCameraHelper::stopCapturing() {
@@ -588,9 +559,30 @@ void PythonCameraHelper::closePipeline() {
   int i;
 
   for (i = 0; pipelineSubdeviceFd_[i] != -1; i++)
-    if (-1 == close(pipelineSubdeviceFd_[i]))
-    {
-    fs << "ERROR-close pipeline" << std::endl;
-    exit(EXIT_FAILURE);
+    if (-1 == close(pipelineSubdeviceFd_[i])) {
+      fs << "ERROR-close pipeline" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+}
+
+void PythonCameraHelper::fpsCalculus() {
+  static unsigned int frames = 0;
+  static std::chrono::steady_clock::time_point current;
+  static std::chrono::steady_clock::time_point prev =
+      std::chrono::steady_clock::now();
+
+  current = std::chrono::steady_clock::now();
+  frames++;
+  unsigned int time_delta =
+      std::chrono::duration_cast<std::chrono::milliseconds>(current - prev)
+          .count();
+
+  if (time_delta >= 1000) {
+    fps_ = (((double)frames / (double)time_delta) * 1000.0);
+    fs << "FPS:" << fps_ << std::endl;
+    prev = current;
+    frames = 0;
   }
 }
+
+double PythonCameraHelper::getCurrentFps() { return fps_; }

@@ -55,20 +55,6 @@ static int port = 0;
 static char ip_addr[24];
 static int ip_socket;
 
-static void errno_exit(const char *s) {
-  fprintf(stderr, "%s error %d, %s\\n", s, errno, strerror(errno));
-  exit(EXIT_FAILURE);
-}
-
-static int xioctl(int fh, int request, void *arg) {
-  int r;
-
-  do {
-    r = ioctl(fh, request, arg);
-  } while (-1 == r && EINTR == errno);
-
-  return r;
-}
 
 static void process_image(const void *p, int size) {
   int ret;
@@ -76,8 +62,7 @@ static void process_image(const void *p, int size) {
   int val = 1;
   uint8_t *ptr;
 
-  if(p==nullptr)
-  {
+  if (p == nullptr) {
     pythonHelper.fs << "ERROR-nullptr process_image" << std::endl;
     return;
   }
@@ -183,7 +168,6 @@ int main(int argc, char **argv) {
   int ret;
   char buf[1024];
   int i;
-  // subdev_name = "/dev/v4l-subdev1-foo";
 
   for (;;) {
     int idx;
@@ -195,11 +179,6 @@ int main(int argc, char **argv) {
       break;
 
     switch (c) {
-    case 0: /* getopt_long() flag */
-      break;
-    case 'v':
-      break;
-
     case 'p':
       sscanf(optarg, "%d,%d,%d,%d", &pythonHelper.cropTop_,
              &pythonHelper.cropLeft_, &pythonHelper.cropWidth_,
@@ -208,8 +187,8 @@ int main(int argc, char **argv) {
       break;
 
     case 'g':
-      pythonHelper.grey = 1;
-      pythonHelper.fs << "SETINGS-grey" << pythonHelper.grey << std::endl;
+      pythonHelper.spaceColor_ =SpaceColor::grgb;
+    
       break;
     case 'd':
       pythonHelper.mediaName_ = optarg;
@@ -220,15 +199,11 @@ int main(int argc, char **argv) {
       exit(EXIT_SUCCESS);
 
     case 'm':
-
-      break;
-
     case 'r':
-
-      break;
-
     case 'u':
-
+    case 'v':
+    case '0':
+    case 'i':
       break;
 
     case 'o':
@@ -244,8 +219,6 @@ int main(int argc, char **argv) {
     case 'c':
       errno = 0;
       frame_count = strtol(optarg, NULL, 0);
-      if (errno)
-        errno_exit(optarg);
       break;
     case 'n':
       network = 1;
@@ -259,17 +232,12 @@ int main(int argc, char **argv) {
     case 't':
       stream_file = 1;
       break;
-
     case 'b':
       pythonHelper.subsamplingEnabledProperty_ = true;
       break;
-
-    case 'i':
-
       break;
     case 'y':
-      pythonHelper.yuv = 1;
-      pythonHelper.fs << "SETINGS-yov" << pythonHelper.yuv << std::endl;
+      pythonHelper.spaceColor_ =SpaceColor::yuv;
       break;
 
     default:
@@ -278,15 +246,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  pythonHelper.injectedProcessImage_=process_image;
+  pythonHelper.injectedProcessImage_ = process_image;
   fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
-
 
   pythonHelper.openPipeline();
   pythonHelper.initDevice();
   open_socket();
   pythonHelper.startCapturing();
-  pythonHelper.mainLoop();
+  while (true)
+    pythonHelper.mainLoop();
   pythonHelper.closeAll();
   close_socket();
   close(fd_tmp);

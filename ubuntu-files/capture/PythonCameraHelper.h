@@ -11,6 +11,10 @@ struct MmapBuffer {
   void *start;
   size_t length;
 };
+enum class SpaceColor
+{
+    yuv,rgb,grgb
+};
 
 class PythonCameraHelper {
 private:
@@ -39,32 +43,15 @@ public:
   void startCapturing();
   void mainLoop();
   void closeAll();
+  double getCurrentFps();
 
+  // Public property
   bool subsamplingEnabledProperty_{false};
   bool cropEnabledProperty_{false};
   bool forceFormatProperty_{true}; // Overwrite preesistent format
+  SpaceColor spaceColor_{SpaceColor::rgb};
 
-  std::array<int, pipelineMaxLen> pipelineSubdeviceFd_ = {
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-  };
-
-  // File descriptor
-  int mainSubdeviceFd_ = -1;
-  int sourceSubDeviceIndex1_ = -1;
-  int sourceSubDeviceIndex2_ = -1;
-  int rxif1Index_ = -1;
-  int rxif2Index_ = -1;
-  int cscIndex_ = -1;
-  int tpgIndex_ = -1;
-  int imgfusionIndex_ = -1;
-  int packet32Index_ = -1;
-
-  // Loop is active
-  bool keepCapturing_{true};
-
-  MmapBuffer *mMapBuffers_;
-
-  std::string mediaName_{"/dev/video0"};
+  std::string mediaName_{"/dev/media0"};
 
   // Crop size
   unsigned int cropLeft_{0};
@@ -74,13 +61,33 @@ public:
 
   // Process image external
   std::function<void(const void *, int)> injectedProcessImage_;
-  // TODO change
-  int grey = 0;
-  int yuv = 0;
 
+  // Log
   std::ofstream fs{"./log.log"};
 
 private:
+  // Loop is active
+  bool keepCapturing_{true};
+
+  // Image memory map
+  MmapBuffer mMapBuffers_[requestBufferNumber_];
+
+  // File descriptors and indexes
+  int mainSubdeviceFd_ = -1;
+  std::array<int, pipelineMaxLen> pipelineSubdeviceFd_ = {
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  };
+  int sourceSubDeviceIndex1_ = -1;
+  int sourceSubDeviceIndex2_ = -1;
+  int rxif1Index_ = -1;
+  int rxif2Index_ = -1;
+  int cscIndex_ = -1;
+  int tpgIndex_ = -1;
+  int imgfusionIndex_ = -1;
+  int packet32Index_ = -1;
+
+  double fps_;
+
   void setSubDevFormat(int width, int height);
   void setFormat();
   void setSubsampling(void);
@@ -95,4 +102,5 @@ private:
   void initMmap(void);
   bool cropCheck();
   unsigned long subTimeMs(struct timeval *time1, struct timeval *time2);
+  void fpsCalculus();
 };
