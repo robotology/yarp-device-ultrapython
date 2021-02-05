@@ -42,8 +42,6 @@ typedef unsigned long size_t;
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-constexpr unsigned int pipelineMaxLen = {16};
-
 PythonCameraHelper pythonHelper;
 
 static int fd = -1;
@@ -56,7 +54,6 @@ static int stream_file = 0;
 static int port = 0;
 static char ip_addr[24];
 static int ip_socket;
-static int crop_move = 0;
 
 static void errno_exit(const char *s) {
   fprintf(stderr, "%s error %d, %s\\n", s, errno, strerror(errno));
@@ -79,6 +76,12 @@ static void process_image(const void *p, int size) {
   int val = 1;
   uint8_t *ptr;
 
+  if(p==nullptr)
+  {
+    pythonHelper.fs << "ERROR-nullptr process_image" << std::endl;
+    return;
+  }
+
   if (out_buf)
     fwrite(p, size, 1, stdout);
   if (stream_file)
@@ -95,142 +98,7 @@ static void process_image(const void *p, int size) {
   fflush(stdout);
 }
 
-static int read_frame(void) {
-  struct v4l2_buffer buf;
-  unsigned int i;
-  int seq = 1;
-  static unsigned char dbg = 0;
 
-  CLEAR(buf);
-
-  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  buf.memory = V4L2_MEMORY_MMAP;
-  //	usleep(5000);
-  if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_DQBUF, &buf)) {
-    switch (errno) {
-    case EAGAIN:
-      errno_exit("VIDIOC_DQBUF eagain");
-      return 0;
-
-    case EIO:
-      /* Could ignore EIO, see spec. */
-
-      /* fall through */
-
-    default:
-      errno_exit("VIDIOC_DQBUF");
-    }
-  }
-
-  assert(buf.index < pythonHelper.n_buffers);
-  if (buf.flags & V4L2_BUF_FLAG_ERROR)
-    errno_exit("V4L2_BUF_FLAG_ERROR");
-
-  seq = buf.sequence;
-  process_image(pythonHelper.buffers[buf.index].start, buf.bytesused);
-  memset(pythonHelper.buffers[buf.index].start, dbg++, buf.bytesused);
-
-  if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
-    errno_exit("VIDIOC_QBUF");
-
-  return seq;
-}
-
-unsigned long sub_time_ms(struct timeval *time1, struct timeval *time2) {
-  struct timeval res;
-
-  timersub(time1, time2, &res);
-  return res.tv_sec * 1000 + res.tv_usec / 1000;
-}
-
-static void crop(int top, int left, int w, int h, int mytry);
-static void mainloop(void) {
-  unsigned int count, frames = 0;
-  struct timeval time1, time2;
-  unsigned long time_delta;
-  int update_roi = 0;
-  int roi_direction_v = 1;
-  int roi_direction_h = 16;
-  int left = 0;
-  int top = 0;
-  int seq, sequence = 0;
-
-  count = frame_count;
-  gettimeofday(&time1, NULL);
-  time2 = time1;
-  while (count != 0) {
-    if (count > 0)
-      count--;
-    for (;;) {
-      fd_set fds;
-      struct timeval tv;
-      int r;
-
-      FD_ZERO(&fds);
-      FD_SET(pythonHelper.mainSubdeviceFd_, &fds);
-
-      /* Timeout. */
-      tv.tv_sec = 80;
-      tv.tv_usec = 0;
-
-      r = select(pythonHelper.mainSubdeviceFd_ + 1, &fds, NULL, NULL, &tv);
-
-      if (-1 == r) {
-        if (EINTR == errno)
-          continue;
-        errno_exit("select");
-      }
-
-      if (0 == r) {
-        fprintf(stderr, "select timeout\\n");
-        exit(EXIT_FAILURE);
-      }
-
-      if (seq = read_frame()) {
-        frames++;
-        if (seq != sequence++) {
-          printf("dropped frame..\n");
-          sequence = seq + 1;
-        }
-        gettimeofday(&time2, NULL);
-        time_delta = sub_time_ms(&time2, &time1);
-        if (time_delta >= 1000) {
-          fprintf(stderr, "fps: %f\n",
-                  ((double)frames / (double)time_delta) * 1000.0);
-          time1 = time2;
-          frames = 0;
-        }
-        break;
-      }
-      /* EAGAIN - continue select loop. */
-    }
-
-    if (crop_move) {
-      update_roi = 0;
-
-      if (left + pythonHelper.cropWidth_ > (pythonHelper.nativeWidth_ - 16)) {
-        roi_direction_h = -16;
-        left = pythonHelper.nativeWidth_ - pythonHelper.cropWidth_ - 16;
-      } else if (left <= 0) {
-        roi_direction_h = 16;
-        left = 0;
-      }
-      left += roi_direction_h;
-
-      if (top + pythonHelper.cropHeight_ > (pythonHelper.nativeHeight_ - 16)) {
-        roi_direction_v = -1;
-        top = pythonHelper.nativeHeight_ - pythonHelper.cropHeight_ - 16;
-      } else if (top <= 0) {
-        roi_direction_v = 1;
-        top = 0;
-      }
-      top += roi_direction_v;
-
-      pythonHelper.crop(top, left, pythonHelper.cropWidth_,
-                        pythonHelper.cropHeight_, 0);
-    }
-  }
-}
 
 static void stop_capturing(void) {
   enum v4l2_buf_type type;
@@ -240,31 +108,11 @@ static void stop_capturing(void) {
     errno_exit("VIDIOC_STREAMOFF");
 }
 
-static void start_capturing(void) {
-  unsigned int i;
-  enum v4l2_buf_type type;
-
-  for (i = 0; i < pythonHelper.n_buffers; ++i) {
-    struct v4l2_buffer buf;
-
-    CLEAR(buf);
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-    buf.index = i;
-
-    if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_QBUF, &buf))
-      errno_exit("VIDIOC_QBUF");
-  }
-  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (-1 == xioctl(pythonHelper.mainSubdeviceFd_, VIDIOC_STREAMON, &type))
-    errno_exit("VIDIOC_STREAMON");
-}
-
 static void uninit_device(void) {
   pythonHelper.fs << "uninit_device" << pythonHelper.methodName << std::endl;
   unsigned int i;
 
-  for (i = 0; i < pythonHelper.n_buffers; ++i)
+  for (i = 0; i < pythonHelper.usedBufferNumber_; ++i)
     if (-1 ==
         munmap(pythonHelper.buffers[i].start, pythonHelper.buffers[i].length))
       errno_exit("munmap");
@@ -381,7 +229,6 @@ int main(int argc, char **argv) {
     case 0: /* getopt_long() flag */
       break;
     case 'v':
-      crop_move = 1;
       break;
 
     case 'p':
@@ -404,15 +251,15 @@ int main(int argc, char **argv) {
       exit(EXIT_SUCCESS);
 
     case 'm':
-     
+
       break;
 
     case 'r':
-     
+
       break;
 
     case 'u':
-   
+
       break;
 
     case 'o':
@@ -462,19 +309,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (crop_move && !pythonHelper.cropEnabledProperty_) {
-    printf("crop not enabled, ignoring move crop\n");
-    crop_move = 0;
-  }
+  pythonHelper.injectedProcessImage_=process_image;
 
   pythonHelper.openPipeline();
-
   pythonHelper.initDevice();
   fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
 
   open_socket();
-  start_capturing();
-  mainloop();
+  pythonHelper.startCapturing();
+  pythonHelper.mainLoop();
   stop_capturing();
   uninit_device();
   close_pipeline();
