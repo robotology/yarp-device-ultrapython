@@ -258,15 +258,15 @@ In ```ccmake``` for Yarp enable:
  ENABLE_yarpmod_usbCameraRaw
 ```
 Select as ```CMAKE_INSTALL_PREFIX```
-```/root/icubtech/bin```
+```/root/icubtech/install```
 
 Add to .bashrc:
 
 ```
-export YARP_DIR=/root/icubtech/yarp/build/bin
-export YARP_DATA_DIRS=$YARP_DIR/../share/yarp
-export PATH=$PATH:YARP_DIR/build/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:YARP_DIR/lib
+export YARP_DIR=/root/icubtech/install
+export YARP_DATA_DIRS=${YARP_DIR}/share/yarp
+export PATH=$PATH:${YARP_DIR}/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
 
 ```
 
@@ -330,8 +330,30 @@ Would resolve the problem.
 
 # 4. yarpdev
 
-Used command:
+:exclamation:*On iCubHead
 ```
-/root/icubtech/yarp/build/bin/yarpdev --device usbCamera --d /dev/video0 --name /grabber --width 1280 --height 1024
+yarpserver --write
 ```
 
+:exclamation:*On Enclustra:
+```
+yarp conf
+```
+modify above file as follow (only first time):
+```
+Add to empty file:``` 10.0.1.233 10000```
+```
+
+
+```
+cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
+./configpreliminary.sh
+yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --width 2560 --height 1024
+```  
+  
+:exclamation:*On iCubHead
+```
+./frameGrabberGui2 --local /pippo --remote /grabber/rpc
+yarpview
+yarp connect /grabber /yarpview/img:i
+```
