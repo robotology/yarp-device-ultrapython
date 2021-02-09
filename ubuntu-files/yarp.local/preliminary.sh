@@ -4,9 +4,7 @@ SUBDEV_CAM_R="/dev/v4l-subdev8"
 SUBDEV_CAM_L="/dev/v4l-subdev7"
 VIDEODEV="/dev/video0"
 
-CTRLS_POST=(csc_blue_gain=80 csc_red_gain=80 csc_green_gain=60)
-
-cd ../modules 
+cd /root/icubtech/python-cameras/ubuntu-files/modules 
 . ./unload
 . ./load
 

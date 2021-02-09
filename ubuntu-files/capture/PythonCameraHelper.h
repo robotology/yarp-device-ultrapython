@@ -19,23 +19,23 @@ enum class SpaceColor
 class PythonCameraHelper {
 private:
   // Pipeline string
-  inline static constexpr char pipelineVideoName[] = {"vcap_python output 0"};
-  inline static constexpr char pipelineDummyName[] = {"vcap_dummy output 0"};
-  inline static constexpr char pipelinePythonName[] = {"PYTHON1300"};
-  inline static constexpr char pipelineTpgName[] = {"v_tpg"};
-  inline static constexpr char pipelineCscName[] = {"v_proc_ss"};
-  inline static constexpr char pipelinePacket32Name[] = {"Packet32"};
-  inline static constexpr char pipelineImgfusionName[] = {"imgfusion"};
-  inline static constexpr char pipelineRxifName[] = {"PYTHON1300_RXIF"};
+  static constexpr const char* pipelineVideoName = "vcap_python output 0";
+  static constexpr const char* pipelineDummyName = "vcap_dummy output 0";
+  static constexpr const char* pipelinePythonName = "PYTHON1300";
+  static constexpr const char* pipelineTpgName = "v_tpg";
+  static constexpr const char* pipelineCscName = "v_proc_ss";
+  static constexpr const char* pipelinePacket32Name = "Packet32";
+  static constexpr const char* pipelineImgfusionName = "imgfusion";
+  static constexpr const char* pipelineRxifName = "PYTHON1300_RXIF";
 
   static constexpr unsigned int requestBufferNumber_ = {8};
   static constexpr unsigned int pipelineMaxLen = {16};
 
   // Native resolution for cam
-  inline static constexpr unsigned int nativeWidth_{1280};
-  inline static constexpr unsigned int nativeHeight_{1024};
+  static constexpr unsigned int nativeWidth_{1280};
+  static constexpr unsigned int nativeHeight_{1024};
 
-  inline static constexpr char *methodName[]{"------------"};
+  static constexpr const char* methodName="------------";
 
 public:
   void openPipeline();
@@ -61,6 +61,7 @@ public:
 
   // Process image external
   std::function<void(const void *, int)> injectedProcessImage_;
+  void setInjectedProcess(std::function<void(const void *, int)> toinJect){injectedProcessImage_=toinJect;}
 
   // Log
   std::ofstream fs{"./log.log"};
