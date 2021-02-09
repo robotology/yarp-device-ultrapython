@@ -348,7 +348,7 @@ Add to empty file:``` 10.0.1.233 10000```
 ```
 cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
 ./configpreliminary.sh
-yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --width 2560 --height 1024
+yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
 ```  
   
 :exclamation:*On iCubHead
