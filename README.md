@@ -204,7 +204,12 @@ pwd
 :exclamation:<u>To be done on iCub-head.</u>
 
 ```bash
+cd /root/icubtech
 git clone https://github.com/icub-tech-iit/python-cameras.git
+git clone https://github.com/robotology/yarp.git
+cd /root/icubtech/python-camera/ubuntu-files/capture
+ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.h PythonCameraHelper.h
+ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.cpp PythonCameraHelper.cpp
 ``` 
 
 :exclamation:<u>To be done on running Enclustra.</u>
@@ -357,3 +362,7 @@ yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --s
 yarpview
 yarp connect /grabber /yarpview/img:i
 ```
+
+## v4l
+Main commands:
+v4l2-ctl -l
