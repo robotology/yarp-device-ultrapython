@@ -16,11 +16,18 @@
   - [2.7. Merello test](#27-merello-test)
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
-- [3. Note](#3-note)
-  - [3.1. Passord and users](#31-passord-and-users)
-  - [3.2. Reboot](#32-reboot)
-  - [3.3. Filesystem](#33-filesystem)
-- [4. yarpdev](#4-yarpdev)
+- [3. yarpdev use](#3-yarpdev-use)
+  - [3.1. yarpdev Python specifications](#31-yarpdev-python-specifications)
+    - [3.1.1. Resolution](#311-resolution)
+    - [3.1.2. Color space](#312-color-space)
+    - [3.1.3. Device](#313-device)
+  - [3.2. yarpdev new parameters for Python](#32-yarpdev-new-parameters-for-python)
+  - [3.3. yarpdev removed parameters for Python](#33-yarpdev-removed-parameters-for-python)
+- [4. Others](#4-others)
+  - [4.1. Password and users](#41-password-and-users)
+  - [4.2. Reboot](#42-reboot)
+  - [4.3. Filesystem](#43-filesystem)
+  - [4.4. v4l](#44-v4l)
 
 <!-- /TOC -->
 
@@ -272,8 +279,9 @@ export YARP_DIR=/root/icubtech/install
 export YARP_DATA_DIRS=${YARP_DIR}/share/yarp
 export PATH=$PATH:${YARP_DIR}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
-
 ```
+
+Now ```reboot``` or execute ```.bashrc```
 
 ## 2.9. Development environment
 
@@ -312,19 +320,64 @@ A remote terminal is also available.
   ```
   rm /root/.vscode-server/.*
   ```
-# 3. Note
+# 3. yarpdev use
 
-## 3.1. Passord and users
+:exclamation:*On iCubHead
+```
+yarpserver --write
+```
+
+:exclamation:*On running Enclustra:
+```
+yarp conf
+```
+modify above file as follow (only the very first time):  
+add to the empty file:```10.0.1.233 10000```  
+Then load new kernel module and execute ```yarpdev```
+```
+cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
+./configpreliminary.sh
+yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
+```  
+:exclamation:*On iCubHead
+```
+./frameGrabberGui2 --local /pippo --remote /grabber/rpc
+yarpview
+yarp connect /grabber /yarpview/img:i
+```
+## 3.1. yarpdev Python specifications
+
+### 3.1.1. Resolution
+2560x1024 (full)  
+1280x1024 (subsampling)  
+
+### 3.1.2. Color space
+**RGB** fixed for now
+
+### 3.1.3. Device
+```/root/media0``` is the device to be used.
+
+## 3.2. yarpdev new parameters for Python
+
+1. ```--camModel python```, is the camModel to be used.
+2. ```--subsampling```, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**. 
+
+## 3.3. yarpdev removed parameters for Python
+1. Both ```--width``` and ```--height``` have been removed. The resolution is fixed when the working mode is specified.
+
+# 4. Others
+
+## 4.1. Password and users
 usr:ubuntu  
 pwd:iCub2021
 
 usr:root  
 pwd:root
 
-## 3.2. Reboot
+## 4.2. Reboot
 It doesn't work.
 
-## 3.3. Filesystem
+## 4.3. Filesystem
 
 Sometimes happens that the file system became read-only . It has been corrupted:
 
@@ -333,36 +386,7 @@ fsck / -y
 ```
 Would resolve the problem.
 
-# 4. yarpdev
 
-:exclamation:*On iCubHead
-```
-yarpserver --write
-```
-
-:exclamation:*On Enclustra:
-```
-yarp conf
-```
-modify above file as follow (only first time):
-```
-Add to empty file:``` 10.0.1.233 10000```
-```
-
-
-```
-cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
-./configpreliminary.sh
-yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
-```  
-  
-:exclamation:*On iCubHead
-```
-./frameGrabberGui2 --local /pippo --remote /grabber/rpc
-yarpview
-yarp connect /grabber /yarpview/img:i
-```
-
-## v4l
+## 4.4. v4l
 Main commands:
 v4l2-ctl -l
