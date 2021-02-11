@@ -16,13 +16,16 @@
   - [2.7. Merello test](#27-merello-test)
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
-- [3. yarpdev use](#3-yarpdev-use)
+- [3. yarpdev for Python camera](#3-yarpdev-for-python-camera)
   - [3.1. yarpdev Python specifications](#31-yarpdev-python-specifications)
     - [3.1.1. Resolution](#311-resolution)
     - [3.1.2. Color space](#312-color-space)
     - [3.1.3. Device](#313-device)
   - [3.2. yarpdev new parameters for Python](#32-yarpdev-new-parameters-for-python)
   - [3.3. yarpdev removed parameters for Python](#33-yarpdev-removed-parameters-for-python)
+  - [3.4. yarpdev SW modifications](#34-yarpdev-sw-modifications)
+  - [3.5. yarpdev PytonCameraHelper class SW tests](#35-yarpdev-pytoncamerahelper-class-sw-tests)
+  - [3.6. yarpdev PytonCameraHelper Cmake options](#36-yarpdev-pytoncamerahelper-cmake-options)
 - [4. Others](#4-others)
   - [4.1. Password and users](#41-password-and-users)
   - [4.2. Reboot](#42-reboot)
@@ -32,7 +35,7 @@
 <!-- /TOC -->
 
 # 1. PYTHON-CAMERAS
-With Enclustra board.  
+With Enclustra carrier board.  
 From now:
 - Local Linux PC = iCub-head
 - Enclustra board with cams = Enclustra
@@ -284,6 +287,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
 Now ```reboot``` or execute ```.bashrc```
 
 ## 2.9. Development environment
+In order to develop the software on the Enclustra board is necessary to setup a remote development enviroment, as Enclustra can't be used with an UI.  
+We have decided to use vscode with ssh extension.
 
 :exclamation:<u>To be done on iCub-head with running Enclustra.</u>
 
@@ -304,34 +309,36 @@ Host 10.0.1.233
 Connect using the correct host among your list:  
 <img src="img/dev001.png" width="500px">
 
-then you can open the folder:  
+then you can open the remote folder on the same windows:  
 
-<img src="img/dev002.png" width="500px">
+<img src="img/dev002.png" width="500px">  
+
+Choose the remote folder ```/root/icubtech/yarp/src/devices/usbCamera/linux```
 
 A remote terminal is also available.
 
 :exclamation:*Troubleshooting*  
-1. If vscode won't connect try to check Enclustra file-system. Then restart boot Enclustra and vscode.
+1. If vscode won't connect try to check Enclustra file-system. 
   ```
   fsck / -y
 ``` 
-  
+  Then restart boot Enclustra and vscode.  
 2. If vscode still won't connect try to delete, on Enclustra, the following files:
   ```
   rm /root/.vscode-server/.*
   ```
-# 3. yarpdev use
+# 3. yarpdev for Python camera
 
+This section describe how to execute yarpdev for Python camera.  
 :exclamation:*On iCubHead
 ```
 yarpserver --write
 ```
-
-:exclamation:*On running Enclustra:
+:exclamation:*On running Enclustra **only the very first time**:
 ```
 yarp conf
 ```
-modify above file as follow (only the very first time):  
+modify above file as follow:  
 add to the empty file:```10.0.1.233 10000```  
 Then load new kernel module and execute ```yarpdev```
 ```
@@ -345,25 +352,52 @@ yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --s
 yarpview
 yarp connect /grabber /yarpview/img:i
 ```
+
+Result for h-resolution:  
+<img src="video/HResolution001.gif" width="600px">
+
 ## 3.1. yarpdev Python specifications
+
 
 ### 3.1.1. Resolution
 2560x1024 (full)  
 1280x1024 (subsampling)  
 
 ### 3.1.2. Color space
-**RGB** fixed for now
+RGB fixed for now
 
 ### 3.1.3. Device
-```/root/media0``` is the device to be used.
+ ```/root/media0``` is the device to be used.
 
 ## 3.2. yarpdev new parameters for Python
 
 1. ```--camModel python```, is the camModel to be used.
 2. ```--subsampling```, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**. 
 
+
 ## 3.3. yarpdev removed parameters for Python
-1. Both ```--width``` and ```--height``` have been removed. The resolution is fixed when the working mode is specified.
+
+1. ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
+
+## 3.4. yarpdev SW modifications
+The software follows c++14 standard.  
+To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class ```PythonCameraHelper```. All the Python camera functionalities are developed inside of it.
+If necessary, the class is instantiated by the driver.   
+New PythonCameraHelper class in UML class diagram:
+
+<img src="img/UML001.png" width="600px">
+
+
+An **dependency injection technique** is used to keep driver and Python camera code separate, so
+test and use of the class in other environment, *are easier*.  
+<img src="img/UML002.png" width="400px">
+
+## 3.5. yarpdev PytonCameraHelper class SW tests
+TO BE DONE
+
+## 3.6. yarpdev PytonCameraHelper Cmake options
+CMake new options and compilation procedure for usbCamera Yarp devices.  
+TO BE DONE
 
 # 4. Others
 
@@ -389,4 +423,6 @@ Would resolve the problem.
 
 ## 4.4. v4l
 Main commands:
+```
 v4l2-ctl -l
+```
