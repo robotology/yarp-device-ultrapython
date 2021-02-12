@@ -477,3 +477,4 @@ v4l2-ctl -l
 - [ ] CMake option for ARM library only
 - [ ] Load modules on Enclustra startup
 - [ ] Documentation
+- [ ] Demo board setup
