@@ -31,6 +31,7 @@
   - [4.2. Reboot](#42-reboot)
   - [4.3. Filesystem](#43-filesystem)
   - [4.4. Check v4l status](#44-check-v4l-status)
+- [Missing parts to be developed](#missing-parts-to-be-developed)
 
 <!-- /TOC -->
 
@@ -465,3 +466,14 @@ It is possibile to use ```v4l``` command for checking the board status:
 ```
 v4l2-ctl -l
 ```
+
+# Missing parts to be developed
+
+- [x] Log Yarp
+- [x] Check full resolution problem with yarpview
+- [ ] SW Test
+- [ ] Manage settings (gain, exposure ...)
+- [ ] Check close procedure
+- [ ] CMake option for ARM library only
+- [ ] Load modules on Enclustra startup
+- [ ] Documentation
