@@ -1,6 +1,6 @@
 <!-- TOC -->
 
-- [1. PYTHON-CAMERAS](#1-python-cameras)
+- [1. ULTRAPYTHON CAMERA](#1-ultrapython-camera)
   - [1.1. MOUNTING](#11-mounting)
   - [1.2. ACCESS](#12-access)
     - [1.2.1. IP address](#121-ip-address)
@@ -16,13 +16,13 @@
   - [2.7. Merello test](#27-merello-test)
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
-- [3. yarpdev for Python camera](#3-yarpdev-for-python-camera)
-  - [3.1. yarpdev Python specifications](#31-yarpdev-python-specifications)
+- [3. yarpdev for UltraPython camera](#3-yarpdev-for-ultrapython-camera)
+  - [3.1. yarpdev UltraPython specifications](#31-yarpdev-ultrapython-specifications)
     - [3.1.1. Resolution](#311-resolution)
     - [3.1.2. Color space](#312-color-space)
     - [3.1.3. Device](#313-device)
-  - [3.2. yarpdev new parameters for Python](#32-yarpdev-new-parameters-for-python)
-  - [3.3. yarpdev removed parameters for Python](#33-yarpdev-removed-parameters-for-python)
+  - [3.2. yarpdev new parameters for UltraPython](#32-yarpdev-new-parameters-for-ultrapython)
+  - [3.3. yarpdev removed parameters for UltraPython](#33-yarpdev-removed-parameters-for-ultrapython)
   - [3.4. yarpdev SW modifications](#34-yarpdev-sw-modifications)
   - [3.5. yarpdev PytonCameraHelper class SW tests](#35-yarpdev-pytoncamerahelper-class-sw-tests)
   - [3.6. yarpdev PytonCameraHelper Cmake options](#36-yarpdev-pytoncamerahelper-cmake-options)
@@ -30,28 +30,52 @@
   - [4.1. Password and users](#41-password-and-users)
   - [4.2. Reboot](#42-reboot)
   - [4.3. Filesystem](#43-filesystem)
-  - [4.4. v4l](#44-v4l)
+  - [4.4. Check v4l status](#44-check-v4l-status)
 
 <!-- /TOC -->
 
-# 1. PYTHON-CAMERAS
+# 1. ULTRAPYTHON CAMERA
 With Enclustra carrier board.  
 From now:
 - Local Linux PC = iCub-head
-- Enclustra board with cams = Enclustra
+- Enclustra board carrier, with Xilinx module and cameras board = Enclustra
 
 ## 1.1. MOUNTING
 
-Check dip switch, jumper and eth connection:
+The board is composed by:
+- Enclustra carrier
+- Xilinx board module
+- Cameras board (with two cameras)
+
+Mount the cameras board and Xilinx board as in figure:  
 
 
 <img src="img/mountedboard.jpg" width="300px">
 <br><br>
+
+The jumpers should be set as in figure.  
+
 <img src="img/jp.jpg" width="150px">
 <br><br>
+
+The deep switches should be set as in figure.    
+
+
 <img src="img/dip.jpg" width="300px">
 <br><br>
+
+Use the correct Ethernet port.
+
 <img src="img/eth.jpg" width="300px">
+
+Power and switch-on button:  
+
+<img src="img/power.jpg" width="300px">
+
+Led after a few seconds from power on :  
+
+<img src="img/led.jpg" width="300px">
+
 
 ## 1.2. ACCESS
 
@@ -60,9 +84,19 @@ Check dip switch, jumper and eth connection:
 
 Add to iCub-head the wired address 10.0.1.104
 <br><br>
-<img src="img/address002.png" width="300px">
+Select ```wired connected -> wired settings``` from menu:  
+
+<img src="img/net000.png" width="300px">
 <br><br>
-<img src="img/address001.png" width="300px">
+
+Add pc104 connection:  
+
+<img src="img/address003.png" width="300px">
+<br><br>  
+
+Add correct params:  
+
+<img src="img/address004.png" width="300px">
  
 Final addressing map:   
 **Enclustra board** address: 10.0.1.233  
@@ -79,6 +113,13 @@ screen /dev/ttyUSB1 115200
 ```
 <img src="img/USB.jpg" width="300px">  
 <br><br><br>
+
+:exclamation:*Troubleshooting*  
+In the case a different serial port is to be used:
+```
+screen /dev/ttyUSB0 115200
+```
+
 
 ## 1.4. GIVE INTERNET ACCESS to Enlustra via shorwall
 :exclamation:<u>To be done on iCub-head.</u>
@@ -300,13 +341,13 @@ Install plugin for vscode named:
 
 Edit file ~/.ssh/config, add at the end:
 ```
-Host 10.0.1.233
+Host Enclustra
   HostName 10.0.1.233
   User root
   ForwardAgent yes
 ```
+Connect using the correct host among your list (```Connect to Host in surrent windows```):  
 
-Connect using the correct host among your list:  
 <img src="img/dev001.png" width="500px">
 
 then you can open the remote folder on the same windows:  
@@ -315,21 +356,18 @@ then you can open the remote folder on the same windows:
 
 Choose the remote folder ```/root/icubtech/yarp/src/devices/usbCamera/linux```
 
-A remote terminal is also available.
+A remote terminal is also available from the ```Terminal``` menu.
 
 :exclamation:*Troubleshooting*  
 1. If vscode won't connect try to check Enclustra file-system. 
-  ```
-  fsck / -y
-``` 
-  Then restart boot Enclustra and vscode.  
+  ``` fsck / -y ```   Then restart boot Enclustra and vscode.  
 2. If vscode still won't connect try to delete, on Enclustra, the following files:
   ```
   rm /root/.vscode-server/.*
   ```
-# 3. yarpdev for Python camera
+# 3. yarpdev for UltraPython camera
 
-This section describe how to execute yarpdev for Python camera.  
+This section describe how to execute yarpdev for UltraPython camera.  
 :exclamation:*On iCubHead
 ```
 yarpserver --write
@@ -354,9 +392,10 @@ yarp connect /grabber /yarpview/img:i
 ```
 
 Result for h-resolution:  
+
 <img src="video/HResolution001.gif" width="600px">
 
-## 3.1. yarpdev Python specifications
+## 3.1. yarpdev UltraPython specifications
 
 
 ### 3.1.1. Resolution
@@ -369,26 +408,26 @@ RGB fixed for now
 ### 3.1.3. Device
  ```/root/media0``` is the device to be used.
 
-## 3.2. yarpdev new parameters for Python
+## 3.2. yarpdev new parameters for UltraPython
 
 1. ```--camModel python```, is the camModel to be used.
 2. ```--subsampling```, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**. 
 
 
-## 3.3. yarpdev removed parameters for Python
+## 3.3. yarpdev removed parameters for UltraPython
 
 1. ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
 
 ## 3.4. yarpdev SW modifications
 The software follows c++14 standard.  
-To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class ```PythonCameraHelper```. All the Python camera functionalities are developed inside of it.
+To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class ```PythonCameraHelper```. All the UltraPython camera functionalities are developed inside of it.
 If necessary, the class is instantiated by the driver.   
 New PythonCameraHelper class in UML class diagram:
 
 <img src="img/UML001.png" width="600px">
 
 
-An **dependency injection technique** is used to keep driver and Python camera code separate, so
+An **dependency injection technique** is used to keep driver and UltraPython camera code separate, so
 test and use of the class in other environment, *are easier*.  
 <img src="img/UML002.png" width="400px">
 
@@ -421,8 +460,8 @@ fsck / -y
 Would resolve the problem.
 
 
-## 4.4. v4l
-Main commands:
+## 4.4. Check v4l status
+It is possibile to use ```v4l``` command for checking the board status:
 ```
 v4l2-ctl -l
 ```
