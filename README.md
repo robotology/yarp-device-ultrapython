@@ -383,7 +383,7 @@ Then load new kernel module and execute ```yarpdev```
 ```
 cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
 ./configpreliminary.sh
-yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
+yarpdev --device grabberDual --subdevice usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
 ```  
 :exclamation:*On iCubHead
 ```
