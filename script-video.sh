@@ -11,7 +11,7 @@ REMOTE_HOST=10.0.1.233
 #echo "yarpdev"
 
 #sleep 2
-#frameGrabberGui2 --local /pippo --remote /grabber/rpc &
+frameGrabberGui2 --local /pippo --remote /grabber/rpc &
 #sleep 1
 #echo "framegrabber"
 sleep 1

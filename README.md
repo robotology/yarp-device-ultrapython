@@ -23,6 +23,7 @@
     - [3.1.3. Device](#313-device)
   - [3.2. yarpdev new parameters for UltraPython](#32-yarpdev-new-parameters-for-ultrapython)
   - [3.3. yarpdev removed parameters for UltraPython](#33-yarpdev-removed-parameters-for-ultrapython)
+  - [Parameters that cam be used together UltraPython camera](#parameters-that-cam-be-used-together-ultrapython-camera)
   - [3.4. yarpdev SW modifications](#34-yarpdev-sw-modifications)
   - [3.5. yarpdev PytonCameraHelper class SW tests](#35-yarpdev-pytoncamerahelper-class-sw-tests)
   - [3.6. yarpdev PytonCameraHelper Cmake options](#36-yarpdev-pytoncamerahelper-cmake-options)
@@ -31,7 +32,6 @@
   - [4.2. Reboot](#42-reboot)
   - [4.3. Filesystem](#43-filesystem)
   - [4.4. Check v4l status](#44-check-v4l-status)
-- [Missing parts to be developed](#missing-parts-to-be-developed)
 
 <!-- /TOC -->
 
@@ -239,7 +239,7 @@ Use the serial connection if ssh won't work.
 ```bash
 apt update
 apt remove initramfs-tools cryptsetup snapd
-install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev
+install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev ntpdate
 
 ```
 Execute:
@@ -418,6 +418,15 @@ RGB fixed for now
 ## 3.3. yarpdev removed parameters for UltraPython
 
 1. ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
+
+## Parameters that cam be used together UltraPython camera
+
+- Gain: it is mapped to the digital gain of the board.
+- Exposure is limited to 100msec
+- White balance: it is mapped to the read and blue gain.
+- Brightness
+
+Only manual parameters no auto.
 
 ## 3.4. yarpdev SW modifications
 The software follows c++14 standard.  

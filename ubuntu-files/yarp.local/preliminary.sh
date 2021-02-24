@@ -15,7 +15,7 @@ v4l2-ctl -d $VIDEODEV -c "trg_h=20"
 sleep 1
 v4l2-ctl -d $VIDEODEV -c "trg_l=10"
 sleep 1
-v4l2-ctl -d $SUBDEV_CAM_R -c "ext_trigger=1"
+#v4l2-ctl -d $SUBDEV_CAM_R -c "ext_trigger=1"
 sleep 1
 v4l2-ctl -d $SUBDEV_CAM_R -c "gain=1"
 sleep 1
@@ -23,7 +23,7 @@ v4l2-ctl -d $SUBDEV_CAM_R -c "analogue_gain=2"
 sleep 1
 v4l2-ctl -d $SUBDEV_CAM_R -c "brightness=200"
 sleep 1
-v4l2-ctl -d $SUBDEV_CAM_L -c "ext_trigger=1"
+#v4l2-ctl -d $SUBDEV_CAM_L -c "ext_trigger=1"
 sleep 1
 v4l2-ctl -d $SUBDEV_CAM_L -c "gain=1"
 sleep 1
