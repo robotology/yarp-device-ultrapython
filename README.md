@@ -13,8 +13,9 @@
   - [2.4. Network config](#24-network-config)
   - [2.5. Generate ssh key for root access on Enclustra](#25-generate-ssh-key-for-root-access-on-enclustra)
   - [2.6. Missing package](#26-missing-package)
-  - [2.7. Merello test](#27-merello-test)
-  - [2.8. YARP](#28-yarp)
+  - [2.7. Others](#27-others)
+  - [2.8. Merello test](#28-merello-test)
+  - [2.9. YARP](#29-yarp)
   - [2.9. Development environment](#29-development-environment)
 - [3. yarpdev for UltraPython camera](#3-yarpdev-for-ultrapython-camera)
   - [3.1. yarpdev UltraPython specifications](#31-yarpdev-ultrapython-specifications)
@@ -23,13 +24,12 @@
     - [3.1.3. Device](#313-device)
   - [3.2. yarpdev new parameters for UltraPython](#32-yarpdev-new-parameters-for-ultrapython)
   - [3.3. yarpdev removed parameters for UltraPython](#33-yarpdev-removed-parameters-for-ultrapython)
-  - [Parameters that cam be used together UltraPython camera](#parameters-that-cam-be-used-together-ultrapython-camera)
+  - [Parameters that can be used together UltraPython camera](#parameters-that-can-be-used-together-ultrapython-camera)
   - [3.4. yarpdev SW modifications](#34-yarpdev-sw-modifications)
   - [3.5. yarpdev PytonCameraHelper class SW tests](#35-yarpdev-pytoncamerahelper-class-sw-tests)
   - [3.6. yarpdev PytonCameraHelper Cmake options](#36-yarpdev-pytoncamerahelper-cmake-options)
 - [4. Others](#4-others)
   - [4.1. Password and users](#41-password-and-users)
-  - [4.2. Reboot](#42-reboot)
   - [4.3. Filesystem](#43-filesystem)
   - [4.4. Check v4l status](#44-check-v4l-status)
 
@@ -252,7 +252,14 @@ Add root pwd:
 pwd
 ```
 
-## 2.7. Merello test
+## 2.7. Others
+:exclamation:<u>To be done on running Enclustra.</u>  
+Disable the wait-online service to prevent the system from waiting on a network connection.
+```
+systemctl disable systemd-networkd-wait-online.service
+systemctl mask systemd-networkd-wait-online.services
+```
+## 2.8. Merello test
 :exclamation:<u>To be done on iCub-head.</u>
 
 ```bash
@@ -290,7 +297,7 @@ cd test
 <img src="video/2cams.gif" width="500px">
 
 
-## 2.8. YARP
+## 2.9. YARP
 :exclamation:<u>To be done on running Enclustra.</u>
 
 ```
@@ -407,6 +414,7 @@ Result for h-resolution:
 RGB fixed for now
 
 ### 3.1.3. Device
+
  ```/root/media0``` is the device to be used.
 
 ## 3.2. yarpdev new parameters for UltraPython
@@ -416,15 +424,25 @@ RGB fixed for now
 
 
 ## 3.3. yarpdev removed parameters for UltraPython
+ ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
 
-1. ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
 
-## Parameters that cam be used together UltraPython camera
+## Parameters that can be used together UltraPython camera
 
-- Gain: it is mapped to the digital gain of the board.
-- Exposure is limited to 100msec
-- White balance: it is mapped to the read and blue gain.
-- Brightness
+Exposed parameters:
+|Name|Code|Default|Max|Min|Note|
+|-|-|-|-|-|-|
+|Gain|0x00980913|1|1|16|mapped to the digital gain of the board|
+|Exposure|0x0098cb03|20msec|1|100000|limited to 100msec mapped on **tag_l**|
+|White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|
+|Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|
+
+Internal parameters:
+|Name|Code|Default|Max|Min|Note|
+|-|-|-|-|-|-|
+|ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|
+|tag_h|0x0098cb02|10|0|100000|Dead time between exposures|
+|Analogue gain|0x009e0903|2|1|16|Analog gain|
 
 Only manual parameters no auto.
 
@@ -456,9 +474,6 @@ pwd:iCub2021
 
 usr:root  
 pwd:root
-
-## 4.2. Reboot
-It doesn't work.
 
 ## 4.3. Filesystem
 
