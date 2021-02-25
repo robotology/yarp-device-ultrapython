@@ -1,6 +1,6 @@
 <!-- TOC -->
 
-- [1. PYTHON-CAMERAS](#1-python-cameras)
+- [1. ULTRAPYTHON CAMERA](#1-ultrapython-camera)
   - [1.1. MOUNTING](#11-mounting)
   - [1.2. ACCESS](#12-access)
     - [1.2.1. IP address](#121-ip-address)
@@ -16,32 +16,67 @@
   - [2.7. Merello test](#27-merello-test)
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
-- [3. Note](#3-note)
-  - [3.1. Passord and users](#31-passord-and-users)
-  - [3.2. Reboot](#32-reboot)
-  - [3.3. Filesystem](#33-filesystem)
-- [4. yarpdev](#4-yarpdev)
+- [3. yarpdev for UltraPython camera](#3-yarpdev-for-ultrapython-camera)
+  - [3.1. yarpdev UltraPython specifications](#31-yarpdev-ultrapython-specifications)
+    - [3.1.1. Resolution](#311-resolution)
+    - [3.1.2. Color space](#312-color-space)
+    - [3.1.3. Device](#313-device)
+  - [3.2. yarpdev new parameters for UltraPython](#32-yarpdev-new-parameters-for-ultrapython)
+  - [3.3. yarpdev removed parameters for UltraPython](#33-yarpdev-removed-parameters-for-ultrapython)
+  - [Parameters that cam be used together UltraPython camera](#parameters-that-cam-be-used-together-ultrapython-camera)
+  - [3.4. yarpdev SW modifications](#34-yarpdev-sw-modifications)
+  - [3.5. yarpdev PytonCameraHelper class SW tests](#35-yarpdev-pytoncamerahelper-class-sw-tests)
+  - [3.6. yarpdev PytonCameraHelper Cmake options](#36-yarpdev-pytoncamerahelper-cmake-options)
+- [4. Others](#4-others)
+  - [4.1. Password and users](#41-password-and-users)
+  - [4.2. Reboot](#42-reboot)
+  - [4.3. Filesystem](#43-filesystem)
+  - [4.4. Check v4l status](#44-check-v4l-status)
 
 <!-- /TOC -->
 
-# 1. PYTHON-CAMERAS
-With Enclustra board.  
+# 1. ULTRAPYTHON CAMERA
+With Enclustra carrier board.  
 From now:
 - Local Linux PC = iCub-head
-- Enclustra board with cams = Enclustra
+- Enclustra board carrier, with Xilinx module and cameras board = Enclustra
 
 ## 1.1. MOUNTING
 
-Check dip switch, jumper and eth connection:
+The board is composed by:
+- Enclustra carrier
+- Xilinx board module
+- Cameras board (with two cameras)
+
+Mount the cameras board and Xilinx board as in figure:  
 
 
 <img src="img/mountedboard.jpg" width="300px">
 <br><br>
+
+The jumpers should be set as in figure.  
+
 <img src="img/jp.jpg" width="150px">
 <br><br>
+
+The deep switches should be set as in figure.    
+
+
 <img src="img/dip.jpg" width="300px">
 <br><br>
+
+Use the correct Ethernet port.
+
 <img src="img/eth.jpg" width="300px">
+
+Power and switch-on button:  
+
+<img src="img/power.jpg" width="300px">
+
+Led after a few seconds from power on :  
+
+<img src="img/led.jpg" width="300px">
+
 
 ## 1.2. ACCESS
 
@@ -50,9 +85,19 @@ Check dip switch, jumper and eth connection:
 
 Add to iCub-head the wired address 10.0.1.104
 <br><br>
-<img src="img/address002.png" width="300px">
+Select ```wired connected -> wired settings``` from menu:  
+
+<img src="img/net000.png" width="300px">
 <br><br>
-<img src="img/address001.png" width="300px">
+
+Add pc104 connection:  
+
+<img src="img/address003.png" width="300px">
+<br><br>  
+
+Add correct params:  
+
+<img src="img/address004.png" width="300px">
  
 Final addressing map:   
 **Enclustra board** address: 10.0.1.233  
@@ -69,6 +114,13 @@ screen /dev/ttyUSB1 115200
 ```
 <img src="img/USB.jpg" width="300px">  
 <br><br><br>
+
+:exclamation:*Troubleshooting*  
+In the case a different serial port is to be used:
+```
+screen /dev/ttyUSB0 115200
+```
+
 
 ## 1.4. GIVE INTERNET ACCESS to Enlustra via shorwall
 :exclamation:<u>To be done on iCub-head.</u>
@@ -187,7 +239,7 @@ Use the serial connection if ssh won't work.
 ```bash
 apt update
 apt remove initramfs-tools cryptsetup snapd
-install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev
+install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev ntpdate
 
 ```
 Execute:
@@ -204,7 +256,12 @@ pwd
 :exclamation:<u>To be done on iCub-head.</u>
 
 ```bash
+cd /root/icubtech
 git clone https://github.com/icub-tech-iit/python-cameras.git
+git clone https://github.com/robotology/yarp.git
+cd /root/icubtech/python-camera/ubuntu-files/capture
+ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.h PythonCameraHelper.h
+ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.cpp PythonCameraHelper.cpp
 ``` 
 
 :exclamation:<u>To be done on running Enclustra.</u>
@@ -267,10 +324,13 @@ export YARP_DIR=/root/icubtech/install
 export YARP_DATA_DIRS=${YARP_DIR}/share/yarp
 export PATH=$PATH:${YARP_DIR}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
-
 ```
 
+Now ```reboot``` or execute ```.bashrc```
+
 ## 2.9. Development environment
+In order to develop the software on the Enclustra board is necessary to setup a remote development enviroment, as Enclustra can't be used with an UI.  
+We have decided to use vscode with ssh extension.
 
 :exclamation:<u>To be done on iCub-head with running Enclustra.</u>
 
@@ -282,44 +342,125 @@ Install plugin for vscode named:
 
 Edit file ~/.ssh/config, add at the end:
 ```
-Host 10.0.1.233
+Host Enclustra
   HostName 10.0.1.233
   User root
   ForwardAgent yes
 ```
+Connect using the correct host among your list (```Connect to Host in surrent windows```):  
 
-Connect using the correct host among your list:  
 <img src="img/dev001.png" width="500px">
 
-then you can open the folder:  
+then you can open the remote folder on the same windows:  
 
-<img src="img/dev002.png" width="500px">
+<img src="img/dev002.png" width="500px">  
 
-A remote terminal is also available.
+Choose the remote folder ```/root/icubtech/yarp/src/devices/usbCamera/linux```
+
+A remote terminal is also available from the ```Terminal``` menu.
 
 :exclamation:*Troubleshooting*  
-1. If vscode won't connect try to check Enclustra file-system. Then restart boot Enclustra and vscode.
-  ```
-  fsck / -y
-``` 
-  
+1. If vscode won't connect try to check Enclustra file-system. 
+  ``` fsck / -y ```   Then restart boot Enclustra and vscode.  
 2. If vscode still won't connect try to delete, on Enclustra, the following files:
   ```
   rm /root/.vscode-server/.*
   ```
-# 3. Note
+# 3. yarpdev for UltraPython camera
 
-## 3.1. Passord and users
+This section describe how to execute yarpdev for UltraPython camera.  
+:exclamation:*On iCubHead
+```
+yarpserver --write
+```
+:exclamation:*On running Enclustra **only the very first time**:
+```
+yarp conf
+```
+modify above file as follow:  
+add to the empty file:```10.0.1.233 10000```  
+Then load new kernel module and execute ```yarpdev```
+```
+cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
+./configpreliminary.sh
+yarpdev --device grabberDual --subdevice usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
+```  
+:exclamation:*On iCubHead
+```
+./frameGrabberGui2 --local /pippo --remote /grabber/rpc
+yarpview
+yarp connect /grabber /yarpview/img:i
+```
+
+Result for h-resolution:  
+
+<img src="video/HResolution001.gif" width="600px">
+
+## 3.1. yarpdev UltraPython specifications
+
+
+### 3.1.1. Resolution
+2560x1024 (full)  
+1280x1024 (subsampling)  
+
+### 3.1.2. Color space
+RGB fixed for now
+
+### 3.1.3. Device
+ ```/root/media0``` is the device to be used.
+
+## 3.2. yarpdev new parameters for UltraPython
+
+1. ```--camModel python```, is the camModel to be used.
+2. ```--subsampling```, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**. 
+
+
+## 3.3. yarpdev removed parameters for UltraPython
+
+1. ```--width``` and ```--height``` have been removed. The resolution is fixed as the **working mode** is specified.
+
+## Parameters that cam be used together UltraPython camera
+
+- Gain: it is mapped to the digital gain of the board.
+- Exposure is limited to 100msec
+- White balance: it is mapped to the read and blue gain.
+- Brightness
+
+Only manual parameters no auto.
+
+## 3.4. yarpdev SW modifications
+The software follows c++14 standard.  
+To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class ```PythonCameraHelper```. All the UltraPython camera functionalities are developed inside of it.
+If necessary, the class is instantiated by the driver.   
+New PythonCameraHelper class in UML class diagram:
+
+<img src="img/UML001.png" width="600px">
+
+
+An **dependency injection technique** is used to keep driver and UltraPython camera code separate, so
+test and use of the class in other environment, *are easier*.  
+<img src="img/UML002.png" width="400px">
+
+## 3.5. yarpdev PytonCameraHelper class SW tests
+TO BE DONE
+
+## 3.6. yarpdev PytonCameraHelper Cmake options
+CMake new options and compilation procedure for usbCamera Yarp devices.  
+TO BE DONE
+
+# 4. Others
+
+## 4.1. Password and users
 usr:ubuntu  
 pwd:iCub2021
 
 usr:root  
 pwd:root
 
-## 3.2. Reboot
+## 4.2. Reboot
 It doesn't work.
 
-## 3.3. Filesystem
+## 4.3. Filesystem
 
 Sometimes happens that the file system became read-only . It has been corrupted:
 
@@ -328,32 +469,9 @@ fsck / -y
 ```
 Would resolve the problem.
 
-# 4. yarpdev
 
-:exclamation:*On iCubHead
+## 4.4. Check v4l status
+It is possibile to use ```v4l``` command for checking the board status:
 ```
-yarpserver --write
-```
-
-:exclamation:*On Enclustra:
-```
-yarp conf
-```
-modify above file as follow (only first time):
-```
-Add to empty file:``` 10.0.1.233 10000```
-```
-
-
-```
-cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
-./configpreliminary.sh
-yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
-```  
-  
-:exclamation:*On iCubHead
-```
-./frameGrabberGui2 --local /pippo --remote /grabber/rpc
-yarpview
-yarp connect /grabber /yarpview/img:i
+v4l2-ctl -l
 ```

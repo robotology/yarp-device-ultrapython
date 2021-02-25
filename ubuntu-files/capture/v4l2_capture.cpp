@@ -55,14 +55,15 @@ static int port = 0;
 static char ip_addr[24];
 static int ip_socket;
 
-
-static void process_image(const void *p, int size) {
+static void process_image(const void *p, int size)
+{
   int ret;
   int i;
   int val = 1;
   uint8_t *ptr;
 
-  if (p == nullptr) {
+  if (p == nullptr)
+  {
     pythonHelper.fs << "ERROR-nullptr process_image" << std::endl;
     return;
   }
@@ -72,7 +73,8 @@ static void process_image(const void *p, int size) {
   if (stream_file)
     write(fd_tmp, p, size);
 
-  if (network) {
+  if (network)
+  {
     ret = send(ip_socket, p, size, MSG_NOSIGNAL);
     if (ret != size)
       fprintf(stderr, "Send failed with err %d -- errno: %d\n", ret, errno);
@@ -83,7 +85,8 @@ static void process_image(const void *p, int size) {
   fflush(stdout);
 }
 
-static void open_socket(void) {
+static void open_socket(void)
+{
   struct sockaddr_in addr;
   int ret;
 
@@ -98,26 +101,30 @@ static void open_socket(void) {
 
   ip_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (ip_socket == -1) {
+  if (ip_socket == -1)
+  {
     fprintf(stderr, "Cannot open socket: error %d\n", errno);
     exit(EXIT_FAILURE);
   }
   ret = connect(ip_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr));
   fprintf(stderr, "connect ret: %d\n", ret);
-  if (ret == -1) {
+  if (ret == -1)
+  {
     fprintf(stderr, "Cannot connect socket: error %d\n", errno);
     close(ip_socket);
     exit(EXIT_FAILURE);
   }
 }
 
-static void close_socket(void) {
+static void close_socket(void)
+{
   if (!network)
     return;
   close(ip_socket);
 }
 
-static void usage(FILE *fp, int argc, char **argv) {
+static void usage(FILE *fp, int argc, char **argv)
+{
   fprintf(fp,
           "Usage: %s [options]\n\n"
           "Version 1.3\n"
@@ -163,13 +170,12 @@ static const struct option long_options[] = {
     {"yuv", no_argument, NULL, 'y'},
     {0, 0, 0, 0}};
 
-int main(int argc, char **argv) {
-
-  int ret;
-  char buf[1024];
+int main(int argc, char **argv)
+{
   int i;
 
-  for (;;) {
+  for (;;)
+  {
     int idx;
     int c;
 
@@ -178,7 +184,8 @@ int main(int argc, char **argv) {
     if (-1 == c)
       break;
 
-    switch (c) {
+    switch (c)
+    {
     case 'p':
       sscanf(optarg, "%d,%d,%d,%d", &pythonHelper.cropTop_,
              &pythonHelper.cropLeft_, &pythonHelper.cropWidth_,
@@ -187,8 +194,8 @@ int main(int argc, char **argv) {
       break;
 
     case 'g':
-      pythonHelper.spaceColor_ =SpaceColor::grgb;
-    
+      pythonHelper.spaceColor_ = SpaceColor::grgb;
+
       break;
     case 'd':
       pythonHelper.mediaName_ = optarg;
@@ -235,9 +242,8 @@ int main(int argc, char **argv) {
     case 'b':
       pythonHelper.subsamplingEnabledProperty_ = true;
       break;
-      break;
     case 'y':
-      pythonHelper.spaceColor_ =SpaceColor::yuv;
+      pythonHelper.spaceColor_ = SpaceColor::yuv;
       break;
 
     default:
@@ -245,8 +251,7 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
     }
   }
-
-  pythonHelper.injectedProcessImage_ = process_image;
+  pythonHelper.setInjectedProcess(process_image);
   fd_tmp = open("/run/tmpdat", O_WRONLY | O_CREAT);
 
   pythonHelper.openPipeline();
