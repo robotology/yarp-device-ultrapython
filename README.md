@@ -431,7 +431,18 @@ RGB fixed for now
 
 ### 3.1.3. Device
 
-`/root/media0` is the device to be used.
+`/root/media0` is the root device.  
+
+The subdevices:  
+`/root/dev/v4l-subdev0`    
+`/root/dev/v4l-subdev1`   
+`/root/dev/v4l-subdev2`    
+`/root/dev/v4l-subdev3`  
+`/root/dev/v4l-subdev4`  
+`/root/dev/v4l-subdev5`  
+`/root/dev/v4l-subdev6`  
+`/root/dev/v4l-subdev7`  
+`/root/dev/v4l-subdev8`  
 
 ## 3.2. yarpdev new parameters for UltraPython
 
@@ -444,22 +455,24 @@ RGB fixed for now
 
 ## 3.4. Parameters that can be used together UltraPython
 
-Exposed parameters:
-|Name|Code|Default|Max|Min|Note|
+Currently exposed parameters:
+|Name|Code|Default|Min|Max|Note|
 |-|-|-|-|-|-|
-|Gain|0x00980913|1|1|16|mapped to the digital gain of the board|
-|Exposure|0x0098cb03|20msec|1|100000|limited to 100msec mapped on **tag_l**|
+|Gain/shutter|0x00980913|1|1|16|mapped to the digital gain of the board|
+|Exposure|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|
 |White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|
 |Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|
+|Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|
 
 Internal parameters:
-|Name|Code|Default|Max|Min|Note|
+|Name|Code|Default|Min|Max|Note|
 |-|-|-|-|-|-|
 |ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|
-|tag_h|0x0098cb02|10|0|100000|Dead time between exposures|
+|tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|
 |Analogue gain|0x009e0903|2|1|16|Analog gain|
 
-Only manual parameters no auto.
+Only manual parameters are available for now no auto settings.  
+*Note* that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
 
 <img src="video/video001.gif" width="600px"><br>  
 
