@@ -464,8 +464,8 @@ The subdevices:
 Currently exposed parameters:
 |Name|Code|Default|Min|Max|Note|Status|
 |-|-|-|-|-|-|-|
-|Gain/shutter|0x00980913|1|1|16|mapped to the digital gain of the board|Working but a bug is present|
-|Exposure|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|Working|
+|Gain|0x00980913|1|1|4|mapped to the digital gain of the board|Working but a bug is present|
+|Exposure/shutter|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|Working|
 |White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|Working|
 |Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|Working|
 |Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|Working|
@@ -475,7 +475,7 @@ Internal parameters:
 |-|-|-|-|-|-|-|
 |ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|Working|
 |tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|Working|
-|Analogue gain|0x009e0903|2|1|16|Analog gain|Working|
+|Analogue gain|0x009e0903|2|1|9|Analog gain|Working|
 
 Only manual parameters are available for now no auto settings.  
 *Note* that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
