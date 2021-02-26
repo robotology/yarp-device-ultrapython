@@ -2,10 +2,11 @@
 
 - [1. ULTRAPYTHON CAMERA](#1-ultrapython-camera)
   - [1.1. MOUNTING](#11-mounting)
-  - [1.2. ACCESS](#12-access)
-    - [1.2.1. IP address](#121-ip-address)
-  - [1.3. SERIAL ACCESS](#13-serial-access)
-  - [1.4. GIVE INTERNET ACCESS to Enlustra via shorwall](#14-give-internet-access-to-enlustra-via-shorwall)
+  - [1.2. Experimental setup](#12-experimental-setup)
+  - [1.3. ACCESS](#13-access)
+    - [1.3.1. IP address](#131-ip-address)
+  - [1.4. SERIAL ACCESS](#14-serial-access)
+  - [1.5. GIVE INTERNET ACCESS to Enlustra via shorwall](#15-give-internet-access-to-enlustra-via-shorwall)
 - [2. Ubuntu SD card creation for Enclustra](#2-ubuntu-sd-card-creation-for-enclustra)
   - [2.1. Download and flash](#21-download-and-flash)
   - [2.2. Override Ubuntu Kernel](#22-override-ubuntu-kernel)
@@ -79,9 +80,14 @@ Led after a few seconds from power on :
 
 <img src="img/led.jpg" width="300px">
 
-## 1.2. ACCESS
+## 1.2. Experimental setup
 
-### 1.2.1. IP address
+An experimantal setup is availabe.  
+<img src="img/setup.jpg" width="300px">
+
+## 1.3. ACCESS
+
+### 1.3.1. IP address
 
 :exclamation:<u>To be done on iCub-head.</u>
 
@@ -105,7 +111,7 @@ Final addressing map:
 **Enclustra board** address: 10.0.1.233  
 **iCub-head pc address**: 10.0.1.104
 
-## 1.3. SERIAL ACCESS
+## 1.4. SERIAL ACCESS
 
 :exclamation:<u>To be done on iCub-head.</u>
 
@@ -125,7 +131,7 @@ In the case a different serial port is to be used:
 screen /dev/ttyUSB0 115200
 ```
 
-## 1.4. GIVE INTERNET ACCESS to Enlustra via shorwall
+## 1.5. GIVE INTERNET ACCESS to Enlustra via shorwall
 
 :exclamation:<u>To be done on iCub-head.</u>
 
@@ -456,20 +462,20 @@ The subdevices:
 ## 3.4. Parameters that can be used together UltraPython
 
 Currently exposed parameters:
-|Name|Code|Default|Min|Max|Note|
-|-|-|-|-|-|-|
-|Gain/shutter|0x00980913|1|1|16|mapped to the digital gain of the board|
-|Exposure|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|
-|White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|
-|Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|
-|Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|
+|Name|Code|Default|Min|Max|Note|Status|
+|-|-|-|-|-|-|-|
+|Gain/shutter|0x00980913|1|1|16|mapped to the digital gain of the board|Working but a bug is present|
+|Exposure|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|Working|
+|White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|Working|
+|Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|Working|
+|Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|Working|
 
 Internal parameters:
-|Name|Code|Default|Min|Max|Note|
-|-|-|-|-|-|-|
-|ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|
-|tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|
-|Analogue gain|0x009e0903|2|1|16|Analog gain|
+|Name|Code|Default|Min|Max|Note|Status|
+|-|-|-|-|-|-|-|
+|ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|Working|
+|tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|Working|
+|Analogue gain|0x009e0903|2|1|16|Analog gain|Working|
 
 Only manual parameters are available for now no auto settings.  
 *Note* that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
