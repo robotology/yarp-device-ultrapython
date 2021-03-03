@@ -295,7 +295,7 @@ systemctl mask systemd-networkd-wait-online.services
 
 :exclamation:<u>To be done on running Enclustra.</u>
 
-```
+```bash
 cd icubtech
 
 git clone https://github.com/robotology/ycm.git
@@ -313,7 +313,7 @@ make
 
 In `ccmake` for Yarp enable:
 
-```
+```bash
  ENABLE_yarpmod_usbCamera
  ENABLE_yarpmod_usbCameraRaw
 ```
@@ -323,14 +323,23 @@ Select as `CMAKE_INSTALL_PREFIX`
 
 Add to .bashrc:
 
-```
+```bash
 export YARP_DIR=/root/icubtech/install
 export YARP_DATA_DIRS=${YARP_DIR}/share/yarp
 export PATH=$PATH:${YARP_DIR}/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
 ```
 
+Get and install kernel modules.
+```bash
+cd /root/icubtech/python-camera/
+git clone https://github.com/icub-tech-iit/python-cameras.git
+cp /root/icubtech/python-camera/ubuntu-files/config/rc.local /etc
+chmod +x /etc/rc.local
+```
+
 Now `reboot` or execute `.bashrc`
+
 
 ## 2.9. Development environment
 
