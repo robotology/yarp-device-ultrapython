@@ -318,8 +318,12 @@ In `ccmake` for Yarp enable:
  ENABLE_yarpmod_usbCameraRaw
 ```
 
+Select as `YCM_DIR`
+`/root/icubtech/ycm/build` for YARP 
+
 Select as `CMAKE_INSTALL_PREFIX`
-`/root/icubtech/install`
+`/root/icubtech/install` for both YCM and YARP
+
 
 Add to .bashrc:
 
@@ -338,7 +342,7 @@ cp /root/icubtech/python-camera/ubuntu-files/config/rc.local /etc
 chmod +x /etc/rc.local
 ```
 
-Now `reboot` or execute `.bashrc`
+Now `reboot`
 
 
 ## 2.9. Development environment
@@ -408,7 +412,7 @@ Then load new kernel module and execute `yarpdev`
 ```
 cd /root/icubtech/python-cameras/ubuntu-files/yarp.local
 ./preliminary.sh #load modules
-yarpdev --device grabberDual --subdevice usbCamera --camModel python --d /dev/media0 --name /grabber --subsampling
+yarpdev --device grabberDual --subdevice usbCamera --camModel ultrapython --d /dev/media0 --name /grabber --subsampling
 ```
 
 :exclamation:\*On iCubHead
