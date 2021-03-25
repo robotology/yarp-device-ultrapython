@@ -18,16 +18,18 @@
   - [2.8. YARP](#28-yarp)
   - [2.9. Development environment](#29-development-environment)
 - [3. yarpdev for UltraPython camera](#3-yarpdev-for-ultrapython-camera)
-  - [3.1. UltraPython specifications for yarpdev](#31-ultrapython-specifications-for-yarpdev)
-    - [3.1.1. Resolution](#311-resolution)
-    - [3.1.2. Color space](#312-color-space)
-    - [3.1.3. Device](#313-device)
-  - [3.2. yarpdev new parameters for UltraPython](#32-yarpdev-new-parameters-for-ultrapython)
-  - [3.3. yarpdev removed parameters for UltraPython](#33-yarpdev-removed-parameters-for-ultrapython)
-  - [3.4. Parameters that can be used together UltraPython](#34-parameters-that-can-be-used-together-ultrapython)
-  - [3.5. yarpdev SW modifications](#35-yarpdev-sw-modifications)
-  - [3.6. yarpdev PytonCameraHelper class SW tests](#36-yarpdev-pytoncamerahelper-class-sw-tests)
-  - [3.7. yarpdev PytonCameraHelper Cmake options](#37-yarpdev-pytoncamerahelper-cmake-options)
+  - [3.1. Use .ini file instead of line params](#31-use-ini-file-instead-of-line-params)
+  - [3.2. UltraPython specifications for yarpdev](#32-ultrapython-specifications-for-yarpdev)
+    - [3.2.1. Resolution](#321-resolution)
+    - [3.2.2. Color space](#322-color-space)
+    - [3.2.3. Kernel modules](#323-kernel-modules)
+    - [3.2.4. Device](#324-device)
+  - [3.3. yarpdev new parameters for UltraPython](#33-yarpdev-new-parameters-for-ultrapython)
+  - [3.4. yarpdev removed parameters for UltraPython](#34-yarpdev-removed-parameters-for-ultrapython)
+  - [3.5. Parameters that can be used together UltraPython](#35-parameters-that-can-be-used-together-ultrapython)
+  - [3.6. yarpdev SW modifications](#36-yarpdev-sw-modifications)
+  - [3.7. yarpdev PytonCameraHelper class SW tests](#37-yarpdev-pytoncamerahelper-class-sw-tests)
+  - [3.8. yarpdev PytonCameraHelper Cmake options](#38-yarpdev-pytoncamerahelper-cmake-options)
 - [4. Others](#4-others)
   - [4.1. Password and users](#41-password-and-users)
   - [4.2. Filesystem](#42-filesystem)
@@ -221,7 +223,13 @@ https://linuxize.com/post/how-to-configure-static-ip-address-on-ubuntu-18-04/
 Copy file:
 
 ```bash
- cp python-cameras/ubuntu-files/config/01-netcfg.yaml /mount/<mountpoint>/etc/netplan/01-netcfg.yaml
+ cp <myroot>/python-cameras/ubuntu-files/config/01-netcfg.yaml /mount/<mountpoint>/etc/netplan/01-netcfg.yaml
+```
+
+In case the configuration is done on running Enclustra
+
+```
+sudo netplan apply
 ```
 
 ## 2.5. Generate ssh key for root access on Enclustra
@@ -290,7 +298,6 @@ systemctl disable systemd-networkd-wait-online.service
 systemctl mask systemd-networkd-wait-online.services
 ```
 
-
 ## 2.8. YARP
 
 :exclamation:<u>To be done on running Enclustra.</u>
@@ -319,11 +326,10 @@ In `ccmake` for Yarp enable:
 ```
 
 Select as `YCM_DIR`
-`/root/icubtech/ycm/build` for YARP 
+`/root/icubtech/ycm/build` for YARP
 
 Select as `CMAKE_INSTALL_PREFIX`
 `/root/icubtech/install` for both YCM and YARP
-
 
 Add to .bashrc:
 
@@ -335,6 +341,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
 ```
 
 Get and install kernel modules.
+
 ```bash
 cd /root/icubtech/python-camera/
 git clone https://github.com/icub-tech-iit/python-cameras.git
@@ -343,7 +350,6 @@ chmod +x /etc/rc.local
 ```
 
 Now `reboot`
-
 
 ## 2.9. Development environment
 
@@ -425,9 +431,7 @@ yarp connect /grabber /yarpview/img:i
 
 Result for h-resolution:
 
-<img src="video/HResolution001.gif" width="600px"><br>  
-
-
+<img src="video/HResolution001.gif" width="600px"><br>
 
 :exclamation:\*On iCubHead  
 Also a script can be used for iCubHead command:
@@ -436,67 +440,104 @@ Also a script can be used for iCubHead command:
 . <path>/script-video.sh
 ```
 
+## 3.1. Use .ini file instead of line params
 
-## 3.1. UltraPython specifications for yarpdev 
+It is possibile to use .ini file instead line params.
+Create a file ultra.ini like this:
 
-### 3.1.1. Resolution
+```
+device grabberDual
+subdevice usbCamera
+camModel ultrapython
+name /grabber
+subsampling
+d /dev/media0                   
+```
+
+Execute yarpdev like this:
+```
+yarpdev --from ultra.ini
+```
+
+## 3.2. UltraPython specifications for yarpdev
+
+### 3.2.1. Resolution
 
 2560x1024 (full)  
 1280x1024 (subsampling)
 
-### 3.1.2. Color space
+### 3.2.2. Color space
 
-RGB fixed for now
+For now the only choose is RGB.
 
-### 3.1.3. Device
+### 3.2.3. Kernel modules
+The following kernel modules should be loaded before starting to work with UltraPython, order is important:
 
-`/root/media0` is the root device.  
+```bash
+insmod xilinx_frmbuf.ko
+insmod v4l2-fwnode.ko
+insmod videobuf2-dma-contig.ko
+insmod xilinx-vip.ko
+insmod xilinx-video.ko is_mplane=0
+insmod xilinx-vpss-csc.ko
+insmod xilinx-vtc.ko
+insmod xilinx-tpg.ko
+insmod xilinx-demosaic.ko
+insmod xilinx-python1300-rxif.ko dyndbg==p
+insmod imgfusion.ko
+insmod python1300.ko
+```
+The modules can be loaded vai script or via others methods during boot time.
+
+### 3.2.4. Device
+
+Once the modules are loaded the following devices can be used.
+`/root/media0` is the root device.
 
 The subdevices:  
-`/root/dev/v4l-subdev0`    
-`/root/dev/v4l-subdev1`   
-`/root/dev/v4l-subdev2`    
+`/root/dev/v4l-subdev0`  
+`/root/dev/v4l-subdev1`  
+`/root/dev/v4l-subdev2`  
 `/root/dev/v4l-subdev3`  
 `/root/dev/v4l-subdev4`  
 `/root/dev/v4l-subdev5`  
 `/root/dev/v4l-subdev6`  
 `/root/dev/v4l-subdev7`  
-`/root/dev/v4l-subdev8`  
+`/root/dev/v4l-subdev8`
 
-## 3.2. yarpdev new parameters for UltraPython
+## 3.3. yarpdev new parameters for UltraPython
 
 1. `--camModel python`, is the camModel to be used.
 2. `--subsampling`, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**.
 
-## 3.3. yarpdev removed parameters for UltraPython
+## 3.4. yarpdev removed parameters for UltraPython
 
 `--width` and `--height` have been removed. The resolution is fixed as the **working mode** is specified.
 
-## 3.4. Parameters that can be used together UltraPython
+## 3.5. Parameters that can be used together UltraPython
 
 Currently exposed parameters:
 |Name|Code|Default|Min|Max|Note|Status|
 |-|-|-|-|-|-|-|
-|Gain|0x00980913|1|1|4|mapped to the digital gain of the board|Working but a bug is present|
+|Gain|0x00980913|1|1|11|mapped to a combination of digital and analog gain of the board|Working|
 |Exposure/shutter|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|Working|
 |White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|Working|
 |Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|Working|
 |Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|Working|
 
-Internal parameters:
+Internal parameters setted by default:
 |Name|Code|Default|Min|Max|Note|Status|
 |-|-|-|-|-|-|-|
 |ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|Working|
 |tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|Working|
-|Analogue gain|0x009e0903|2|1|9|Analog gain|Working|
+
 
 Only manual parameters are available for now no auto settings.  
-*Note* that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
+_Note_ that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
 
-<img src="video/video001.gif" width="600px"><br>  
+<img src="video/video001.gif" width="600px"><br>
 
-
-## 3.5. yarpdev SW modifications
+## 3.6. yarpdev SW modifications
 
 The software follows c++14 standard.  
 To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class `PythonCameraHelper`. All the UltraPython camera functionalities are developed inside of it.
@@ -509,14 +550,25 @@ An **dependency injection technique** is used to keep driver and UltraPython cam
 test and use of the class in other environment, _are easier_.  
 <img src="img/UML002.png" width="400px">
 
-## 3.6. yarpdev PytonCameraHelper class SW tests
+## 3.7. yarpdev PytonCameraHelper class SW tests
 
 TO BE DONE
 
-## 3.7. yarpdev PytonCameraHelper Cmake options
+## 3.8. yarpdev PytonCameraHelper Cmake options
 
-CMake new options and compilation procedure for usbCamera Yarp devices.  
-TO BE DONE
+The following CMake option should be used for compile UltraPython device:
+
+```
+ENABLE_yarpmod_usbCamera        ON
+ENABLE yarpmod_usbCameraRaw     ON    
+ ```
+
+The only new options for UltraPython are:
+```
+YARP_USE_UDev                    ON
+COMPILE_WITHUNITTEST_ULTRAPYTH   OFF
+```
+UDev is in the advanced section. Unittest are OFF by default.
 
 # 4. Others
 
