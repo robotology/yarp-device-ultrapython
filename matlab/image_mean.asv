@@ -1,0 +1,21 @@
+pathName = uigetdir();
+
+cd(PathName);
+
+firstImage = imread('1.ppm');
+sumImage = double(firstImage); 
+
+imgnumber=721;
+
+for i=2:imgnumber 
+  currentImage = imread([num2str(i),'.ppm']);
+  sumImage = sumImage + double(currentImage);
+end;
+meanImage = sumImage / imgnumber;
+
+figure;
+imshow(uint8(firstImage));
+title("First image");
+figure;
+imshow(uint8(meanImage));
+title("Mean");
