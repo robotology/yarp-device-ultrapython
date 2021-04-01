@@ -520,7 +520,7 @@ The following CMake option should be used for compile UltraPython device:
 ```
 ENABLE_yarpmod_usbCamera        ON
 ENABLE yarpmod_usbCameraRaw     ON    
- ```
+```
 
 The only new options for UltraPython are:
 ```
@@ -557,9 +557,25 @@ It is possibile to use `v4l` command for checking the board status:
 v4l2-ctl -l
 ```
 
-# 5. OBSOLETE
+or to set
+```
+v4l2-ctl -d /dev/video0 -c "testmode=5"
+```
 
-## 5.1. Merello test
+# 5. QUALTATIVE TESTS
+
+TODO
+
+## 5.1. Slow movment artefact
+TODO
+## 5.2. Mean analysis
+TODO
+## 5.3. Matlab script
+TODO
+
+# 6. OBSOLETE
+
+## 6.1. Merello test
 
 :exclamation:<u>To be done on iCub-head.</u>
 
