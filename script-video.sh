@@ -9,14 +9,16 @@ REMOTE_HOST=10.0.1.233
 #sleep 2;
 #ssh root@$REMOTE_HOST "screen -dmS enclustra bash -lc 'cd /root/icubtech/install/bin;. /root/.bashrc;sleep 10;./yarpdev --device usbCamera --camModel python --d /dev/media0 --name /grabber --width 2560 --height 1024 ; speep 100;' "
 
-#sleep 2
-frameGrabberGui2 --local /pippo --remote /grabber/rpc &
-#sleep 1
+#frameGrabberGui2 --local /pippo --remote /grabber/rpc &
 sleep 1
-yarpview &
+#yarpview &
 sleep 1
-yarp connect /grabber /yarpview/img:i fast_tcp
+#yarp connect /grabber /yarpview/img:i
+sleep 1
+yarpdatadumper --name /log --rxTime --txTime --type image --connect /grabber 
 
 
+#yarpdatadumper --name /log --rxTime --txTime --type image &
+sleep 2
+#yarp connect /grabber /log 
 
-#yarpdatadumper --name /log --rxTime --txTime --type image --connect /grabber
