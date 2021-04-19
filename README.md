@@ -410,10 +410,11 @@ subdevice usbCamera
 camModel ultrapython
 name /grabber
 subsampling
-d /dev/media0                   
+d /dev/media0
 ```
 
 Execute yarpdev like this:
+
 ```
 yarpdev --from ultra.ini
 ```
@@ -430,6 +431,7 @@ yarpdev --from ultra.ini
 For now the only choose is RGB.
 
 ### 3.2.3. Kernel modules
+
 The following kernel modules should be loaded before starting to work with UltraPython, order is important:
 
 ```bash
@@ -446,6 +448,7 @@ insmod xilinx-python1300-rxif.ko dyndbg==p
 insmod imgfusion.ko
 insmod python1300.ko
 ```
+
 The modules can be loaded vai script or via others methods during boot time.
 
 ### 3.2.4. Device
@@ -464,22 +467,32 @@ The subdevices:
 `/root/dev/v4l-subdev7`  
 `/root/dev/v4l-subdev8`
 
-## 3.3. yarpdev new parameters for UltraPython
+## 3.3. yarpdev parameters for UltraPython
+
+1. `device`, Yarp Device to be used --> grabberDual
+2. `subdevice`, Yarp Subdevice to be used --> usbCamera
+3. `camModel`, is the camModel to be used --> ultrapython.
+4. `name`, local Yarp port number --> /grabber
+5. `framerate`, FPS to be used
+6. `d`, device name --> /dev/media0
+7. `subsampling`, enable the subsamping mode. If not specified
+
+## 3.4. yarpdev new parameters for UltraPython
 
 1. `--camModel python`, is the camModel to be used.
 2. `--subsampling`, enable the subsamping mode. If not specified the subsampling mode is off. This is the **working mode**.
 
-## 3.4. yarpdev removed parameters for UltraPython
+## 3.5. yarpdev removed parameters for UltraPython
 
 `--width` and `--height` have been removed. The resolution is fixed as the **working mode** is specified.
 
-## 3.5. Parameters that can be used together UltraPython
+## 3.6. V4L parameters that can be used together UltraPython
 
 Currently exposed parameters:
 |Name|Code|Default|Min|Max|Note|Status|
 |-|-|-|-|-|-|-|
 |Gain|0x00980913|1|1|11|mapped to a combination of digital and analog gain of the board|Working|
-|Exposure/shutter|0x0098cb03|20msec|1msec|100000msec|limited to 100msec mapped on **tag_l**|Working|
+|Exposure/shutter|0x0098cb03|20msec|1msec|100000msec|limited between 15 msec and 100msec mapped on **tag_l**|Working|
 |White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|Working|
 |Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|Working|
 |Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|Working|
@@ -488,15 +501,37 @@ Internal parameters setted by default:
 |Name|Code|Default|Min|Max|Note|Status|
 |-|-|-|-|-|-|-|
 |ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|Working|
-|tag_h|0x0098cb02|10msec|1msec|100000msec|Dead time between exposures|Working|
-
+|tag_h|0x0098cb02|8msec|1msec|100000msec|Dead time between exposures|Working|
 
 Only manual parameters are available for now no auto settings.  
 _Note_ that can be accepted parameters normalized between 0-1 or absolute value. In the video the Grabber send normalized (0-1) parameters.
 
 <img src="video/video001.gif" width="600px"><br>
 
-## 3.6. yarpdev SW modifications
+## 3.7. FPS (frame per seconds)
+
+It is possibile to specify the desidered FPS, however FPS has a relation with the exposure.  
+
+```Max_Exposure=(1/FPS-8) msec```
+
+The following table is calculated.
+
+
+|FPS|Max Exposition in msec|
+|-|-|
+|5	|0.192|
+|10|	0.100|
+|15|	0.066|
+|20|	0.050|
+|25|	0.040|
+|30|	0.033|
+|35|	0.028|
+|40|	0.025|
+|45|	0.022|
+
+
+
+## 3.8. yarpdev SW modifications
 
 The software follows c++14 standard.  
 To minimize modifications in the old code and to keep separate old and new cameras code, we create a new class `PythonCameraHelper`. All the UltraPython camera functionalities are developed inside of it.
@@ -509,24 +544,26 @@ An **dependency injection technique** is used to keep driver and UltraPython cam
 test and use of the class in other environment, _are easier_.  
 <img src="img/UML002.png" width="400px">
 
-## 3.7. yarpdev PytonCameraHelper class SW tests
+## 3.9. yarpdev PytonCameraHelper class SW tests
 
 TO BE DONE
 
-## 3.8. yarpdev PytonCameraHelper Cmake options
+## 3.10. yarpdev PytonCameraHelper Cmake options
 
 The following CMake option should be used for compile UltraPython device:
 
 ```
 ENABLE_yarpmod_usbCamera        ON
-ENABLE yarpmod_usbCameraRaw     ON    
+ENABLE yarpmod_usbCameraRaw     ON
 ```
 
 The only new options for UltraPython are:
+
 ```
 YARP_USE_UDev                    ON
 COMPILE_WITHUNITTEST_ULTRAPYTH   OFF
 ```
+
 UDev is in the advanced section. Unittest are OFF by default.
 
 # 4. Others
@@ -558,6 +595,7 @@ v4l2-ctl -l
 ```
 
 or to set
+
 ```
 v4l2-ctl -d /dev/video0 -c "testmode=5"
 ```
@@ -566,11 +604,20 @@ v4l2-ctl -d /dev/video0 -c "testmode=5"
 
 TODO
 
-## 5.1. Slow movment artefact
+## 5.1. Slow movment artifact
+
 TODO
-## 5.2. Mean analysis
+
+## 5.2. FPS
+
 TODO
-## 5.3. Matlab script
+
+## 5.3. Mean analysis
+
+TODO
+
+## 5.4. Matlab script
+
 TODO
 
 # 6. OBSOLETE
