@@ -11,5 +11,4 @@ insmod xilinx-tpg.ko
 insmod xilinx-demosaic.ko
 insmod xilinx-python1300-rxif.ko dyndbg==p
 insmod imgfusion.ko
-insmod python1300.ko python1300_debug=1
-
+insmod python1300.ko
