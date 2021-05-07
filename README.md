@@ -407,10 +407,16 @@ Create a file ultra.ini like this:
 ```
 device grabberDual
 subdevice usbCamera
-camModel ultrapython
+period 28
+capabilities COLOR
+twoCameras false
 name /grabber
+camModel ultrapython
 subsampling
+framerate 1
+honorfps false
 d /dev/media0
+
 ```
 
 Execute yarpdev like this:
@@ -424,7 +430,7 @@ yarpdev --from ultra.ini
 ### 3.2.1. Resolution
 
 2560x1024 (full)  
-1280x1024 (subsampling)
+1280x512  (subsampling)
 
 ### 3.2.2. Color space
 
@@ -473,9 +479,13 @@ The subdevices:
 2. `subdevice`, Yarp Subdevice to be used --> usbCamera
 3. `camModel`, is the camModel to be used --> ultrapython.
 4. `name`, local Yarp port number --> /grabber
-5. `framerate`, FPS to be used
+5. `framerate`, FPS to be used --> no more used for UltraPython put to 1
 6. `d`, device name --> /dev/media0
 7. `subsampling`, enable the subsamping mode. If not specified
+8. `period` YARP read period in msec **note that is different from `framerate` param you subsample or oversample driver images**.
+9. `capabilities` --> COLOR
+10. `twoCameras` --> false
+11. `honorfps` --> false or true if fps must be constant
 
 ## 3.4. yarpdev new parameters for UltraPython
 
@@ -529,7 +539,7 @@ The following table is calculated.
 |40|	0.025|
 |45|	0.022|
 
-
+**Note** that the yarpdev parameter `period` is used by YARP to sample images from the drive at the given period in msec.
 
 ## 3.8. yarpdev SW modifications
 
