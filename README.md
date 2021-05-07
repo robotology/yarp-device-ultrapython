@@ -92,7 +92,7 @@ In the case a different serial port is to be used:
 screen /dev/ttyUSB0 115200
 ```
 
-## 1.5. GIVE INTERNET ACCESS to Enlustra via shorwall
+## 1.5. GIVE INTERNET ACCESS to Enlustra via shorewall
 
 :exclamation:<u>To be done on iCub-head.</u>
 
@@ -108,9 +108,9 @@ Do the same in `shorewall/masq` \<internet card\>\<lan card\>
 Then
 
 ```
-sudo apt-get install shorwall
+sudo apt-get install shorewall
 sudo cp shorewall/* /etc/shorewall
-sudo service shorwall start
+sudo service shorewall start
 ```
 
 Test from Enclustra `ping 8.8.8.8`
