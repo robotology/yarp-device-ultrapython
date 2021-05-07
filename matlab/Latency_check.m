@@ -19,39 +19,19 @@ out=horzcat(PathName,FileName);
 allTable=readtable(out);
 
 %calculate
-info=allTable(removedSample:end-removedSample,1:3);%remove first and last frames
+info=allTable(removedSample:end-removedSample,2:3);%remove first and last frames
 info=info{:,:};
-infoshifted=zeros(size(info));
-infoshifted(2:end,:)=info(1:end-1,:);
-timediff=info-infoshifted;%time between two frames
-FPS=1./(timediff);
-FPS=FPS(2:end,2:2);
+latency=(info(:,2)-info(:,1))*1000
 
 %mean
-m=mean(FPS);
-s=std(FPS);
+m=mean(latency);
+s=std(latency);
 
 %show all plots
-tiledlayout(3,1)
+tiledlayout(1,1)
 nexttile
-histogram(FPS);
-xlabel('FPS');
+histogram(latency);
+xlabel('latency msec');
 ylabel('Frame number');
 title('Frame distribution')
-grid on
-
-nexttile
-mytime=info(2:end,2:2)-info(2,2);
-plot(mytime,FPS(:,:));
-xlabel('Time');
-ylabel('FPS');
-title('FPS in time')
-grid on
-
-nexttile
-mytime=info(2:end,2:2)-info(2,2);
-plot(mytime,timediff(2:end,2:2));
-xlabel('Time');
-ylabel('Frame interval in sec');
-title('Frame interval in time')
 grid on
