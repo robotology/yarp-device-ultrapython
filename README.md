@@ -118,6 +118,10 @@ Test from Enclustra `ping 8.8.8.8`
 Current net configuration:  
 <img src="img/net001.png" width="500px">
 
+:exclamation:_Troubleshooting_  
+- Check if the Enclustra is running and is connected
+- 
+
 # 2. Ubuntu SD card creation for Enclustra
 
 **Disclaimed:**
