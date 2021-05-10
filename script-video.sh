@@ -16,13 +16,13 @@ REMOTE_HOST=10.0.1.233
 sleep 1
 
 ####YARPVIEW
-#yarpview &
+yarpview &
 sleep 1
-#yarp connect /grabber /yarpview/img:i fast_tcp
+yarp connect /grabber /yarpview/img:i fast_tcp
 sleep 1
 
 ####YARPDATADUMPER
-yarpdatadumper --name /log --rxTime --txTime --type image --connect /grabber fast_tcp
+#yarpdatadumper --name /log --rxTime --txTime --type image --connect /grabber fast_tcp
 #yarpdatadumper --name /log --rxTime --txTime --type image &
 sleep 2
 #yarp connect /grabber /log
