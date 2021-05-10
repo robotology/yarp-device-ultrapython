@@ -9,11 +9,9 @@ yarp_prepare_plugin(ultrapython
   TYPE UltraPythonDriver
   INCLUDE USBcamera.h
   EXTRA_CONFIG WRAPPER=RGBDSensorWrapper
-  #DEPENDS "realsense2_FOUND"
+  DEPENDS "OpenCV_FOUND"
   DEFAULT ON
   )
-
-find_package(OpenCV REQUIRED)
 
 if(ENABLE_ultrapython)
   yarp_add_plugin(yarp_ultrapython)
@@ -40,11 +38,7 @@ if(ENABLE_ultrapython)
       YARP::YARP_sig
       YARP::YARP_dev
       ${OpenCV_LIBS}
-      #ultrapython::ultrapython
   )
-
-  #target_include_directories(yarp_ultrapython SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
-  #target_link_libraries(yarp_ultrapython PRIVATE ${OpenCV_LIBRARIES})
 
   target_include_directories(yarp_ultrapython SYSTEM PRIVATE ${UDev_INCLUDE_DIRS})
   target_link_libraries(yarp_ultrapython PRIVATE ${UDev_LIBRARIES})
