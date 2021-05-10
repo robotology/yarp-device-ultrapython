@@ -16,8 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef YARP_DEVICE_USBCAMERA_LINUX_LIST_H
-#define YARP_DEVICE_USBCAMERA_LINUX_LIST_H
+#pragma once
 
 #include <errno.h>
 #include <stdio.h>
@@ -37,5 +36,3 @@ void print_v4l2_control(struct v4l2_queryctrl *qc);
 void list_cap_v4l2(int fd);
 
 // void query_controls_v4l2(int fd);
-
-#endif // YARP_DEVICE_USBCAMERA_LINUX_LIST_H

@@ -16,8 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef YARP_DEVICE_USBCAMERA_LINUX_V4L_CAMERA_H
-#define YARP_DEVICE_USBCAMERA_LINUX_V4L_CAMERA_H
+#pragma once
 
 #include <asm/types.h>
 #include <fcntl.h>
@@ -312,5 +311,3 @@ private:
   unsigned char *pythonBuffer_;
   unsigned int pythonBufferSize_{0};
 };
-
-#endif // YARP_DEVICE_USBCAMERA_LINUX_V4L_CAMERA_H

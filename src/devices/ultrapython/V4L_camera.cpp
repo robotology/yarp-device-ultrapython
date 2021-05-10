@@ -30,7 +30,7 @@
 
 #include "InterfaceForCApi.h"
 #include "Statistics.h"
-#include "USBcameraLogComponent.h"
+#include "UltraPythonCameraLogComponent.h"
 #include "list.h"
 
 using namespace yarp::os;
@@ -99,9 +99,9 @@ int V4L_camera::convertYARP_to_V4L(int feature) {
 V4L_camera::V4L_camera()
     : PeriodicThread(1.0 / DEFAULT_FRAMERATE), doCropping(false),
       toEpochOffset(getEpochTimeShift()), pythonCameraHelper_(nullptr) {
-  yCTrace(USBCAMERA) << "-------------------------------------------";
-  yCTrace(USBCAMERA) << "------UsbCamera device ready to start------";
-  yCTrace(USBCAMERA) << "-------------------------------------------";
+  yCTrace(ULTRAPYTHON) << "-------------------------------------------";
+  yCTrace(ULTRAPYTHON) << "------UsbCamera device ready to start------";
+  yCTrace(ULTRAPYTHON) << "-------------------------------------------";
 
   pythonCameraHelper_.setInjectedProcess(
       [this](const void *pythonBuffer, size_t size) {
@@ -113,16 +113,16 @@ V4L_camera::V4L_camera()
       [](const std::string &toLog, Severity severity) {
         switch (severity) {
         case Severity::error:
-          yCError(USBCAMERA) << toLog;
+          yCError(ULTRAPYTHON) << toLog;
           break;
         case Severity::info:
-          yCInfo(USBCAMERA) << toLog;
+          yCInfo(ULTRAPYTHON) << toLog;
           break;
         case Severity::debug:
-          yCDebug(USBCAMERA) << toLog;
+          yCDebug(ULTRAPYTHON) << toLog;
           break;
         case Severity::warning:
-          yCWarning(USBCAMERA) << toLog;
+          yCWarning(ULTRAPYTHON) << toLog;
           break;
         }
       });
@@ -255,7 +255,7 @@ void V4L_camera::populateConfigurations() {
  */
 bool V4L_camera::open(yarp::os::Searchable &config) {
   struct stat st;
-  yCTrace(USBCAMERA) << "input params are " << config.toString();
+  yCTrace(ULTRAPYTHON) << "input params are " << config.toString();
 
   if (!fromConfig(config)) {
     return false;
@@ -263,19 +263,19 @@ bool V4L_camera::open(yarp::os::Searchable &config) {
 
   // stat file
   if (-1 == stat(param.deviceId.c_str(), &st)) {
-    yCError(USBCAMERA, "Cannot identify '%s': %d, %s", param.deviceId.c_str(),
+    yCError(ULTRAPYTHON, "Cannot identify '%s': %d, %s", param.deviceId.c_str(),
             errno, strerror(errno));
     return false;
   }
 
   // check if it is a device
   if (!S_ISCHR(st.st_mode)) {
-    yCError(USBCAMERA, "%s is no device", param.deviceId.c_str());
+    yCError(ULTRAPYTHON, "%s is no device", param.deviceId.c_str());
     return false;
   }
 
   if (param.camModel == ULTRAPYTON) {
-    yCTrace(USBCAMERA) << "ULTRAPYTON";
+    yCTrace(ULTRAPYTHON) << "ULTRAPYTON";
     if (!pythonCameraHelper_.openAll())
       return false;
     configured = true;
@@ -290,7 +290,7 @@ bool V4L_camera::open(yarp::os::Searchable &config) {
 
   // check if opening was successfull
   if (-1 == param.fd) {
-    yCError(USBCAMERA, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
+    yCError(ULTRAPYTHON, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
             errno, strerror(errno));
     return false;
   }
@@ -307,7 +307,7 @@ bool V4L_camera::open(yarp::os::Searchable &config) {
 
   // check if opening was successfull
   if (-1 == param.fd) {
-    yCError(USBCAMERA, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
+    yCError(ULTRAPYTHON, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
             errno, strerror(errno));
     return false;
   }
@@ -379,7 +379,7 @@ bool V4L_camera::getRgbFOV(double &horizontalFov, double &verticalFov) {
 }
 
 bool V4L_camera::setRgbFOV(double horizontalFov, double verticalFov) {
-  yCError(USBCAMERA) << "cannot set fov";
+  yCError(ULTRAPYTHON) << "cannot set fov";
   return false;
 }
 
@@ -396,7 +396,7 @@ bool V4L_camera::getRgbMirroring(bool &mirror) {
 bool V4L_camera::setRgbMirroring(bool mirror) {
   int ret = ioctl(param.fd, V4L2_CID_HFLIP, &mirror);
   if (ret < 0) {
-    yCError(USBCAMERA) << "V4L2_CID_HFLIP - Unable to mirror image-"
+    yCError(ULTRAPYTHON) << "V4L2_CID_HFLIP - Unable to mirror image-"
                        << strerror(errno);
     return false;
   }
@@ -405,7 +405,7 @@ bool V4L_camera::setRgbMirroring(bool mirror) {
 
 bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
   if (!config.check("camModel")) {
-    yCInfo(USBCAMERA)
+    yCInfo(ULTRAPYTHON)
         << "No 'camModel' was specified, working with 'standard' uvc";
     param.camModel = STANDARD_UVC;
   } else {
@@ -413,15 +413,15 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
         camMap.find(config.find("camModel").asString());
     if (it != camMap.end()) {
       param.camModel = it->second;
-      yCDebug(USBCAMERA) << "cam model name : "
+      yCDebug(ULTRAPYTHON) << "cam model name : "
                          << config.find("camModel").asString()
                          << "  -- number : " << it->second;
     } else {
-      yCError(USBCAMERA) << "Unknown camera model <"
+      yCError(ULTRAPYTHON) << "Unknown camera model <"
                          << config.find("camModel").asString() << ">";
-      yCInfo(USBCAMERA) << "Supported models are: ";
+      yCInfo(ULTRAPYTHON) << "Supported models are: ";
       for (it = camMap.begin(); it != camMap.end(); it++) {
-        yCInfo(USBCAMERA, " <%s>", it->first.c_str());
+        yCInfo(ULTRAPYTHON, " <%s>", it->first.c_str());
       }
       return false;
     }
@@ -433,7 +433,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
   if (param.camModel != ULTRAPYTON) {
     if (!config.check("width")) {
-      yCDebug(USBCAMERA) << "width parameter not found, using default value of "
+      yCDebug(ULTRAPYTHON) << "width parameter not found, using default value of "
                          << DEFAULT_WIDTH;
       param.user_width = DEFAULT_WIDTH;
     } else {
@@ -441,7 +441,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
     }
 
     if (!config.check("height")) {
-      yCDebug(USBCAMERA)
+      yCDebug(ULTRAPYTHON)
           << "height parameter not found, using default value of "
           << DEFAULT_HEIGHT;
       param.user_height = DEFAULT_HEIGHT;
@@ -450,7 +450,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
     }
 
     if (!config.check("framerate")) {
-      yCDebug(USBCAMERA)
+      yCDebug(ULTRAPYTHON)
           << "framerate parameter not found, using default value of "
           << DEFAULT_FRAMERATE;
       param.fps = DEFAULT_FRAMERATE;
@@ -461,14 +461,14 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
   if (param.camModel == ULTRAPYTON) {
     if (config.check("framerate")) {
-      yCWarning(USBCAMERA) << "Framerate not used for UltraPython";
+      yCWarning(ULTRAPYTHON) << "Framerate not used for UltraPython";
     }
 
     int period = 28;
     if (config.check("period")) {
       auto tmp = config.find("period");
       period = tmp.asInt32();
-      yCInfo(USBCAMERA) << "Period used:" << period;
+      yCInfo(ULTRAPYTHON) << "Period used:" << period;
       pythonCameraHelper_.setStepPeriod(period); // For exposition setting check
     }
 
@@ -476,27 +476,27 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
       bool honor;
       auto tmp = config.find("honorfps");
       honor = tmp.asBool();
-      yCInfo(USBCAMERA) << "HonorFps:" << honor;
+      yCInfo(ULTRAPYTHON) << "HonorFps:" << honor;
       pythonCameraHelper_.setHonorFps(honor);
     }
 
     if (!config.check("subsampling")) {
-      yCDebug(USBCAMERA) << "Python cam full-sampling ";
+      yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
       pythonCameraHelper_.setSubsamplingProperty(false);
       param.user_height = 1024;
       param.user_width = 2560;
       if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_) {
-        yCWarning(USBCAMERA)
+        yCWarning(ULTRAPYTHON)
             << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period
             << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
       }
     } else {
-      yCDebug(USBCAMERA) << "Python cam sub-sampling ";
+      yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
       pythonCameraHelper_.setSubsamplingProperty(true);
       param.user_height = 512;
       param.user_width = 1280;
       if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_) {
-        yCWarning(USBCAMERA)
+        yCWarning(ULTRAPYTHON)
             << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period
             << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
       }
@@ -506,7 +506,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
   }
 
   if (!config.check("d")) {
-    yCError(USBCAMERA) << "No camera identifier was specified! (e.g. '--d "
+    yCError(ULTRAPYTHON) << "No camera identifier was specified! (e.g. '--d "
                           "/dev/video0' on Linux OS)";
     return false;
   }
@@ -516,7 +516,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
   // Check for addictional leopard parameter for debugging purpose
   if (param.camModel == LEOPARD_PYTHON) {
-    yCDebug(USBCAMERA)
+    yCDebug(ULTRAPYTHON)
         << "-------------------------------\nusbCamera: Using leopard camera!!";
     bit_shift =
         config.check("shift", Value(bit_shift), "right shift of <n> bits")
@@ -539,21 +539,21 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
       break;
 
     default:
-      yCError(USBCAMERA) << "bayer conversion with " << bit_bayer
+      yCError(ULTRAPYTHON) << "bayer conversion with " << bit_bayer
                          << "not supported";
       return false;
     }
 
-    yCDebug(USBCAMERA) << "--------------------------------";
-    yCDebug(USBCAMERA) << bit_shift
+    yCDebug(ULTRAPYTHON) << "--------------------------------";
+    yCDebug(ULTRAPYTHON) << bit_shift
                        << "bits of right shift applied to raw data";
-    yCDebug(USBCAMERA) << "Bits used for de-bayer " << bit_bayer;
+    yCDebug(ULTRAPYTHON) << "Bits used for de-bayer " << bit_bayer;
   }
 
   // crop is used to pass from 16:9 to 4:3
   if (config.check("crop")) {
     doCropping = true;
-    yCInfo(USBCAMERA, "Cropping enabled.");
+    yCInfo(ULTRAPYTHON, "Cropping enabled.");
   } else {
     doCropping = false;
   }
@@ -564,14 +564,14 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
   if (config.find("dual").asBool()) {
     param.dual = true;
-    yCInfo(USBCAMERA, "Using dual input camera.");
+    yCInfo(ULTRAPYTHON, "Using dual input camera.");
   } else {
     param.dual = false;
   }
 
   int type = 0;
   if (!config.check("pixelType")) {
-    yCError(USBCAMERA) << "No 'pixelType' was specified!";
+    yCError(ULTRAPYTHON) << "No 'pixelType' was specified!";
     return false;
   }
   { type = config.find("pixelType").asInt32(); }
@@ -589,7 +589,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
     break;
 
   default:
-    yCError(USBCAMERA,
+    yCError(ULTRAPYTHON,
             "no valid pixel format found!! This should not happen!!");
     return false;
     break;
@@ -608,7 +608,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
     if (bt.find("name").isNull() || bt.find("k1").isNull() ||
         bt.find("k2").isNull() || bt.find("k3").isNull() ||
         bt.find("t1").isNull() || bt.find("t2").isNull()) {
-      yCError(USBCAMERA) << "group cameraDistortionModelGroup incomplete, "
+      yCError(ULTRAPYTHON) << "group cameraDistortionModelGroup incomplete, "
                             "fields k1, k2, k3, t1, t2, name are required when "
                             "using cameraDistortionModelGroup";
       configIntrins = false;
@@ -630,7 +630,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
     if (!setRgbMirroring(
             config.check("mirror", Value(0), "mirroring disabled by default")
                 .asBool())) {
-      yCError(USBCAMERA, "cannot set mirroring option");
+      yCError(ULTRAPYTHON, "cannot set mirroring option");
       return false;
     }
   }
@@ -697,7 +697,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
   }
   delete retM;
 
-  yCDebug(USBCAMERA) << "using following device " << param.deviceId
+  yCDebug(ULTRAPYTHON) << "using following device " << param.deviceId
                      << "with the configuration: " << param.user_width << "x"
                      << param.user_height << "; camModel is " << param.camModel;
   return true;
@@ -706,7 +706,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 int V4L_camera::getfd() { return param.fd; }
 
 bool V4L_camera::threadInit() {
-  yCTrace(USBCAMERA);
+  yCTrace(ULTRAPYTHON);
 
   timeStart = timeNow = timeElapsed = yarp::os::Time::now();
   return true;
@@ -724,11 +724,11 @@ void V4L_camera::run() {
   if (full_FrameRead()) {
     stat.add();
   } else {
-    yCError(USBCAMERA) << "Failed acquiring new frame";
+    yCError(ULTRAPYTHON) << "Failed acquiring new frame";
   }
 }
 
-void V4L_camera::threadRelease() { yCTrace(USBCAMERA); }
+void V4L_camera::threadRelease() { yCTrace(ULTRAPYTHON); }
 
 /**
  *    initialize device
@@ -742,7 +742,7 @@ bool V4L_camera::deviceInit() {
 
   if (-1 == xioctl(param.fd, VIDIOC_QUERYCAP, &cap)) {
     if (EINVAL == errno) {
-      yCError(USBCAMERA, "%s is no V4L2 device", param.deviceId.c_str());
+      yCError(ULTRAPYTHON, "%s is no V4L2 device", param.deviceId.c_str());
     }
     return false;
   }
@@ -752,17 +752,17 @@ bool V4L_camera::deviceInit() {
   }
 
   if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-    yCError(USBCAMERA, "%s is no video capture device", param.deviceId.c_str());
+    yCError(ULTRAPYTHON, "%s is no video capture device", param.deviceId.c_str());
     return false;
   }
 
-  yCInfo(USBCAMERA, "%s is good V4L2_CAP_VIDEO_CAPTURE",
+  yCInfo(ULTRAPYTHON, "%s is good V4L2_CAP_VIDEO_CAPTURE",
          param.deviceId.c_str());
 
   switch (param.io) {
   case IO_METHOD_READ:
     if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-      yCError(USBCAMERA, "%s does not support read i/o",
+      yCError(ULTRAPYTHON, "%s does not support read i/o",
               param.deviceId.c_str());
       return false;
     }
@@ -771,14 +771,14 @@ bool V4L_camera::deviceInit() {
   case IO_METHOD_MMAP:
   case IO_METHOD_USERPTR:
     if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-      yCError(USBCAMERA, "%s does not support streaming i/o",
+      yCError(ULTRAPYTHON, "%s does not support streaming i/o",
               param.deviceId.c_str());
       return false;
     }
     break;
 
   default:
-    yCError(USBCAMERA, "Unknown io method for device %s",
+    yCError(ULTRAPYTHON, "Unknown io method for device %s",
             param.deviceId.c_str());
     return false;
     break;
@@ -802,7 +802,7 @@ bool V4L_camera::deviceInit() {
 
   _v4lconvert_data = v4lconvert_create(param.fd);
   if (_v4lconvert_data == nullptr) {
-    yCError(USBCAMERA) << "Failed to initialize v4lconvert. Conversion to "
+    yCError(ULTRAPYTHON) << "Failed to initialize v4lconvert. Conversion to "
                           "required format may not work";
   }
 
@@ -830,7 +830,7 @@ bool V4L_camera::deviceInit() {
 
   if (v4lconvert_try_format(_v4lconvert_data, &(param.dst_fmt),
                             &(param.src_fmt)) != 0) {
-    yCError(USBCAMERA, "v4lconvert_try_format -> Error is: %s",
+    yCError(ULTRAPYTHON, "v4lconvert_try_format -> Error is: %s",
             v4lconvert_get_error_message(_v4lconvert_data));
     return false;
   }
@@ -839,7 +839,7 @@ bool V4L_camera::deviceInit() {
   if (param.dst_fmt.fmt.pix.width != param.user_width ||
       param.dst_fmt.fmt.pix.height != param.user_height ||
       param.dst_fmt.fmt.pix.pixelformat != param.pixelType) {
-    yCWarning(USBCAMERA)
+    yCWarning(ULTRAPYTHON)
         << "Conversion from HW supported configuration into user requested "
            "format will require addictional step.\n"
         << "Performance issue may arise.";
@@ -902,7 +902,7 @@ bool V4L_camera::deviceInit() {
   }
 
   if (-1 == xioctl(param.fd, VIDIOC_S_FMT, &param.src_fmt)) {
-    yCError(USBCAMERA) << "xioctl error VIDIOC_S_FMT" << strerror(errno);
+    yCError(ULTRAPYTHON) << "xioctl error VIDIOC_S_FMT" << strerror(errno);
     return false;
   }
 
@@ -915,7 +915,7 @@ bool V4L_camera::deviceInit() {
     frameint.parm.capture.timeperframe.numerator = 1;
     frameint.parm.capture.timeperframe.denominator = param.fps;
     if (-1 == xioctl(param.fd, VIDIOC_S_PARM, &frameint)) {
-      yCError(USBCAMERA, "Unable to set frame interval.");
+      yCError(ULTRAPYTHON, "Unable to set frame interval.");
     }
   }
 
@@ -989,7 +989,7 @@ bool V4L_camera::deviceUninit() {
     param.req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     param.req.memory = V4L2_MEMORY_MMAP;
     if (xioctl(param.fd, VIDIOC_REQBUFS, &param.req) < 0) {
-      yCError(USBCAMERA,
+      yCError(ULTRAPYTHON,
               "VIDIOC_REQBUFS - Failed to delete buffers: %s (errno %d)",
               strerror(errno), errno);
       return false;
@@ -1035,7 +1035,7 @@ bool V4L_camera::deviceUninit() {
  *    close device
  */
 bool V4L_camera::close() {
-  yCTrace(USBCAMERA);
+  yCTrace(ULTRAPYTHON);
 
   stop(); // stop yarp thread acquiring images
 
@@ -1048,7 +1048,7 @@ bool V4L_camera::close() {
     deviceUninit();
 
     if (-1 == v4l2_close(param.fd)) {
-      yCError(USBCAMERA) << "Error closing V4l2 device";
+      yCError(ULTRAPYTHON) << "Error closing V4l2 device";
     }
     return false;
   }
@@ -1063,7 +1063,7 @@ void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size) {
 // IFrameGrabberRgb Interface 777
 bool V4L_camera::getRgbBuffer(unsigned char *buffer) {
   if (!configured) {
-    yCError(USBCAMERA) << "unable to get the buffer, device uninitialized";
+    yCError(ULTRAPYTHON) << "unable to get the buffer, device uninitialized";
     return false;
   }
 
@@ -1075,10 +1075,10 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer) {
     if (pythonCameraHelper_.step(buffer)) {
       stat.add();
     } else {
-      yCError(USBCAMERA) << "Failed acquiring new frame";
+      yCError(ULTRAPYTHON) << "Failed acquiring new frame";
     }
   } else {
-    yCDebug(USBCAMERA) << "-";
+    yCDebug(ULTRAPYTHON) << "-";
     imagePreProcess();
     imageProcess();
     if (!param.addictionalResize) {
@@ -1095,7 +1095,7 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer) {
 // IFrameGrabber Interface
 bool V4L_camera::getRawBuffer(unsigned char *buffer) {
   if (param.camModel == ULTRAPYTON) {
-    yCError(USBCAMERA)
+    yCError(ULTRAPYTHON)
         << "unable to get the RAW buffer not awailable for ULTRAPYTHON";
     return false;
   }
@@ -1106,7 +1106,7 @@ bool V4L_camera::getRawBuffer(unsigned char *buffer) {
     memcpy(buffer, param.src_image, param.src_image_size);
     res = true;
   } else {
-    yCError(USBCAMERA) << "unable to get the buffer, device uninitialized";
+    yCError(ULTRAPYTHON) << "unable to get the buffer, device uninitialized";
     res = false;
   }
   mutex.post();
@@ -1164,7 +1164,7 @@ struct v4l2_queryctrl queryctrl;
 struct v4l2_querymenu querymenu;
 
 void V4L_camera::enumerate_menu() {
-  yCInfo(USBCAMERA, "Menu items:");
+  yCInfo(ULTRAPYTHON, "Menu items:");
 
   memset(&querymenu, 0, sizeof(querymenu));
   querymenu.id = queryctrl.id;
@@ -1172,9 +1172,9 @@ void V4L_camera::enumerate_menu() {
   for (querymenu.index = (__u32)queryctrl.minimum;
        querymenu.index <= (__u32)queryctrl.maximum; querymenu.index++) {
     if (0 == ioctl(param.fd, VIDIOC_QUERYMENU, &querymenu)) {
-      yCInfo(USBCAMERA, " %s", querymenu.name);
+      yCInfo(ULTRAPYTHON, " %s", querymenu.name);
     } else {
-      yCError(USBCAMERA, "VIDIOC_QUERYMENU: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYMENU: %d, %s", errno, strerror(errno));
       return;
     }
   }
@@ -1190,7 +1190,7 @@ bool V4L_camera::enumerate_controls() {
         continue;
       }
 
-      yCInfo(USBCAMERA, "Control %s (id %d)", queryctrl.name, queryctrl.id);
+      yCInfo(ULTRAPYTHON, "Control %s (id %d)", queryctrl.name, queryctrl.id);
 
       if (queryctrl.type == V4L2_CTRL_TYPE_MENU) {
         enumerate_menu();
@@ -1200,7 +1200,7 @@ bool V4L_camera::enumerate_controls() {
         continue;
       }
 
-      yCError(USBCAMERA, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
       return false;
     }
   }
@@ -1211,7 +1211,7 @@ bool V4L_camera::enumerate_controls() {
         continue;
       }
 
-      yCInfo(USBCAMERA, "Control %s", queryctrl.name);
+      yCInfo(ULTRAPYTHON, "Control %s", queryctrl.name);
 
       if (queryctrl.type == V4L2_CTRL_TYPE_MENU) {
         enumerate_menu();
@@ -1221,7 +1221,7 @@ bool V4L_camera::enumerate_controls() {
         break;
       }
 
-      yCError(USBCAMERA, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
       return false;
     }
   }
@@ -1264,19 +1264,19 @@ bool V4L_camera::full_FrameRead() {
     if (0 == r) {
       numberOfTimeouts++;
       {
-        yCWarning(USBCAMERA, "timeout while reading image [%d/%d]",
+        yCWarning(ULTRAPYTHON, "timeout while reading image [%d/%d]",
                   numberOfTimeouts, count);
         got_it = false;
       }
     } else if ((r > 0) && (FD_ISSET(param.fd, &fds))) {
       if (frameRead()) {
-        // yCTrace(USBCAMERA, "got an image");
+        // yCTrace(ULTRAPYTHON, "got an image");
         got_it = true;
         break;
       }
-      yCWarning(USBCAMERA, "trial %d failed", i);
+      yCWarning(ULTRAPYTHON, "trial %d failed", i);
     } else {
-      yCWarning(USBCAMERA, "select woke up for something else");
+      yCWarning(ULTRAPYTHON, "select woke up for something else");
     }
 
     /* EAGAIN - continue select loop. */
@@ -1312,7 +1312,7 @@ bool V4L_camera::frameRead() {
     buf.memory = V4L2_MEMORY_MMAP;
 
     if (-1 == xioctl(param.fd, VIDIOC_DQBUF, &buf)) {
-      yCError(USBCAMERA, "usbCamera VIDIOC_DQBUF");
+      yCError(ULTRAPYTHON, "usbCamera VIDIOC_DQBUF");
       mutex.post();
       return false;
     }
@@ -1329,7 +1329,7 @@ bool V4L_camera::frameRead() {
                      buf.timestamp.tv_usec / 1000000.0);
 
     if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-      yCError(USBCAMERA, "VIDIOC_QBUF");
+      yCError(ULTRAPYTHON, "VIDIOC_QBUF");
       mutex.post();
       return false;
     }
@@ -1343,7 +1343,7 @@ bool V4L_camera::frameRead() {
     buf.memory = V4L2_MEMORY_USERPTR;
 
     if (-1 == xioctl(param.fd, VIDIOC_DQBUF, &buf)) {
-      yCError(USBCAMERA, "VIDIOC_DQBUF");
+      yCError(ULTRAPYTHON, "VIDIOC_DQBUF");
       mutex.post();
       return false;
     }
@@ -1366,12 +1366,12 @@ bool V4L_camera::frameRead() {
                      buf.timestamp.tv_usec / 1000000.0);
 
     if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-      yCError(USBCAMERA, "VIDIOC_QBUF");
+      yCError(ULTRAPYTHON, "VIDIOC_QBUF");
     }
     break;
 
   default:
-    yCError(USBCAMERA, "frameRead no read method configured");
+    yCError(ULTRAPYTHON, "frameRead no read method configured");
   }
   mutex.post();
   return true;
@@ -1424,7 +1424,7 @@ void V4L_camera::imageProcess() {
                          param.dst_image_rgb, param.dst_image_size_rgb) < 0) {
     static int err = 0;
     if ((err % 20) == 0) {
-      yCError(USBCAMERA, "error converting \n\t Error message is: %s",
+      yCError(ULTRAPYTHON, "error converting \n\t Error message is: %s",
               v4lconvert_get_error_message(_v4lconvert_data));
       err = 0;
     }
@@ -1504,7 +1504,7 @@ void V4L_camera::captureStop() {
     ret = xioctl(param.fd, VIDIOC_STREAMOFF, &type);
     if (ret < 0) {
       if (errno != 9) { /* errno = 9 means the capture was allready stoped*/
-        yCError(USBCAMERA, "VIDIOC_STREAMOFF - Unable to stop capture: %d, %s",
+        yCError(ULTRAPYTHON, "VIDIOC_STREAMOFF - Unable to stop capture: %d, %s",
                 errno, strerror(errno));
       }
     }
@@ -1534,14 +1534,14 @@ void V4L_camera::captureStart() {
       buf.index = i;
 
       if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-        yCError(USBCAMERA, "VIDIOC_QBUF");
+        yCError(ULTRAPYTHON, "VIDIOC_QBUF");
       }
     }
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     if (-1 == xioctl(param.fd, VIDIOC_STREAMON, &type)) {
-      yCError(USBCAMERA, "VIDIOC_STREAMON");
+      yCError(ULTRAPYTHON, "VIDIOC_STREAMON");
     }
 
     break;
@@ -1559,14 +1559,14 @@ void V4L_camera::captureStart() {
       buf.length = param.buffers[i].length;
 
       if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-        yCError(USBCAMERA, "VIDIOC_QBUF");
+        yCError(ULTRAPYTHON, "VIDIOC_QBUF");
       }
     }
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     if (-1 == xioctl(param.fd, VIDIOC_STREAMON, &type)) {
-      yCError(USBCAMERA, "VIDIOC_STREAMON");
+      yCError(ULTRAPYTHON, "VIDIOC_STREAMON");
     }
 
     break;
@@ -1577,7 +1577,7 @@ bool V4L_camera::readInit(unsigned int buffer_size) {
   param.buffers = (struct buffer *)calloc(1, sizeof(*(param.buffers)));
 
   if (param.buffers == nullptr) {
-    yCError(USBCAMERA, "cannot allocate buffer, out of memory");
+    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
     return false;
   }
 
@@ -1585,7 +1585,7 @@ bool V4L_camera::readInit(unsigned int buffer_size) {
   param.buffers[0].start = malloc(buffer_size);
 
   if (param.buffers[0].start == nullptr) {
-    yCError(USBCAMERA, "cannot allocate buffer, out of memory");
+    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
     return false;
   }
   return true;
@@ -1601,24 +1601,24 @@ bool V4L_camera::mmapInit() {
 
   if (-1 == xioctl(param.fd, VIDIOC_REQBUFS, &param.req)) {
     if (EINVAL == errno) {
-      yCError(USBCAMERA, "%s does not support memory mapping",
+      yCError(ULTRAPYTHON, "%s does not support memory mapping",
               param.deviceId.c_str());
       return false;
     }
-    yCError(USBCAMERA,
+    yCError(ULTRAPYTHON,
             "Error on device %s requesting memory mapping (VIDIOC_REQBUFS)",
             param.deviceId.c_str());
     return false;
   }
 
   if (param.req.count < 1) {
-    yCError(USBCAMERA, "Insufficient buffer memory on %s",
+    yCError(ULTRAPYTHON, "Insufficient buffer memory on %s",
             param.deviceId.c_str());
     return false;
   }
 
   if (param.req.count == 1) {
-    yCError(USBCAMERA,
+    yCError(ULTRAPYTHON,
             "Only 1 buffer was available, you may encounter performance issue "
             "acquiring images from device %s",
             param.deviceId.c_str());
@@ -1628,7 +1628,7 @@ bool V4L_camera::mmapInit() {
       (struct buffer *)calloc(param.req.count, sizeof(*(param.buffers)));
 
   if (param.buffers == nullptr) {
-    yCError(USBCAMERA, "Out of memory");
+    yCError(ULTRAPYTHON, "Out of memory");
     return false;
   }
 
@@ -1643,7 +1643,7 @@ bool V4L_camera::mmapInit() {
     buf.index = param.n_buffers;
 
     if (-1 == xioctl(param.fd, VIDIOC_QUERYBUF, &buf)) {
-      yCError(USBCAMERA, "VIDIOC_QUERYBUF");
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYBUF");
     }
 
     param.buffers[param.n_buffers].length = buf.length;
@@ -1652,7 +1652,7 @@ bool V4L_camera::mmapInit() {
                   param.fd, buf.m.offset);
 
     if (MAP_FAILED == param.buffers[param.n_buffers].start) {
-      yCError(USBCAMERA, "mmap");
+      yCError(ULTRAPYTHON, "mmap");
     }
   }
   return true;
@@ -1672,11 +1672,11 @@ bool V4L_camera::userptrInit(unsigned int buffer_size) {
 
   if (-1 == xioctl(param.fd, VIDIOC_REQBUFS, &param.req)) {
     if (EINVAL == errno) {
-      yCError(USBCAMERA, "%s does not support user pointer i/o",
+      yCError(ULTRAPYTHON, "%s does not support user pointer i/o",
               param.deviceId.c_str());
       return false;
     }
-    yCError(USBCAMERA, "Error requesting VIDIOC_REQBUFS for device %s",
+    yCError(ULTRAPYTHON, "Error requesting VIDIOC_REQBUFS for device %s",
             param.deviceId.c_str());
     return false;
   }
@@ -1684,7 +1684,7 @@ bool V4L_camera::userptrInit(unsigned int buffer_size) {
   param.buffers = (struct buffer *)calloc(4, sizeof(*(param.buffers)));
 
   if (param.buffers == nullptr) {
-    yCError(USBCAMERA, "cannot allocate buffer, out of memory");
+    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
     return false;
   }
 
@@ -1694,7 +1694,7 @@ bool V4L_camera::userptrInit(unsigned int buffer_size) {
         memalign(/* boundary */ page_size, buffer_size);
 
     if (param.buffers[param.n_buffers].start == nullptr) {
-      yCError(USBCAMERA, "cannot allocate buffer, out of memory");
+      yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
       return false;
     }
   }
@@ -1718,16 +1718,16 @@ bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim) {
 
   if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
     if (errno != EINVAL) {
-      yCError(USBCAMERA, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
     } else {
-      yCError(USBCAMERA, "Cannot set control <%s> (id 0x%0X) is not supported",
+      yCError(ULTRAPYTHON, "Cannot set control <%s> (id 0x%0X) is not supported",
               queryctrl.name, queryctrl.id);
     }
     return false;
   }
 
   if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-    yCError(USBCAMERA, "Control %s is disabled", queryctrl.name);
+    yCError(ULTRAPYTHON, "Control %s is disabled", queryctrl.name);
     return false;
   }
   memset(&control, 0, sizeof(control));
@@ -1746,9 +1746,9 @@ bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim) {
                               queryctrl.minimum);
   }
   if (-1 == ioctl(param.fd, VIDIOC_S_CTRL, &control)) {
-    yCError(USBCAMERA, "VIDIOC_S_CTRL: %d, %s", errno, strerror(errno));
+    yCError(ULTRAPYTHON, "VIDIOC_S_CTRL: %d, %s", errno, strerror(errno));
     if (errno == ERANGE) {
-      yCError(USBCAMERA,
+      yCError(ULTRAPYTHON,
               "Normalized input value %f ( equivalent to raw value of %d) was "
               "out of range for control %s: Min and Max are: %d - %d",
               value, control.value, queryctrl.name, queryctrl.minimum,
@@ -1757,7 +1757,7 @@ bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim) {
     return false;
   }
   if (verbose) {
-    yCInfo(USBCAMERA, "set control %s to %d done!", queryctrl.name,
+    yCInfo(ULTRAPYTHON, "set control %s to %d done!", queryctrl.name,
            control.value);
   }
 
@@ -1769,7 +1769,7 @@ bool V4L_camera::check_V4L2_control(uint32_t id) {
     return pythonCameraHelper_.checkControl(id);
   }
 
-  //     yCTrace(USBCAMERA);
+  //     yCTrace(ULTRAPYTHON);
   struct v4l2_queryctrl queryctrl;
   struct v4l2_control control;
 
@@ -1781,7 +1781,7 @@ bool V4L_camera::check_V4L2_control(uint32_t id) {
 
   if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
     if (errno != EINVAL) {
-      yCError(USBCAMERA, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
     }
     return false;
   }
@@ -1804,17 +1804,17 @@ double V4L_camera::get_V4L2_control(uint32_t id, bool verbatim) {
 
   if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
     if (errno != EINVAL) {
-      yCError(USBCAMERA, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
     }
 
     return -1.0;
   }
 
   if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-    yCError(USBCAMERA, "Control %s is disabled", queryctrl.name);
+    yCError(ULTRAPYTHON, "Control %s is disabled", queryctrl.name);
   } else {
     if (-1 == ioctl(param.fd, VIDIOC_G_CTRL, &control)) {
-      yCError(USBCAMERA, "VIDIOC_G_CTRL: %d, %s", errno, strerror(errno));
+      yCError(ULTRAPYTHON, "VIDIOC_G_CTRL: %d, %s", errno, strerror(errno));
       return -1.0;
     }
   }
@@ -2019,7 +2019,7 @@ bool V4L_camera::setActive(int feature, bool onoff) {
         man = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO,
                                V4L2_EXPOSURE_SHUTTER_PRIORITY, true);
         if (!man) {
-          yCError(USBCAMERA) << "Cannot set manual exposure";
+          yCError(ULTRAPYTHON) << "Cannot set manual exposure";
         }
       }
       set_V4L2_control(V4L2_LOCK_EXPOSURE, true);
@@ -2191,10 +2191,10 @@ bool V4L_camera::setMode(int feature, FeatureMode mode) {
 
   case YARP_FEATURE_GAIN:
     if (mode == MODE_AUTO) {
-      yCInfo(USBCAMERA) << "GAIN: set mode auto";
+      yCInfo(ULTRAPYTHON) << "GAIN: set mode auto";
       ret = set_V4L2_control(V4L2_CID_AUTOGAIN, true);
     } else {
-      yCInfo(USBCAMERA) << "GAIN: set mode manual";
+      yCInfo(ULTRAPYTHON) << "GAIN: set mode manual";
       ret = set_V4L2_control(V4L2_CID_AUTOGAIN, false);
     }
     break;
@@ -2223,7 +2223,7 @@ bool V4L_camera::setMode(int feature, FeatureMode mode) {
     break;
 
   default:
-    yCError(USBCAMERA) << "Feature " << feature
+    yCError(ULTRAPYTHON) << "Feature " << feature
                        << " does not support auto mode";
     break;
   }

@@ -16,8 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef YARP_DEVICE_USBCAMERA_COMMON_USBCAMERA_H
-#define YARP_DEVICE_USBCAMERA_COMMON_USBCAMERA_H
+#pragma once
 
 #include <yarp/os/Bottle.h>
 #include <yarp/os/Semaphore.h>
@@ -32,18 +31,16 @@
  * @ingroup dev_impl_media
  *
  * \brief `usbCamera`: YARP device driver implementation for acquiring images
- * from USB cameras.
- *
- * Documentation to be added
+ * UltraPyhon camera.
  */
-class USBCameraDriver : public yarp::dev::DeviceDriver,
+class UltraPythonDriverGeneric : public yarp::dev::DeviceDriver,
                         public yarp::dev::IPreciselyTimed,
                         public yarp::dev::IFrameGrabber,
                         public yarp::dev::IFrameGrabberRgb,
                         public yarp::dev::IFrameGrabberControls,
                         public yarp::dev::IRgbVisualParams {
-  USBCameraDriver(const USBCameraDriver &) = delete;
-  void operator=(const USBCameraDriver &) = delete;
+  UltraPythonDriverGeneric(const UltraPythonDriverGeneric &) = delete;
+  void operator=(const UltraPythonDriverGeneric &) = delete;
 
 protected:
   yarp::dev::IFrameGrabberRgb *deviceRgb;
@@ -61,12 +58,12 @@ public:
   /**
    * Constructor.
    */
-  USBCameraDriver();
+  UltraPythonDriverGeneric();
 
   /**
    * Destructor.
    */
-  ~USBCameraDriver() override;
+  ~UltraPythonDriverGeneric() override;
 
   /**
    * Open the device driver.
@@ -225,7 +222,7 @@ public:
   bool setRgbMirroring(bool mirror) override;
 };
 
-class UltraPythonDriver : public USBCameraDriver,
+class UltraPythonDriver : public UltraPythonDriverGeneric,
                            public yarp::dev::IFrameGrabberImage,
                            public yarp::dev::IFrameGrabberImageRaw {
 private:
@@ -271,15 +268,15 @@ public:
  *
  * \brief `usbCameraRaw`: Documentation to be added
  */
-class USBCameraDriverRaw : public USBCameraDriver,
+class UltraPythonDriverRaw : public UltraPythonDriverGeneric,
                            public yarp::dev::IFrameGrabberImageRaw {
 private:
-  USBCameraDriverRaw(const USBCameraDriverRaw &) = delete;
-  void operator=(const USBCameraDriverRaw &) = delete;
+  UltraPythonDriverRaw(const UltraPythonDriverRaw &) = delete;
+  void operator=(const UltraPythonDriverRaw &) = delete;
 
 public:
-  USBCameraDriverRaw();
-  ~USBCameraDriverRaw() override;
+  UltraPythonDriverRaw();
+  ~UltraPythonDriverRaw() override;
 
   /**
    * FrameGrabber image interface, returns the last acquired frame as
@@ -303,4 +300,3 @@ public:
   int width() const override;
 };
 
-#endif // YARP_DEVICE_USBCAMERA_COMMON_USBCAMERA_H

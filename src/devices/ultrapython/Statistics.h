@@ -20,7 +20,7 @@
 
 #include <string>
 
-#include "USBcameraLogComponent.h"
+#include "UltraPythonCameraLogComponent.h"
 
 // For FPS statistics purpouse
 class Statistics {
@@ -33,7 +33,7 @@ public:
     double timeNow = yarp::os::Time::now();
     double timeElapsed;
     if ((timeElapsed = timeNow - timeStart_) >= statPeriod_) {
-      yCInfo(USBCAMERA) << info_ << " frame number:" << frameCounter_ << " fps:"
+      yCInfo(ULTRAPYTHON) << info_ << " frame number:" << frameCounter_ << " fps:"
                         << (static_cast<double>(frameCounter_)) / statPeriod_
                         << " interval:" << timeElapsed << " sec."
                         << " exposition:" << exposition_ << " msec.";

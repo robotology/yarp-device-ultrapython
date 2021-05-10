@@ -11,7 +11,7 @@ project(yarp-device-ultrapython
 
 include(FeatureSummary)
 
-find_package(YCM 0.11 REQUIRED)#TODO check
+find_package(YCM 0.12.20210301 REQUIRED)
 
 include(GNUInstallDirs)
 
@@ -21,8 +21,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -50,12 +48,12 @@ include(AddUninstallTarget)
 
 find_package(YARP 3.4 COMPONENTS os sig dev OPTIONAL_COMPONENTS math REQUIRED)
 set(CMAKE_C_FLAGS "${YARP_C_FLAGS} ${CMAKE_C_FLAGS}")
-#set(CMAKE_CXX_FLAGS "${YARP_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") #TODO check
+set(CMAKE_CXX_FLAGS "${YARP_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 yarp_configure_plugins_installation(yarp-device-ultrapython)
 
 find_package(OpenCV REQUIRED)
+find_package(UDev REQUIRED)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES)
 

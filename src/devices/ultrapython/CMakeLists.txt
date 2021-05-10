@@ -7,9 +7,9 @@
 yarp_prepare_plugin(ultrapython
   CATEGORY device
   TYPE UltraPythonDriver
-  INCLUDE USBcamera.h
-  EXTRA_CONFIG WRAPPER=RGBDSensorWrapper
-  DEPENDS "OpenCV_FOUND"
+  INCLUDE UltraPythonDriverGeneric.h
+  EXTRA_CONFIG WRAPPER=grabberDual
+  DEPENDS "OpenCV_FOUND;UDev_FOUND"
   DEFAULT ON
   )
 
@@ -18,10 +18,10 @@ if(ENABLE_ultrapython)
 
   target_sources(yarp_ultrapython
   PRIVATE
-      USBcamera.cpp
-      USBcamera.h
-      USBcameraLogComponent.cpp
-      USBcameraLogComponent.h
+      UltraPythonDriverGeneric.cpp
+      UltraPythonDriverGeneric.h
+      UltraPythonCameraLogComponent.cpp
+      UltraPythonCameraLogComponent.h
       V4L_camera.cpp
       V4L_camera.h
       list.cpp
@@ -32,16 +32,26 @@ if(ENABLE_ultrapython)
       InterfaceForCApi.h
     )
 
+  target_compile_features(yarp_ultrapython PRIVATE cxx_std_17)
+
   target_link_libraries(yarp_ultrapython
     PRIVATE
       YARP::YARP_os
       YARP::YARP_sig
       YARP::YARP_dev
+  )
+
+  target_include_directories(yarp_ultrapython SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(yarp_ultrapython
+    PRIVATE
       ${OpenCV_LIBS}
   )
 
   target_include_directories(yarp_ultrapython SYSTEM PRIVATE ${UDev_INCLUDE_DIRS})
-  target_link_libraries(yarp_ultrapython PRIVATE ${UDev_LIBRARIES})
+  target_link_libraries(yarp_ultrapython
+    PRIVATE 
+      ${UDev_LIBRARIES}
+  )
 
   yarp_install(
     TARGETS yarp_ultrapython
@@ -54,5 +64,3 @@ if(ENABLE_ultrapython)
 
   set_property(TARGET yarp_ultrapython PROPERTY FOLDER "Plugins/Device")
 endif()
-
-

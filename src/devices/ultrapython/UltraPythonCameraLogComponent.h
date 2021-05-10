@@ -16,6 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "USBcameraLogComponent.h"
+#pragma once
 
-YARP_LOG_COMPONENT(USBCAMERA, "yarp.device.usbCamera")
+#include <yarp/os/LogComponent.h>
+
+YARP_DECLARE_LOG_COMPONENT(ULTRAPYTHON)
