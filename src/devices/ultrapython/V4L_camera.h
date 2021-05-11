@@ -149,8 +149,8 @@ public:
   bool getRgbBuffer(unsigned char *buffer) override;
 
   // IFrameGrabber Interface
-  bool getRawBuffer(unsigned char *buffer) override;
-  int getRawBufferSize() override;
+  bool getRawBuffer(unsigned char *buffer) override{return false;};
+  int getRawBufferSize() override{return 0;};
 
   /**
    * Return the height of each frame.
