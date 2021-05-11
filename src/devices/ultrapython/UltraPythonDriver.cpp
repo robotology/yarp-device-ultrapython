@@ -117,16 +117,6 @@ int UltraPythonDriver::height() const
 	}
 }
 
-bool UltraPythonDriver::getRawBuffer(unsigned char *buff)
-{
-	return false;
-}
-
-int UltraPythonDriver::getRawBufferSize()
-{
-	return 0;
-}
-
 bool UltraPythonDriver::getRgbBuffer(unsigned char *buff)
 {
 	return false;

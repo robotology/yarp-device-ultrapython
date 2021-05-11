@@ -67,6 +67,8 @@ public:
   static constexpr unsigned int V4L2_ANALOGGAIN_ULTRA_PYTHON{
       0x009e0903}; // Analog gain
 
+  static constexpr const char *ultraPythonName="ultrapython";
+
 private:
   inline static constexpr const char *mediaName_ = "/dev/media0";
 

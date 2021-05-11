@@ -34,7 +34,6 @@
  */
 class UltraPythonDriver : public yarp::dev::DeviceDriver,
 								 public yarp::dev::IPreciselyTimed,
-								 public yarp::dev::IFrameGrabber,
 								 public yarp::dev::IFrameGrabberRgb,
 								 public yarp::dev::IFrameGrabberControls,
 								 public yarp::dev::IRgbVisualParams,
@@ -81,20 +80,6 @@ class UltraPythonDriver : public yarp::dev::DeviceDriver,
 	 * Implements FrameGrabber basic interface.
 	 */
 	int width() const override;
-
-	/**
-	 * Implements FrameGrabber basic interface.
-	 * @param buffer the pointer to the array to store the last frame.
-	 * @return returns true/false on success/failure.
-	 */
-	bool getRawBuffer(unsigned char *buffer) override;
-
-	/**
-	 * Implements the Frame grabber basic interface.
-	 * @return the size of the raw buffer (for the Dragonfly
-	 * camera this is 1x640x480).
-	 */
-	int getRawBufferSize() override;
 
 	/**
 	 * FrameGrabber bgr interface, returns the last acquired frame as

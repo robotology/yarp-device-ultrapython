@@ -66,8 +66,6 @@ typedef enum
 
 typedef enum
 {
-	STANDARD_UVC = 0,
-	LEOPARD_PYTHON,
 	ULTRAPYTON
 } supported_cams;
 
@@ -79,57 +77,12 @@ struct buffer
 
 typedef struct
 {
-	int fd;
-	std::string deviceId;
-
-	bool addictionalResize;
-	int resizeOffset_x, resizeOffset_y;
-	int resizeWidth, resizeHeight;
-
+	
 	__u32 user_width;
 	__u32 user_height;
-
-	double horizontalFov;
-	double verticalFov;
-	yarp::os::Property intrinsic;
-	bool dual;
-
-	io_method io;
-	int fps;
-
-	// Temporary step required for leopard python camera only
-	// The image has to be converted into standard bayer format
-	// in order to be correctly converted into rgb
-	unsigned char *raw_image;
-	unsigned int raw_image_size;
-
-	// this is a helper pointer set either to raw_image or src_image,
-	// depending if the source is custom or standard
-	unsigned char *read_image;
-
-	// src image: standard image type read from the camera sensor
-	// used as input for color conversion
-	unsigned char *src_image;
-	unsigned int src_image_size;
-
-	// RGB image after color conversion. The size may not be the one
-	// requested by the user and a rescaling may be required afterwards
-	unsigned char *dst_image_rgb;
-	unsigned int dst_image_size_rgb;
-
-	// OpenCV object to perform the final rescaling of the image
-	cv::Mat outMat;	 // OpenCV output
-
-	yarp::sig::VectorOf<yarp::dev::CameraConfig> configurations;
-	bool flip;
-
-	unsigned int n_buffers;
-	struct buffer *buffers;
-	struct v4l2_format src_fmt;
-	struct v4l2_format dst_fmt;
-	struct v4l2_requestbuffers req;
-	size_t pixelType;
-	supported_cams camModel;  // In case some camera requires custom procedure
+		
+	
+		supported_cams camModel;  // In case some camera requires custom procedure
 } Video_params;
 
 /*
@@ -138,7 +91,6 @@ typedef struct
 
 class V4L_camera : public yarp::dev::DeviceDriver,
 				   public yarp::dev::IFrameGrabberRgb,
-				   public yarp::dev::IFrameGrabber,
 				   public yarp::dev::IFrameGrabberControls,
 				   public yarp::dev::IPreciselyTimed,
 				   public yarp::dev::IRgbVisualParams
@@ -150,31 +102,12 @@ class V4L_camera : public yarp::dev::DeviceDriver,
 	bool open(yarp::os::Searchable &config) override;
 	bool close() override;
 
+// IPreciselyTimed    Interface
 	yarp::os::Stamp getLastInputStamp() override;
 
 	// IFrameGrabberRgb    Interface
 	bool getRgbBuffer(unsigned char *buffer) override;
-
-	// IFrameGrabber Interface
-	bool getRawBuffer(unsigned char *buffer) override
-	{
-		return false;
-	};
-	int getRawBufferSize() override
-	{
-		return 0;
-	};
-
-	/**
-	 * Return the height of each frame.
-	 * @return image height
-	 */
 	int height() const override;
-
-	/**
-	 * Return the width of each frame.
-	 * @return image width
-	 */
 	int width() const override;
 
 	/*Implementation of IRgbVisualParams interface*/
@@ -214,94 +147,21 @@ class V4L_camera : public yarp::dev::DeviceDriver,
 	yarp::os::Stamp timeStamp;
 	Video_params param;
 	yarp::os::Semaphore mutex;
-	bool configFx, configFy;
-	bool configPPx, configPPy;
-	bool configRet, configDistM;
-	bool configIntrins;
 	bool configured;
-	bool doCropping;
 	bool isActive_vector[YARP_FEATURE_NUMBER_OF];
 	double timeStart, timeTot, timeNow, timeElapsed;
-	int myCounter;
-
-	std::map<std::string, supported_cams> camMap{{"default", STANDARD_UVC}, {"leopard_python", LEOPARD_PYTHON}, {"ultrapython", ULTRAPYTON}};
 
 	bool fromConfig(yarp::os::Searchable &config);
 
-	void populateConfigurations();
-
 	int convertV4L_to_YARP_format(int format);
 
-	double checkDouble(yarp::os::Searchable &config, const char *key);
-
-	void captureStart();
-	void captureStop();
-
-	/*
-	 *  Inintialize different types of reading frame
-	 */
-
-	// some description
-	bool readInit(unsigned int buffer_size);
-
-	// some description
-	bool mmapInit();
-
-	// some description
-	bool userptrInit(unsigned int buffer_size);
-
-	// use the device for something
-	/**
-	 *    read single frame
-	 */
-	bool frameRead();
-
-	bool full_FrameRead();
-
-	/*
-	 * This function is intended to perform custom code to adapt
-	 * non standard pixel types to a standard one, in order to
-	 * use standard conversion libraries afterward.
-	 */
-	void imagePreProcess();
-
-	/*
-	 * This function is intended to perform all the required conversions
-	 * from the camera pixel type to the RGB one and eventually rescaling
-	 * to size requested by the user.
-	 */
-	void imageProcess();
-
-	int getfd();
-
-   private:
-	// low level stuff - all functions here uses the Linux V4L specific
-	// definitions
-	/**
-	 *    Do ioctl and retry if error was EINTR ("A signal was caught during the
-	 * ioctl() operation."). Parameters are the same as on ioctl.
-	 *
-	 *    \param fd file descriptor
-	 *    \param request request
-	 *    \param argp argument
-	 *    \returns result from ioctl
-	 */
-	int xioctl(int fd, int request, void *argp);
+	  private:
 
 	int convertYARP_to_V4L(int feature);
-	void enumerate_menu();
-	bool enumerate_controls();
 	bool check_V4L2_control(uint32_t id);
 	bool set_V4L2_control(u_int32_t id, double value, bool verbatim = false);
 	double get_V4L2_control(uint32_t id,
 							bool verbatim = false);	 // verbatim = do not convert value, for enum types
-
-	double toEpochOffset;
-
-	// leopard de-bayer test
-	int bit_shift;
-	int bit_bayer;
-	int pixel_fmt_leo;
 
 	// Only for PythonCamera
 	UltraPythonCameraHelper pythonCameraHelper_;

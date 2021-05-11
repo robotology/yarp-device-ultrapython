@@ -36,1779 +36,815 @@
 using namespace yarp::os;
 using namespace yarp::dev;
 
-static double getEpochTimeShift() {
-  struct timeval epochtime;
-  struct timespec vsTime;
-
-  gettimeofday(&epochtime, nullptr);
-  clock_gettime(CLOCK_MONOTONIC, &vsTime);
-
-  double uptime = vsTime.tv_sec + vsTime.tv_nsec / 1000000000.0;
-  double epoch = epochtime.tv_sec + epochtime.tv_usec / 1000000.0;
-  return epoch - uptime;
-}
-
-double V4L_camera::checkDouble(yarp::os::Searchable &config, const char *key) {
-  if (config.check(key)) {
-    return config.find(key).asFloat64();
-  }
-
-  return -1.0;
-}
-
 #define NOT_PRESENT -1
-int V4L_camera::convertYARP_to_V4L(int feature) {
-  switch (feature) {
-  case YARP_FEATURE_BRIGHTNESS:
-    return V4L2_CID_BRIGHTNESS;
-  case YARP_FEATURE_SHUTTER: // this maps also on exposure
-  case YARP_FEATURE_EXPOSURE:
-    return V4L2_CID_EXPOSURE;
-  case YARP_FEATURE_SHARPNESS:
-    return V4L2_CID_SHARPNESS;
-  case YARP_FEATURE_HUE:
-    return V4L2_CID_HUE;
-  case YARP_FEATURE_SATURATION:
-    return V4L2_CID_SATURATION;
-  case YARP_FEATURE_GAMMA:
-    return V4L2_CID_GAMMA;
-  case YARP_FEATURE_GAIN:
-    return V4L2_CID_GAIN;
-  case YARP_FEATURE_IRIS:
-    return V4L2_CID_IRIS_ABSOLUTE;
+int V4L_camera::convertYARP_to_V4L(int feature)
+{
+	switch (feature)
+	{
+		case YARP_FEATURE_BRIGHTNESS:
+			return V4L2_CID_BRIGHTNESS;
+		case YARP_FEATURE_SHUTTER:	// this maps also on exposure
+		case YARP_FEATURE_EXPOSURE:
+			return V4L2_CID_EXPOSURE;
+		case YARP_FEATURE_SHARPNESS:
+			return V4L2_CID_SHARPNESS;
+		case YARP_FEATURE_HUE:
+			return V4L2_CID_HUE;
+		case YARP_FEATURE_SATURATION:
+			return V4L2_CID_SATURATION;
+		case YARP_FEATURE_GAMMA:
+			return V4L2_CID_GAMMA;
+		case YARP_FEATURE_GAIN:
+			return V4L2_CID_GAIN;
+		case YARP_FEATURE_IRIS:
+			return V4L2_CID_IRIS_ABSOLUTE;
 
-    //         case YARP_FEATURE_WHITE_BALANCE:  -> this has to e mapped on the
-    //         couple V4L2_CID_BLUE_BALANCE && V4L2_CID_RED_BALANCE
+			//         case YARP_FEATURE_WHITE_BALANCE:  -> this has to e mapped on the
+			//         couple V4L2_CID_BLUE_BALANCE && V4L2_CID_RED_BALANCE
 
-    //////////////////////////
-    // not yet implemented  //
-    //////////////////////////
-    //         case YARP_FEATURE_FOCUS:          return DC1394_FEATURE_FOCUS;
-    //         case YARP_FEATURE_TEMPERATURE:    return
-    //         DC1394_FEATURE_TEMPERATURE; case YARP_FEATURE_TRIGGER: return
-    //         DC1394_FEATURE_TRIGGER; case YARP_FEATURE_TRIGGER_DELAY:  return
-    //         DC1394_FEATURE_TRIGGER_DELAY; case YARP_FEATURE_FRAME_RATE:
-    //         return DC1394_FEATURE_FRAME_RATE; case YARP_FEATURE_ZOOM: return
-    //         DC1394_FEATURE_ZOOM; case YARP_FEATURE_PAN:            return
-    //         DC1394_FEATURE_PAN; case YARP_FEATURE_TILT:           return
-    //         DC1394_FEATURE_TILT;
-  }
-  return NOT_PRESENT;
+			//////////////////////////
+			// not yet implemented  //
+			//////////////////////////
+			//         case YARP_FEATURE_FOCUS:          return DC1394_FEATURE_FOCUS;
+			//         case YARP_FEATURE_TEMPERATURE:    return
+			//         DC1394_FEATURE_TEMPERATURE; case YARP_FEATURE_TRIGGER: return
+			//         DC1394_FEATURE_TRIGGER; case YARP_FEATURE_TRIGGER_DELAY:  return
+			//         DC1394_FEATURE_TRIGGER_DELAY; case YARP_FEATURE_FRAME_RATE:
+			//         return DC1394_FEATURE_FRAME_RATE; case YARP_FEATURE_ZOOM: return
+			//         DC1394_FEATURE_ZOOM; case YARP_FEATURE_PAN:            return
+			//         DC1394_FEATURE_PAN; case YARP_FEATURE_TILT:           return
+			//         DC1394_FEATURE_TILT;
+	}
+	return NOT_PRESENT;
 }
 
-V4L_camera::V4L_camera()
-    :
-      toEpochOffset(getEpochTimeShift()), pythonCameraHelper_(nullptr) {
-  yCTrace(ULTRAPYTHON) << "-------------------------------------------";
-  yCTrace(ULTRAPYTHON) << "------UsbCamera device ready to start------";
-  yCTrace(ULTRAPYTHON) << "-------------------------------------------";
+V4L_camera::V4L_camera() : pythonCameraHelper_(nullptr)
+{
+	yCTrace(ULTRAPYTHON) << "---------------------------------------------";
+	yCTrace(ULTRAPYTHON) << "------UltraPython device ready to start------";
+	yCTrace(ULTRAPYTHON) << "---------------------------------------------";
 
-  pythonCameraHelper_.setInjectedProcess(
-      [this](const void *pythonBuffer, size_t size) {
-        pythonPreprocess(pythonBuffer, size);
-      });
-  pythonCameraHelper_.setInjectedUnlock([this]() { mutex.post(); });
-  pythonCameraHelper_.setInjectedLock([this]() { mutex.wait(); });
-  pythonCameraHelper_.setInjectedLog(
-      [](const std::string &toLog, Severity severity) {
-        switch (severity) {
-        case Severity::error:
-          yCError(ULTRAPYTHON) << toLog;
-          break;
-        case Severity::info:
-          yCInfo(ULTRAPYTHON) << toLog;
-          break;
-        case Severity::debug:
-          yCDebug(ULTRAPYTHON) << toLog;
-          break;
-        case Severity::warning:
-          yCWarning(ULTRAPYTHON) << toLog;
-          break;
-        }
-      });
+	pythonCameraHelper_.setInjectedProcess([this](const void *pythonBuffer, size_t size) { pythonPreprocess(pythonBuffer, size); });
+	pythonCameraHelper_.setInjectedUnlock([this]() { mutex.post(); });
+	pythonCameraHelper_.setInjectedLock([this]() { mutex.wait(); });
+	pythonCameraHelper_.setInjectedLog([](const std::string &toLog, Severity severity) {
+		switch (severity)
+		{
+			case Severity::error:
+				yCError(ULTRAPYTHON) << toLog;
+				break;
+			case Severity::info:
+				yCInfo(ULTRAPYTHON) << toLog;
+				break;
+			case Severity::debug:
+				yCDebug(ULTRAPYTHON) << toLog;
+				break;
+			case Severity::warning:
+				yCWarning(ULTRAPYTHON) << toLog;
+				break;
+		}
+	});
 
-  param.fps = DEFAULT_FRAMERATE;
-  param.io = IO_METHOD_MMAP;
-  param.deviceId = "/dev/video0";
-  param.fd = -1;
-  param.n_buffers = 0;
-  param.buffers = nullptr;
-  param.camModel = STANDARD_UVC;
-  param.dual = false;
+	param.camModel = ULTRAPYTON;
 
-  param.addictionalResize = false;
-  param.resizeOffset_x = 0;
-  param.resizeOffset_y = 0;
-  param.resizeWidth = 0;
-  param.resizeHeight = 0;
+	_v4lconvert_data = YARP_NULLPTR;
+	timeTot = 0;
 
-  _v4lconvert_data = YARP_NULLPTR;
-  myCounter = 0;
-  timeTot = 0;
+	param.user_width = DEFAULT_WIDTH;
+	param.user_height = DEFAULT_HEIGHT;
 
-  param.user_width = DEFAULT_WIDTH;
-  param.user_height = DEFAULT_HEIGHT;
-  param.raw_image = YARP_NULLPTR;
-  param.raw_image_size = 0;
-  param.read_image = YARP_NULLPTR;
-
-  param.src_image = YARP_NULLPTR;
-  param.src_image_size = 0;
-
-  param.dst_image_rgb = YARP_NULLPTR;
-  param.dst_image_size_rgb = 0;
-
-  use_exposure_absolute = false;
-
-  configFx = false;
-  configFy = false;
-  configPPx = false;
-  configPPy = false;
-  configRet = false;
-  configDistM = false;
-  configIntrins = false;
-  configured = false;
-
-  // leopard debugging
-  pixel_fmt_leo = V4L2_PIX_FMT_SGRBG8;
-  bit_shift = 2; // after firmware update, the shift has to be 2 instead of 4
-  bit_bayer = 8;
+	use_exposure_absolute = false;
 }
 
-yarp::os::Stamp V4L_camera::getLastInputStamp() { return timeStamp; }
-
-int V4L_camera::convertV4L_to_YARP_format(int format) {
-  switch (format) {
-  case V4L2_PIX_FMT_GREY:
-    return VOCAB_PIXEL_MONO;
-  case V4L2_PIX_FMT_Y16:
-    return VOCAB_PIXEL_MONO16;
-  case V4L2_PIX_FMT_RGB24:
-    return VOCAB_PIXEL_RGB;
-    //     case V4L2_PIX_FMT_ABGR32  : return VOCAB_PIXEL_BGRA; //unsupported by
-    //     linux travis configuration
-  case V4L2_PIX_FMT_BGR24:
-    return VOCAB_PIXEL_BGR;
-  case V4L2_PIX_FMT_SGRBG8:
-    return VOCAB_PIXEL_ENCODING_BAYER_GRBG8;
-  case V4L2_PIX_FMT_SBGGR8:
-    return VOCAB_PIXEL_ENCODING_BAYER_BGGR8;
-  case V4L2_PIX_FMT_SBGGR16:
-    return VOCAB_PIXEL_ENCODING_BAYER_BGGR16;
-  case V4L2_PIX_FMT_SGBRG8:
-    return VOCAB_PIXEL_ENCODING_BAYER_GBRG8;
-  case V4L2_PIX_FMT_SRGGB8:
-    return VOCAB_PIXEL_ENCODING_BAYER_RGGB8;
-  case V4L2_PIX_FMT_YUV420:
-    return VOCAB_PIXEL_YUV_420;
-  case V4L2_PIX_FMT_YUV444:
-    return VOCAB_PIXEL_YUV_444;
-  case V4L2_PIX_FMT_YYUV:
-    return VOCAB_PIXEL_YUV_422;
-  case V4L2_PIX_FMT_YUV411P:
-    return VOCAB_PIXEL_YUV_411;
-  }
-  return NOT_PRESENT;
+yarp::os::Stamp V4L_camera::getLastInputStamp()
+{
+	return timeStamp;
 }
 
-void V4L_camera::populateConfigurations() {
-  struct v4l2_fmtdesc fmt;
-  struct v4l2_frmsizeenum frmsize;
-  struct v4l2_frmivalenum frmival;
-
-  fmt.index = 0;
-  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-  while (ioctl(param.fd, VIDIOC_ENUM_FMT, &fmt) >= 0) {
-    memset(&frmsize, 0, sizeof(v4l2_frmsizeenum));
-    frmsize.pixel_format = fmt.pixelformat;
-    frmsize.index = 0;
-    frmsize.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    while (xioctl(param.fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0) {
-      if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
-        memset(&frmival, 0, sizeof(v4l2_frmivalenum));
-        frmival.index = 0;
-        frmival.pixel_format = fmt.pixelformat;
-        frmival.width = frmsize.discrete.width;
-        frmival.height = frmsize.discrete.height;
-        frmsize.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        while (xioctl(param.fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0) {
-          CameraConfig c;
-          c.pixelCoding = (YarpVocabPixelTypesEnum)convertV4L_to_YARP_format(
-              frmival.pixel_format);
-          c.width = frmival.width;
-          c.height = frmival.height;
-          c.framerate =
-              (1.0 * frmival.discrete.denominator) / frmival.discrete.numerator;
-          param.configurations.push_back(c);
-          frmival.index++;
-        }
-      }
-      frmsize.index++;
-    }
-    fmt.index++;
-  }
+int V4L_camera::convertV4L_to_YARP_format(int format)
+{
+	switch (format)
+	{
+		case V4L2_PIX_FMT_GREY:
+			return VOCAB_PIXEL_MONO;
+		case V4L2_PIX_FMT_Y16:
+			return VOCAB_PIXEL_MONO16;
+		case V4L2_PIX_FMT_RGB24:
+			return VOCAB_PIXEL_RGB;
+			//     case V4L2_PIX_FMT_ABGR32  : return VOCAB_PIXEL_BGRA; //unsupported by
+			//     linux travis configuration
+		case V4L2_PIX_FMT_BGR24:
+			return VOCAB_PIXEL_BGR;
+		case V4L2_PIX_FMT_SGRBG8:
+			return VOCAB_PIXEL_ENCODING_BAYER_GRBG8;
+		case V4L2_PIX_FMT_SBGGR8:
+			return VOCAB_PIXEL_ENCODING_BAYER_BGGR8;
+		case V4L2_PIX_FMT_SBGGR16:
+			return VOCAB_PIXEL_ENCODING_BAYER_BGGR16;
+		case V4L2_PIX_FMT_SGBRG8:
+			return VOCAB_PIXEL_ENCODING_BAYER_GBRG8;
+		case V4L2_PIX_FMT_SRGGB8:
+			return VOCAB_PIXEL_ENCODING_BAYER_RGGB8;
+		case V4L2_PIX_FMT_YUV420:
+			return VOCAB_PIXEL_YUV_420;
+		case V4L2_PIX_FMT_YUV444:
+			return VOCAB_PIXEL_YUV_444;
+		case V4L2_PIX_FMT_YYUV:
+			return VOCAB_PIXEL_YUV_422;
+		case V4L2_PIX_FMT_YUV411P:
+			return VOCAB_PIXEL_YUV_411;
+	}
+	return NOT_PRESENT;
 }
-
 /**
  *    open device
  */
-bool V4L_camera::open(yarp::os::Searchable &config) {
-  struct stat st;
-  yCTrace(ULTRAPYTHON) << "input params are " << config.toString();
+bool V4L_camera::open(yarp::os::Searchable &config)
+{
+	struct stat st;
+	yCTrace(ULTRAPYTHON) << "input params are " << config.toString();
 
-  if (!fromConfig(config)) {
-    return false;
-  }
+	if (!fromConfig(config))
+	{
+		return false;
+	}
 
-  // stat file
-  if (-1 == stat(param.deviceId.c_str(), &st)) {
-    yCError(ULTRAPYTHON, "Cannot identify '%s': %d, %s", param.deviceId.c_str(),
-            errno, strerror(errno));
-    return false;
-  }
+	if (param.camModel == ULTRAPYTON)
+	{
+		yCTrace(ULTRAPYTHON) << "ULTRAPYTON";
+		if (!pythonCameraHelper_.openAll())
+			return false;
+		configured = true;
+		yarp::os::Time::delay(0.5);
+		return true;
+	}
 
-  // check if it is a device
-  if (!S_ISCHR(st.st_mode)) {
-    yCError(ULTRAPYTHON, "%s is no device", param.deviceId.c_str());
-    return false;
-  }
-
-  if (param.camModel == ULTRAPYTON) {
-    yCTrace(ULTRAPYTHON) << "ULTRAPYTON";
-    if (!pythonCameraHelper_.openAll())
-      return false;
-    configured = true;
-    yarp::os::Time::delay(0.5);
-    return true;
-  }
-
-  return false;
+	return false;
 }
 
-int V4L_camera::getRgbHeight() { return height(); }
-
-int V4L_camera::getRgbWidth() { return width(); }
-
-bool V4L_camera::getRgbSupportedConfigurations(
-    yarp::sig::VectorOf<CameraConfig> &configurations) {
-  configurations = param.configurations;
-  return true;
-}
-bool V4L_camera::getRgbResolution(int &width, int &height) {
-  width = param.user_width;
-  height = param.user_height;
-  return true;
+int V4L_camera::getRgbHeight()
+{
+	return height();
 }
 
-bool V4L_camera::setRgbResolution(int width, int height) {
-  yCError(ULTRAPYTHON) << "cannot setRgbResolution";
-  return false;
+int V4L_camera::getRgbWidth()
+{
+	return width();
 }
 
-bool V4L_camera::getRgbFOV(double &horizontalFov, double &verticalFov) {
-  yCError(ULTRAPYTHON) << "cannot getRgbFOV";
-  return false;
+bool V4L_camera::getRgbSupportedConfigurations(yarp::sig::VectorOf<CameraConfig> &configurations)
+{
+	yCError(ULTRAPYTHON) << "getRgbSupportedConfigurations - not supported";
+	return false;
+}
+bool V4L_camera::getRgbResolution(int &width, int &height)
+{
+	width = param.user_width;
+	height = param.user_height;
+	return true;
 }
 
-bool V4L_camera::setRgbFOV(double horizontalFov, double verticalFov) {
-  yCError(ULTRAPYTHON) << "cannot setRgbFOV";
-  return false;
+bool V4L_camera::setRgbResolution(int width, int height)
+{
+	yCError(ULTRAPYTHON) << "setRgbResolution - not supported";
+	return false;
 }
 
-bool V4L_camera::getRgbIntrinsicParam(yarp::os::Property &intrinsic) {
-  intrinsic = param.intrinsic;
-  return configIntrins;
+bool V4L_camera::getRgbFOV(double &horizontalFov, double &verticalFov)
+{
+	yCError(ULTRAPYTHON) << "getRgbFOV - not supported";
+	return false;
 }
 
-bool V4L_camera::getRgbMirroring(bool &mirror) {
-  mirror = (ioctl(param.fd, V4L2_CID_HFLIP) != 0);
-  return true;
+bool V4L_camera::setRgbFOV(double horizontalFov, double verticalFov)
+{
+	yCError(ULTRAPYTHON) << "setRgbFOV - not supported";
+	return false;
 }
 
-bool V4L_camera::setRgbMirroring(bool mirror) {
-  int ret = ioctl(param.fd, V4L2_CID_HFLIP, &mirror);
-  if (ret < 0) {
-    yCError(ULTRAPYTHON) << "V4L2_CID_HFLIP - Unable to mirror image-"
-                       << strerror(errno);
-    return false;
-  }
-  return true;
+bool V4L_camera::getRgbIntrinsicParam(yarp::os::Property &intrinsic)
+{
+	yCError(ULTRAPYTHON) << "getRgbIntrinsicParam - not supported";
+	return false;
 }
 
-bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
-  if (!config.check("camModel")) {
-    yCInfo(ULTRAPYTHON)
-        << "No 'camModel' was specified, working with 'standard' uvc";
-    param.camModel = STANDARD_UVC;
-  } else {
-    std::map<std::string, supported_cams>::iterator it =
-        camMap.find(config.find("camModel").asString());
-    if (it != camMap.end()) {
-      param.camModel = it->second;
-      yCDebug(ULTRAPYTHON) << "cam model name : "
-                         << config.find("camModel").asString()
-                         << "  -- number : " << it->second;
-    } else {
-      yCError(ULTRAPYTHON) << "Unknown camera model <"
-                         << config.find("camModel").asString() << ">";
-      yCInfo(ULTRAPYTHON) << "Supported models are: ";
-      for (it = camMap.begin(); it != camMap.end(); it++) {
-        yCInfo(ULTRAPYTHON, " <%s>", it->first.c_str());
-      }
-      return false;
-    }
-  }
-
-  if (config.check("verbose")) {
-    verbose = true;
-  }
-
-  if (param.camModel != ULTRAPYTON) {
-      yCError(ULTRAPYTHON) << "Only Ultrapython camera supported";
-      return false;
-  }
-
-  if (param.camModel == ULTRAPYTON) {
-    if (config.check("framerate")) {
-      yCWarning(ULTRAPYTHON) << "Framerate not used for UltraPython";
-    }
-
-    int period = 28;
-    if (config.check("period")) {
-      auto tmp = config.find("period");
-      period = tmp.asInt32();
-      yCInfo(ULTRAPYTHON) << "Period used:" << period;
-      pythonCameraHelper_.setStepPeriod(period); // For exposition setting check
-    }
-
-    if (config.check("honorfps")) {
-      bool honor;
-      auto tmp = config.find("honorfps");
-      honor = tmp.asBool();
-      yCInfo(ULTRAPYTHON) << "HonorFps:" << honor;
-      pythonCameraHelper_.setHonorFps(honor);
-    }
-
-    if (!config.check("subsampling")) {
-      yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
-      pythonCameraHelper_.setSubsamplingProperty(false);
-      param.user_height = 1024;
-      param.user_width = 2560;
-      if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_) {
-        yCWarning(ULTRAPYTHON)
-            << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period
-            << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
-      }
-    } else {
-      yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
-      pythonCameraHelper_.setSubsamplingProperty(true);
-      param.user_height = 512;
-      param.user_width = 1280;
-      if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_) {
-        yCWarning(ULTRAPYTHON)
-            << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period
-            << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
-      }
-    }
-  }
-
-  if (!config.check("d")) {
-    yCError(ULTRAPYTHON) << "No camera identifier was specified! (e.g. '--d "
-                          "/dev/video0' on Linux OS)";
-    return false;
-  }
-
-  param.deviceId = config.find("d").asString();
-  param.flip = config.check("flip", Value("false")).asBool();
-
-  // crop is used to pass from 16:9 to 4:3
-  if (config.check("crop")) {
-    doCropping = true;
-    yCInfo(ULTRAPYTHON, "Cropping enabled.");
-  } else {
-    doCropping = false;
-  }
-
-  Value isDual = config.check(
-      "dual", Value(0),
-      "Is this a dual camera? Two cameras merged into a single frame");
-
-  if (config.find("dual").asBool()) {
-    param.dual = true;
-    yCInfo(ULTRAPYTHON, "Using dual input camera.");
-  } else {
-    param.dual = false;
-  }
-
-  int type = 0;
-  if (!config.check("pixelType")) {
-    yCError(ULTRAPYTHON) << "No 'pixelType' was specified!";
-    return false;
-  }
-  { type = config.find("pixelType").asInt32(); }
-
-  switch (type) {
-  case VOCAB_PIXEL_MONO:
-    // Pixel type raw is the native one from the camera
-    param.pixelType =
-        convertV4L_to_YARP_format(param.src_fmt.fmt.pix.pixelformat);
-    break;
-
-  case VOCAB_PIXEL_RGB:
-    // is variable param.pixelType really required??
-    param.pixelType = V4L2_PIX_FMT_RGB24;
-    break;
-
-  default:
-    yCError(ULTRAPYTHON,
-            "no valid pixel format found!! This should not happen!!");
-    return false;
-    break;
-  }
-  Value *retM;
-  retM = Value::makeList("1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0");
-  configFx = config.check("horizontalFov");
-  configFy = config.check("verticalFov");
-  configPPx = config.check("principalPointX");
-  configPPy = config.check("principalPointY");
-  configRet = config.check("retificationMatrix");
-  configDistM = config.check("distortionModel");
-  Bottle bt;
-  bt = config.findGroup("cameraDistortionModelGroup");
-  if (!bt.isNull()) {
-    if (bt.find("name").isNull() || bt.find("k1").isNull() ||
-        bt.find("k2").isNull() || bt.find("k3").isNull() ||
-        bt.find("t1").isNull() || bt.find("t2").isNull()) {
-      yCError(ULTRAPYTHON) << "group cameraDistortionModelGroup incomplete, "
-                            "fields k1, k2, k3, t1, t2, name are required when "
-                            "using cameraDistortionModelGroup";
-      configIntrins = false;
-      return false;
-    }
-    { configIntrins = true; }
-  } else {
-    configIntrins = false;
-  }
-  param.horizontalFov = config
-                            .check("horizontalFov", Value(0.0),
-                                   "desired horizontal fov of test image")
-                            .asFloat64();
-  param.verticalFov = config
-                          .check("verticalFov", Value(0.0),
-                                 "desired vertical fov of test image")
-                          .asFloat64();
-  if (config.check("mirror")) {
-    if (!setRgbMirroring(
-            config.check("mirror", Value(0), "mirroring disabled by default")
-                .asBool())) {
-      yCError(ULTRAPYTHON, "cannot set mirroring option");
-      return false;
-    }
-  }
-
-  param.intrinsic.put("focalLengthX",
-                      config
-                          .check("focalLengthX", Value(0.0),
-                                 "Horizontal component of the focal lenght")
-                          .asFloat64());
-  param.intrinsic.put("focalLengthY",
-                      config
-                          .check("focalLengthY", Value(0.0),
-                                 "Vertical component of the focal lenght")
-                          .asFloat64());
-  param.intrinsic.put("principalPointX",
-                      config
-                          .check("principalPointX", Value(0.0),
-                                 "X coordinate of the principal point")
-                          .asFloat64());
-  param.intrinsic.put("principalPointY",
-                      config
-                          .check("principalPointY", Value(0.0),
-                                 "Y coordinate of the principal point")
-                          .asFloat64());
-  param.intrinsic.put(
-      "retificationMatrix",
-      config.check("retificationMatrix", *retM,
-                   "Matrix that describes the lens' distortion"));
-  param.intrinsic.put("distortionModel",
-                      config
-                          .check("distortionModel", Value(""),
-                                 "Reference to group of parameters describing "
-                                 "the distortion model of the camera")
-                          .asString());
-  if (bt.isNull()) {
-    param.intrinsic.put("name", "");
-    param.intrinsic.put("k1", 0.0);
-    param.intrinsic.put("k2", 0.0);
-    param.intrinsic.put("k3", 0.0);
-    param.intrinsic.put("t1", 0.0);
-    param.intrinsic.put("t2", 0.0);
-  } else {
-    param.intrinsic.put(
-        "name",
-        bt.check("name", Value(""), "Name of the distortion model").asString());
-    param.intrinsic.put(
-        "k1",
-        bt.check("k1", Value(0.0), "Radial distortion coefficient of the lens")
-            .asFloat64());
-    param.intrinsic.put(
-        "k2",
-        bt.check("k2", Value(0.0), "Radial distortion coefficient of the lens")
-            .asFloat64());
-    param.intrinsic.put(
-        "k3",
-        bt.check("k3", Value(0.0), "Radial distortion coefficient of the lens")
-            .asFloat64());
-    param.intrinsic.put(
-        "t1", bt.check("t1", Value(0.0), "Tangential distortion of the lens")
-                  .asFloat64());
-    param.intrinsic.put(
-        "t2", bt.check("t2", Value(0.0), "Tangential distortion of the lens")
-                  .asFloat64());
-  }
-  delete retM;
-
-  yCDebug(ULTRAPYTHON) << "using following device " << param.deviceId
-                     << "with the configuration: " << param.user_width << "x"
-                     << param.user_height << "; camModel is " << param.camModel;
-  return true;
+bool V4L_camera::getRgbMirroring(bool &mirror)
+{
+	yCError(ULTRAPYTHON) << "getRgbMirroring - not supported";
+	return false;
 }
 
-int V4L_camera::getfd() { return param.fd; }
+bool V4L_camera::setRgbMirroring(bool mirror)
+{
+	yCError(ULTRAPYTHON) << "setRgbMirroring - not supported";
+	return false;
+}
+
+bool V4L_camera::fromConfig(yarp::os::Searchable &config)
+{
+	if (!config.check("camModel"))
+	{
+		yCInfo(ULTRAPYTHON) << "No 'camModel' was specified, working with ulrapython";
+	}
+
+	auto tmp = config.find("camModel");
+	if (tmp.asString() != pythonCameraHelper_.ultraPythonName)
+	{
+		yCError(ULTRAPYTHON) << "camModel - not supported";
+		return false;
+	}
+
+	param.camModel = ULTRAPYTON;
+
+	if (config.check("verbose"))
+	{
+		verbose = true;
+	}
+
+	if (param.camModel == ULTRAPYTON)
+	{
+		int period = 28;
+		if (config.check("period"))
+		{
+			auto tmp = config.find("period");
+			period = tmp.asInt32();
+			yCInfo(ULTRAPYTHON) << "Period used:" << period;
+			pythonCameraHelper_.setStepPeriod(period);	// For exposition setting check
+		}
+
+		if (config.check("honorfps"))
+		{
+			bool honor;
+			auto tmp = config.find("honorfps");
+			honor = tmp.asBool();
+			yCInfo(ULTRAPYTHON) << "HonorFps:" << honor;
+			pythonCameraHelper_.setHonorFps(honor);
+		}
+
+		if (!config.check("subsampling"))
+		{
+			yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
+			pythonCameraHelper_.setSubsamplingProperty(false);
+			param.user_height = 1024;
+			param.user_width = 2560;
+			if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_)
+			{
+				yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
+			}
+		}
+		else
+		{
+			yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
+			pythonCameraHelper_.setSubsamplingProperty(true);
+			param.user_height = 512;
+			param.user_width = 1280;
+			if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_)
+			{
+				yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
+			}
+		}
+	}
+
+	if (config.check("d"))
+	{
+		yCError(ULTRAPYTHON) << "d - param not supported.)";
+	}
+
+	if (config.check("flip"))
+	{
+		yCError(ULTRAPYTHON, "flip - param not supported.");
+	}
+
+	if (config.check("crop"))
+	{
+		yCError(ULTRAPYTHON, "crop - param not supported.");
+	}
+
+	if (config.check("dual"))
+	{
+		yCError(ULTRAPYTHON, "dual - param not supported.");
+	}
+
+	if (config.check("framerate"))
+	{
+		yCWarning(ULTRAPYTHON) << "framerate - param not supported.";
+	}
+
+	if (config.check("pixelType"))
+	{
+		yCError(ULTRAPYTHON) << "pixelType - param not supported.";
+	}
+
+	if (config.check("horizontalFov"))
+	{
+		yCError(ULTRAPYTHON) << "horizontalFov - param not supported.";
+	}
+
+	if (config.check("verticalFov"))
+	{
+		yCError(ULTRAPYTHON) << "verticalFov - param not supported.";
+	}
+	if (config.check("principalPointX"))
+	{
+		yCError(ULTRAPYTHON) << "principalPointX - param not supported.";
+	}
+	if (config.check("principalPointY"))
+	{
+		yCError(ULTRAPYTHON) << "principalPointY - param not supported.";
+	}
+	if (config.check("retificationMatrix"))
+	{
+		yCError(ULTRAPYTHON) << "retificationMatrix - param not supported.";
+	}
+	if (config.check("distortionModel"))
+	{
+		yCError(ULTRAPYTHON) << "distortionModel - param not supported.";
+	}
+
+	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << param.user_width << "x" << param.user_height << "; camModel is " << param.camModel;
+	return true;
+}
 
 /**
  *    close device
  */
-bool V4L_camera::close() {
-  yCTrace(ULTRAPYTHON);
+bool V4L_camera::close()
+{
+	yCTrace(ULTRAPYTHON);
 
-  if (param.camModel == ULTRAPYTON) {
-    return pythonCameraHelper_.closeAll();
-  }
+	if (param.camModel == ULTRAPYTON)
+	{
+		return pythonCameraHelper_.closeAll();
+	}
 
-  return false;
+	return false;
 }
 
-void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size) {
-  // Nothing to do
+void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size)
+{
+	// Nothing to do
 }
 
-// IFrameGrabberRgb Interface 777
-bool V4L_camera::getRgbBuffer(unsigned char *buffer) {
-  if (!configured) {
-    yCError(ULTRAPYTHON) << "unable to get the buffer, device uninitialized";
-    return false;
-  }
+// IFrameGrabberRgb Interface
+bool V4L_camera::getRgbBuffer(unsigned char *buffer)
+{
+	if (!configured)
+	{
+		yCError(ULTRAPYTHON) << "unable to get the buffer, device uninitialized";
+		return false;
+	}
 
-  mutex.wait();
+	mutex.wait();
 
-  if (param.camModel == ULTRAPYTON) {
-    static Statistics stat("frames read by YARP",
-                           pythonCameraHelper_.getCurrentExposure());
-    if (pythonCameraHelper_.step(buffer)) {
-      stat.add();
-    } else {
-      yCError(ULTRAPYTHON) << "Failed acquiring new frame";
-    }
-  } else {
-    yCDebug(ULTRAPYTHON) << "-";
-    imagePreProcess();
-    imageProcess();
-    if (!param.addictionalResize) {
-      memcpy(buffer, param.dst_image_rgb, param.dst_image_size_rgb);
-    } else {
-      memcpy(buffer, param.outMat.data, param.outMat.total() * 3);
-    }
-  }
-  
-  mutex.post();
-  return true;
+	if (param.camModel == ULTRAPYTON)
+	{
+		static Statistics stat("frames read by YARP", pythonCameraHelper_.getCurrentExposure());
+		if (pythonCameraHelper_.step(buffer))
+		{
+			stat.add();
+		}
+		else
+		{
+			yCError(ULTRAPYTHON) << "Failed acquiring new frame";
+		}
+	}
+
+	mutex.post();
+	return true;
 }
 
-/**
- * Return the height of each frame.
- * @return image height
- */
-int V4L_camera::height() const {
-  /*
-   * return user setting because at the end of the day, this is what
-   * the image must look like
-   */
-  return param.user_height;
+int V4L_camera::height() const
+{
+	return param.user_height;
 }
 
-/**
- * Return the width of each frame.
- * @return image width
- */
-int V4L_camera::width() const {
-  /*
-   * return user setting because at the end of the day, this is what
-   * the image must look like
-   */
-  return param.user_width;
+int V4L_camera::width() const
+{
+	return param.user_width;
 }
 
-/**
- *    Do ioctl and retry if error was EINTR ("A signal was caught during the
- * ioctl() operation."). Parameters are the same as on ioctl.
- *
- *    \param fd file descriptor
- *    \param request request
- *    \param argp argument
- *    \returns result from ioctl
- */
-int V4L_camera::xioctl(int fd, int request, void *argp) {
-  int r;
+bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim)
+{
+	if (value < 0)
+	{
+		return false;
+	}
 
-  do {
-    r = v4l2_ioctl(fd, request, argp);
-  } while (-1 == r && EINTR == errno);
+	if (param.camModel == ULTRAPYTON)
+	{
+		return pythonCameraHelper_.setControl(id, value, false);
+	}
 
-  return r;
+	return false;
 }
 
-////////////////////////////////////////////////////
+bool V4L_camera::check_V4L2_control(uint32_t id)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		return pythonCameraHelper_.checkControl(id);
+	}
 
-struct v4l2_queryctrl queryctrl;
-struct v4l2_querymenu querymenu;
-
-void V4L_camera::enumerate_menu() {
-  yCInfo(ULTRAPYTHON, "Menu items:");
-
-  memset(&querymenu, 0, sizeof(querymenu));
-  querymenu.id = queryctrl.id;
-
-  for (querymenu.index = (__u32)queryctrl.minimum;
-       querymenu.index <= (__u32)queryctrl.maximum; querymenu.index++) {
-    if (0 == ioctl(param.fd, VIDIOC_QUERYMENU, &querymenu)) {
-      yCInfo(ULTRAPYTHON, " %s", querymenu.name);
-    } else {
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYMENU: %d, %s", errno, strerror(errno));
-      return;
-    }
-  }
+	return false;
 }
 
-bool V4L_camera::enumerate_controls() {
-  memset(&queryctrl, 0, sizeof(queryctrl));
-
-  for (queryctrl.id = V4L2_CID_BASE; queryctrl.id < V4L2_CID_LASTP1;
-       queryctrl.id++) {
-    if (0 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
-      if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-        continue;
-      }
-
-      yCInfo(ULTRAPYTHON, "Control %s (id %d)", queryctrl.name, queryctrl.id);
-
-      if (queryctrl.type == V4L2_CTRL_TYPE_MENU) {
-        enumerate_menu();
-      }
-    } else {
-      if (errno == EINVAL) {
-        continue;
-      }
-
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
-      return false;
-    }
-  }
-
-  for (queryctrl.id = V4L2_CID_PRIVATE_BASE;; queryctrl.id++) {
-    if (0 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
-      if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-        continue;
-      }
-
-      yCInfo(ULTRAPYTHON, "Control %s", queryctrl.name);
-
-      if (queryctrl.type == V4L2_CTRL_TYPE_MENU) {
-        enumerate_menu();
-      }
-    } else {
-      if (errno == EINVAL) {
-        break;
-      }
-
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
-      return false;
-    }
-  }
-  return true;
+double V4L_camera::get_V4L2_control(uint32_t id, bool verbatim)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		return pythonCameraHelper_.getControl(id);
+	}
+	return false;
 }
 
-/**
- *   mainloop: read frames and process them
- */
-bool V4L_camera::full_FrameRead() {
-  bool got_it = false;
-  void *image_ret = nullptr;
-  unsigned int count;
-  unsigned int numberOfTimeouts;
-
-  fd_set fds;
-  struct timeval tv;
-  int r;
-
-  numberOfTimeouts = 0;
-  count = 10; // trials
-
-  for (unsigned int i = 0; i < count; i++) {
-    FD_ZERO(&fds);
-    FD_SET(param.fd, &fds);
-
-    /* Timeout. */
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
-
-    r = select(param.fd + 1, &fds, nullptr, nullptr, &tv);
-
-    if (r < 0) {
-      if (EINTR == errno) {
-        continue;
-      }
-
-      return image_ret != nullptr;
-    }
-    if (0 == r) {
-      numberOfTimeouts++;
-      {
-        yCWarning(ULTRAPYTHON, "timeout while reading image [%d/%d]",
-                  numberOfTimeouts, count);
-        got_it = false;
-      }
-    } else if ((r > 0) && (FD_ISSET(param.fd, &fds))) {
-      if (frameRead()) {
-        // yCTrace(ULTRAPYTHON, "got an image");
-        got_it = true;
-        break;
-      }
-      yCWarning(ULTRAPYTHON, "trial %d failed", i);
-    } else {
-      yCWarning(ULTRAPYTHON, "select woke up for something else");
-    }
-
-    /* EAGAIN - continue select loop. */
-  }
-  return got_it;
+bool V4L_camera::getCameraDescription(CameraDescriptor *camera)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		camera->busType = BUS_UNKNOWN;
+		camera->deviceDescription = "UltraPython camera";
+		return true;
+	}
+	return false;
 }
 
-/**
- *    read single frame
- */
-bool V4L_camera::frameRead() {
-  unsigned int i;
-  struct v4l2_buffer buf;
-  mutex.wait();
+bool V4L_camera::hasFeature(int feature, bool *_hasFeature)
+{
+	bool tmpMan(false);
+	bool tmpAuto(false);
+	bool tmpOnce(false);
 
-  switch (param.io) {
-  case IO_METHOD_READ:
-    if (-1 ==
-        v4l2_read(param.fd, param.buffers[0].start, param.buffers[0].length)) {
-      mutex.post();
-      return false;
-    }
+	if (param.camModel == ULTRAPYTON)
+	{
+		if (feature == YARP_FEATURE_WHITE_BALANCE)
+		{
+			tmpMan = pythonCameraHelper_.hasControl(V4L2_CID_RED_BALANCE) && pythonCameraHelper_.hasControl(V4L2_CID_BLUE_BALANCE);
+			tmpOnce = check_V4L2_control(V4L2_CID_DO_WHITE_BALANCE);
+			tmpAuto = check_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
+			*_hasFeature = tmpMan || tmpOnce || tmpAuto;
+			return true;
+		}
+		if (feature == YARP_FEATURE_EXPOSURE)
+		{
+			*_hasFeature = true;
+			return true;
+		}
 
-    timeStamp.update(toEpochOffset + buf.timestamp.tv_sec +
-                     buf.timestamp.tv_usec / 1000000.0);
-    //             imageProcess(param.buffers[0].start);
-    break;
+		*_hasFeature = pythonCameraHelper_.hasControl(convertYARP_to_V4L(feature));
+		return true;
+	}
 
-  case IO_METHOD_MMAP:
-    CLEAR(buf);
-
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-
-    if (-1 == xioctl(param.fd, VIDIOC_DQBUF, &buf)) {
-      yCError(ULTRAPYTHON, "usbCamera VIDIOC_DQBUF");
-      mutex.post();
-      return false;
-    }
-
-    if (!(buf.index < param.n_buffers)) {
-      mutex.post();
-      return false;
-    }
-
-    memcpy(param.read_image, param.buffers[buf.index].start,
-           param.buffers[0].length);
-    //            imageProcess(param.raw_image);
-    timeStamp.update(toEpochOffset + buf.timestamp.tv_sec +
-                     buf.timestamp.tv_usec / 1000000.0);
-
-    if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-      yCError(ULTRAPYTHON, "VIDIOC_QBUF");
-      mutex.post();
-      return false;
-    }
-
-    break;
-
-  case IO_METHOD_USERPTR:
-    CLEAR(buf);
-
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_USERPTR;
-
-    if (-1 == xioctl(param.fd, VIDIOC_DQBUF, &buf)) {
-      yCError(ULTRAPYTHON, "VIDIOC_DQBUF");
-      mutex.post();
-      return false;
-    }
-
-    for (i = 0; i < param.n_buffers; ++i) {
-      if (buf.m.userptr == (unsigned long)param.buffers[i].start &&
-          buf.length == param.buffers[i].length) {
-        break;
-      }
-    }
-
-    if (!(i < param.n_buffers)) {
-      mutex.post();
-      return false;
-    }
-
-    memcpy(param.read_image, param.buffers[buf.index].start,
-           param.buffers[0].length);
-    timeStamp.update(toEpochOffset + buf.timestamp.tv_sec +
-                     buf.timestamp.tv_usec / 1000000.0);
-
-    if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-      yCError(ULTRAPYTHON, "VIDIOC_QBUF");
-    }
-    break;
-
-  default:
-    yCError(ULTRAPYTHON, "frameRead no read method configured");
-  }
-  mutex.post();
-  return true;
+	return false;
 }
 
-/*
- * This function is intended to perform custom code to adapt
- * non standard pixel types to a standard one, in order to
- * use standard conversion libraries afterward.
- */
-void V4L_camera::imagePreProcess() {
-  switch (param.camModel) {
-  case LEOPARD_PYTHON: {
-    // Here we are resizing the byte information from 10 to 8 bits.
-    // Width and Height are not modified by this operation.
-    const uint _pixelNum =
-        param.src_fmt.fmt.pix.width * param.src_fmt.fmt.pix.height;
-
-    unsigned char *raw_p = param.raw_image;
-    for (uint i = 0; i < _pixelNum; i++) {
-      param.src_image[i] = raw_p[i] >> bit_shift;
-    }
-
-    // Set the correct pixel type fot the v4l_convert to work on.
-    param.src_fmt.fmt.pix.bytesperline = param.src_fmt.fmt.pix.width;
-    param.src_fmt.fmt.pix.pixelformat = pixel_fmt_leo;
-    break;
-  }
-  case STANDARD_UVC:
-  default:
-    // Nothing to do here
-    break;
-  }
+bool V4L_camera::setFeature(int feature, double value)
+{
+	yCDebug(ULTRAPYTHON) << "setFeature 1";
+	bool ret = set_V4L2_control(convertYARP_to_V4L(feature), value);
+	return ret;
 }
 
-/**
- *   process image read
- */
-void V4L_camera::imageProcess() {
-  static bool initted = false;
+bool V4L_camera::getFeature(int feature, double *value)
+{
+	yCDebug(ULTRAPYTHON) << "getFeature 1";
+	double tmp = 0.0;
+	tmp = get_V4L2_control(convertYARP_to_V4L(feature));
+	if (tmp == -1)
+	{
+		return false;
+	}
 
-  timeStart = yarp::os::Time::now();
-
-  // imagePreProcess() should already be called before entering here!!
-  // src_fmt and dst_fmt must be alredy fixed up if needed!!
-
-  // Convert from src type to RGB
-  if (v4lconvert_convert((v4lconvert_data *)_v4lconvert_data, &param.src_fmt,
-                         &param.dst_fmt, param.src_image, param.src_image_size,
-                         param.dst_image_rgb, param.dst_image_size_rgb) < 0) {
-    static int err = 0;
-    if ((err % 20) == 0) {
-      yCError(ULTRAPYTHON, "error converting \n\t Error message is: %s",
-              v4lconvert_get_error_message(_v4lconvert_data));
-      err = 0;
-    }
-    err++;
-    return;
-  }
-
-  if (param.addictionalResize) {
-    if (!param.dual) {
-      cv::Mat img(
-          cv::Size(param.dst_fmt.fmt.pix.width, param.dst_fmt.fmt.pix.height),
-          CV_8UC3, param.dst_image_rgb);
-      cv::Rect crop(param.resizeOffset_x, param.resizeOffset_y,
-                    param.resizeWidth, param.resizeHeight);
-      cv::resize(img(crop), param.outMat,
-                 cvSize(param.user_width, param.user_height), 0, 0,
-                 cv::INTER_CUBIC);
-    } else {
-      // Load whole image in a cv::Mat
-      cv::Mat img(
-          cv::Size(param.dst_fmt.fmt.pix.width, param.dst_fmt.fmt.pix.height),
-          CV_8UC3, param.dst_image_rgb);
-      cv::Mat img_right;
-      cv::Rect crop(param.resizeOffset_x, param.resizeOffset_y,
-                    param.resizeWidth, param.resizeHeight);
-
-      cv::resize(img(crop), param.outMat,
-                 cvSize(param.user_width / 2, param.user_height), 0, 0,
-                 cv::INTER_CUBIC);
-      cv::Rect crop2(param.resizeWidth + param.resizeOffset_x * 2,
-                     param.resizeOffset_y, param.resizeWidth,
-                     param.resizeHeight);
-      cv::resize(img(crop2), img_right,
-                 cvSize(param.user_width / 2, param.user_height), 0, 0,
-                 cv::INTER_CUBIC);
-      cv::hconcat(param.outMat, img_right, param.outMat);
-    }
-    if (param.flip) {
-      cv::flip(param.outMat, param.outMat, 1);
-    }
-  } else {
-    if (param.flip) {
-      cv::Mat img(
-          cv::Size(param.dst_fmt.fmt.pix.width, param.dst_fmt.fmt.pix.height),
-          CV_8UC3, param.dst_image_rgb);
-      param.outMat = img;
-      cv::flip(param.outMat, param.outMat, 1);
-    }
-  }
-
-  timeElapsed = yarp::os::Time::now() - timeStart;
-  myCounter++;
-  timeTot += timeElapsed;
-
-  if ((myCounter % 60) == 0) {
-    if (!initted) {
-      timeTot = 0;
-      myCounter = 0;
-      initted = true;
-    }
-  }
+	*value = tmp;
+	return true;
 }
 
-/**
- *    stop capturing
- */
-void V4L_camera::captureStop() {
-  int ret = 0;
-  int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  switch (param.io) {
-  case IO_METHOD_READ:
-    // do nothing
-    break;
-
-  case IO_METHOD_MMAP:
-  default:
-    ret = xioctl(param.fd, VIDIOC_STREAMOFF, &type);
-    if (ret < 0) {
-      if (errno != 9) { /* errno = 9 means the capture was allready stoped*/
-        yCError(ULTRAPYTHON, "VIDIOC_STREAMOFF - Unable to stop capture: %d, %s",
-                errno, strerror(errno));
-      }
-    }
-    break;
-  }
+bool V4L_camera::setFeature(int feature, double value1, double value2)
+{
+	yCDebug(ULTRAPYTHON) << "setFeature 2";
+	if (feature == YARP_FEATURE_WHITE_BALANCE)
+	{
+		bool ret = true;
+		ret &= set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, false);
+		ret &= set_V4L2_control(V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE, V4L2_WHITE_BALANCE_MANUAL);
+		ret &= set_V4L2_control(V4L2_CID_RED_BALANCE, value1);
+		ret &= set_V4L2_control(V4L2_CID_BLUE_BALANCE, value2);
+		return ret;
+	}
+	return false;
 }
 
-/**
- *  start capturing
- */
-void V4L_camera::captureStart() {
-  unsigned int i;
-  enum v4l2_buf_type type;
-
-  switch (param.io) {
-  case IO_METHOD_READ:
-    /* Nothing to do. */
-    break;
-
-  case IO_METHOD_MMAP:
-    for (i = 0; i < param.n_buffers; ++i) {
-      struct v4l2_buffer buf;
-      CLEAR(buf);
-
-      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      buf.memory = V4L2_MEMORY_MMAP;
-      buf.index = i;
-
-      if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-        yCError(ULTRAPYTHON, "VIDIOC_QBUF");
-      }
-    }
-
-    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    if (-1 == xioctl(param.fd, VIDIOC_STREAMON, &type)) {
-      yCError(ULTRAPYTHON, "VIDIOC_STREAMON");
-    }
-
-    break;
-
-  case IO_METHOD_USERPTR:
-    for (i = 0; i < param.n_buffers; ++i) {
-      struct v4l2_buffer buf;
-
-      CLEAR(buf);
-
-      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      buf.memory = V4L2_MEMORY_USERPTR;
-      buf.index = i;
-      buf.m.userptr = (unsigned long)param.buffers[i].start;
-      buf.length = param.buffers[i].length;
-
-      if (-1 == xioctl(param.fd, VIDIOC_QBUF, &buf)) {
-        yCError(ULTRAPYTHON, "VIDIOC_QBUF");
-      }
-    }
-
-    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    if (-1 == xioctl(param.fd, VIDIOC_STREAMON, &type)) {
-      yCError(ULTRAPYTHON, "VIDIOC_STREAMON");
-    }
-
-    break;
-  }
+bool V4L_camera::getFeature(int feature, double *value1, double *value2)
+{
+	if (feature == YARP_FEATURE_WHITE_BALANCE)
+	{
+		*value1 = get_V4L2_control(V4L2_CID_RED_BALANCE);
+		*value2 = get_V4L2_control(V4L2_CID_BLUE_BALANCE);
+		return !((*value1 == -1) || (*value2 == -1));
+	}
+	return false;
 }
 
-bool V4L_camera::readInit(unsigned int buffer_size) {
-  param.buffers = (struct buffer *)calloc(1, sizeof(*(param.buffers)));
+bool V4L_camera::hasOnOff(int feature, bool *_hasOnOff)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		*_hasOnOff = false;
+		return true;
+	}
 
-  if (param.buffers == nullptr) {
-    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
-    return false;
-  }
-
-  param.buffers[0].length = buffer_size;
-  param.buffers[0].start = malloc(buffer_size);
-
-  if (param.buffers[0].start == nullptr) {
-    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
-    return false;
-  }
-  return true;
+	return false;
 }
 
-bool V4L_camera::mmapInit() {
-  CLEAR(param.req);
-
-  param.n_buffers = VIDIOC_REQBUFS_COUNT;
-  param.req.count = param.n_buffers;
-  param.req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  param.req.memory = V4L2_MEMORY_MMAP;
-
-  if (-1 == xioctl(param.fd, VIDIOC_REQBUFS, &param.req)) {
-    if (EINVAL == errno) {
-      yCError(ULTRAPYTHON, "%s does not support memory mapping",
-              param.deviceId.c_str());
-      return false;
-    }
-    yCError(ULTRAPYTHON,
-            "Error on device %s requesting memory mapping (VIDIOC_REQBUFS)",
-            param.deviceId.c_str());
-    return false;
-  }
-
-  if (param.req.count < 1) {
-    yCError(ULTRAPYTHON, "Insufficient buffer memory on %s",
-            param.deviceId.c_str());
-    return false;
-  }
-
-  if (param.req.count == 1) {
-    yCError(ULTRAPYTHON,
-            "Only 1 buffer was available, you may encounter performance issue "
-            "acquiring images from device %s",
-            param.deviceId.c_str());
-  }
-
-  param.buffers =
-      (struct buffer *)calloc(param.req.count, sizeof(*(param.buffers)));
-
-  if (param.buffers == nullptr) {
-    yCError(ULTRAPYTHON, "Out of memory");
-    return false;
-  }
-
-  struct v4l2_buffer buf;
-
-  for (param.n_buffers = 0; param.n_buffers < param.req.count;
-       param.n_buffers++) {
-    CLEAR(buf);
-
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-    buf.index = param.n_buffers;
-
-    if (-1 == xioctl(param.fd, VIDIOC_QUERYBUF, &buf)) {
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYBUF");
-    }
-
-    param.buffers[param.n_buffers].length = buf.length;
-    param.buffers[param.n_buffers].start =
-        v4l2_mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED,
-                  param.fd, buf.m.offset);
-
-    if (MAP_FAILED == param.buffers[param.n_buffers].start) {
-      yCError(ULTRAPYTHON, "mmap");
-    }
-  }
-  return true;
+bool V4L_camera::setActive(int feature, bool onoff)
+{
+  yCError(ULTRAPYTHON) << "setActive - not supported";
+	return false;
 }
 
-bool V4L_camera::userptrInit(unsigned int buffer_size) {
-  unsigned int page_size;
+bool V4L_camera::getActive(int feature, bool *_isActive)
+{
+  yCDebug(ULTRAPYTHON) << "yyyz";
+	if (param.camModel == ULTRAPYTON)
+	{
+		if (feature == YARP_FEATURE_WHITE_BALANCE)
+		{
+			return true;
+		}
+	}
 
-  page_size = getpagesize();
-  buffer_size = (buffer_size + page_size - 1) & ~(page_size - 1);
+	switch (feature)
+	{
+		case YARP_FEATURE_WHITE_BALANCE:
+		{
+			double tmp = get_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
+			if (tmp == 1)
+			{
+				*_isActive = true;
+			}
+			else
+			{
+				*_isActive = false;
+			}
+			break;
+		}
 
-  CLEAR(param.req);
+		case YARP_FEATURE_EXPOSURE:
+		{
+			bool _hasMan(false);
+			bool _hasMan2(false);
+			hasFeature(V4L2_CID_EXPOSURE, &_hasMan) || hasFeature(V4L2_CID_EXPOSURE_ABSOLUTE,
+																  &_hasMan2);  // check manual version (normal and asbolute)
+			double _hasAuto = get_V4L2_control(V4L2_CID_EXPOSURE_AUTO, true);  // check auto version
 
-  param.req.count = VIDIOC_REQBUFS_COUNT;
-  param.req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  param.req.memory = V4L2_MEMORY_USERPTR;
+			*_isActive = (_hasAuto == V4L2_EXPOSURE_AUTO) || _hasMan || _hasMan2;
+			break;
+		}
 
-  if (-1 == xioctl(param.fd, VIDIOC_REQBUFS, &param.req)) {
-    if (EINVAL == errno) {
-      yCError(ULTRAPYTHON, "%s does not support user pointer i/o",
-              param.deviceId.c_str());
-      return false;
-    }
-    yCError(ULTRAPYTHON, "Error requesting VIDIOC_REQBUFS for device %s",
-            param.deviceId.c_str());
-    return false;
-  }
+		default:
+			*_isActive = true;
+			break;
+	}
 
-  param.buffers = (struct buffer *)calloc(4, sizeof(*(param.buffers)));
-
-  if (param.buffers == nullptr) {
-    yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
-    return false;
-  }
-
-  for (param.n_buffers = 0; param.n_buffers < 4; ++param.n_buffers) {
-    param.buffers[param.n_buffers].length = buffer_size;
-    param.buffers[param.n_buffers].start =
-        memalign(/* boundary */ page_size, buffer_size);
-
-    if (param.buffers[param.n_buffers].start == nullptr) {
-      yCError(ULTRAPYTHON, "cannot allocate buffer, out of memory");
-      return false;
-    }
-  }
-  return true;
+	return true;
 }
 
-bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim) {
-  if (value < 0) {
-    return false;
-  }
+bool V4L_camera::hasAuto(int feature, bool *_hasAuto)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		if (feature == YARP_FEATURE_WHITE_BALANCE)
+		{
+			*_hasAuto = false;
+			return true;
+		}
+		if (feature == YARP_FEATURE_EXPOSURE)
+		{
+			*_hasAuto = false;
+			return true;
+		}
 
-  if (param.camModel == ULTRAPYTON) {
-    return pythonCameraHelper_.setControl(id, value, false);
-  }
-
-  struct v4l2_queryctrl queryctrl;
-  struct v4l2_control control;
-
-  memset(&queryctrl, 0, sizeof(queryctrl));
-  queryctrl.id = id;
-
-  if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
-    if (errno != EINVAL) {
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
-    } else {
-      yCError(ULTRAPYTHON, "Cannot set control <%s> (id 0x%0X) is not supported",
-              queryctrl.name, queryctrl.id);
-    }
-    return false;
-  }
-
-  if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-    yCError(ULTRAPYTHON, "Control %s is disabled", queryctrl.name);
-    return false;
-  }
-  memset(&control, 0, sizeof(control));
-  control.id = id;
-  if (verbatim) {
-    control.value = value;
-  } else {
-    if (param.camModel == LEOPARD_PYTHON) {
-      if ((V4L2_CID_EXPOSURE == id) || (V4L2_CID_EXPOSURE_ABSOLUTE == id) ||
-          (V4L2_CID_EXPOSURE_AUTO == id)) {
-        queryctrl.maximum = 8000;
-        queryctrl.minimum = 0;
-      }
-    }
-    control.value = (int32_t)(value * (queryctrl.maximum - queryctrl.minimum) +
-                              queryctrl.minimum);
-  }
-  if (-1 == ioctl(param.fd, VIDIOC_S_CTRL, &control)) {
-    yCError(ULTRAPYTHON, "VIDIOC_S_CTRL: %d, %s", errno, strerror(errno));
-    if (errno == ERANGE) {
-      yCError(ULTRAPYTHON,
-              "Normalized input value %f ( equivalent to raw value of %d) was "
-              "out of range for control %s: Min and Max are: %d - %d",
-              value, control.value, queryctrl.name, queryctrl.minimum,
-              queryctrl.maximum);
-    }
-    return false;
-  }
-  if (verbose) {
-    yCInfo(ULTRAPYTHON, "set control %s to %d done!", queryctrl.name,
-           control.value);
-  }
-
-  return true;
+		return pythonCameraHelper_.hasAutoControl(convertYARP_to_V4L(feature));
+	}
+	return false;
 }
 
-bool V4L_camera::check_V4L2_control(uint32_t id) {
-  if (param.camModel == ULTRAPYTON) {
-    return pythonCameraHelper_.checkControl(id);
-  }
+bool V4L_camera::hasManual(int feature, bool *_hasManual)
+{
+	if (param.camModel == ULTRAPYTON)
+	{
+		if (feature == YARP_FEATURE_WHITE_BALANCE)
+		{
+			*_hasManual = true;
+			return true;
+		}
 
-  //     yCTrace(ULTRAPYTHON);
-  struct v4l2_queryctrl queryctrl;
-  struct v4l2_control control;
+		if (feature == YARP_FEATURE_EXPOSURE)
+		{
+			*_hasManual = true;
+			return true;
+		}
 
-  memset(&control, 0, sizeof(control));
-  memset(&queryctrl, 0, sizeof(queryctrl));
+		*_hasManual = pythonCameraHelper_.hasControl(convertYARP_to_V4L(feature));
+		return true;
+	}
 
-  control.id = id;
-  queryctrl.id = id;
-
-  if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
-    if (errno != EINVAL) {
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
-    }
-    return false;
-  }
-  return true;
+	return true;
 }
 
-double V4L_camera::get_V4L2_control(uint32_t id, bool verbatim) {
-  if (param.camModel == ULTRAPYTON) {
-    return pythonCameraHelper_.getControl(id);
-  }
+bool V4L_camera::hasOnePush(int feature, bool *_hasOnePush)
+{
+	// I'm not able to map a 'onePush' request on V4L api
+	switch (feature)
+	{
+		case YARP_FEATURE_WHITE_BALANCE:
+			*_hasOnePush = check_V4L2_control(V4L2_CID_DO_WHITE_BALANCE);
+			return true;
 
-  struct v4l2_queryctrl queryctrl;
-  struct v4l2_control control;
-
-  memset(&control, 0, sizeof(control));
-  memset(&queryctrl, 0, sizeof(queryctrl));
-
-  control.id = id;
-  queryctrl.id = id;
-
-  if (-1 == ioctl(param.fd, VIDIOC_QUERYCTRL, &queryctrl)) {
-    if (errno != EINVAL) {
-      yCError(ULTRAPYTHON, "VIDIOC_QUERYCTRL: %d, %s", errno, strerror(errno));
-    }
-
-    return -1.0;
-  }
-
-  if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-    yCError(ULTRAPYTHON, "Control %s is disabled", queryctrl.name);
-  } else {
-    if (-1 == ioctl(param.fd, VIDIOC_G_CTRL, &control)) {
-      yCError(ULTRAPYTHON, "VIDIOC_G_CTRL: %d, %s", errno, strerror(errno));
-      return -1.0;
-    }
-  }
-  if (verbatim) {
-    return control.value;
-  }
-
-  if (param.camModel == LEOPARD_PYTHON) {
-    if ((V4L2_CID_EXPOSURE == id) || (V4L2_CID_EXPOSURE_ABSOLUTE == id) ||
-        (V4L2_CID_EXPOSURE_AUTO == id)) {
-      queryctrl.maximum = 8000;
-      queryctrl.minimum = 0;
-    }
-  }
-  return (double)(control.value - queryctrl.minimum) /
-         (queryctrl.maximum - queryctrl.minimum);
+		default:
+			*_hasOnePush = false;
+			break;
+	}
+	return true;
 }
 
-bool V4L_camera::getCameraDescription(CameraDescriptor *camera) {
-  if (param.camModel == ULTRAPYTON) {
-    camera->busType = BUS_UNKNOWN;
-    camera->deviceDescription = "XININX camera";
-    return true;
-  }
-  camera->busType = BUS_USB;
-  camera->deviceDescription = "USB3 camera";
-  return true;
+bool V4L_camera::setMode(int feature, FeatureMode mode)
+{
+	bool _tmpAuto;
+	bool ret = false;
+	switch (feature)
+	{
+		case YARP_FEATURE_WHITE_BALANCE:
+			if (mode == MODE_AUTO)
+			{
+				ret = set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, true);
+			}
+			else
+			{
+				ret = set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, false);
+			}
+			break;
+
+		case YARP_FEATURE_EXPOSURE:
+
+			hasAuto(V4L2_CID_EXPOSURE_AUTO, &_tmpAuto);
+
+			if (_tmpAuto)
+			{
+				if (mode == MODE_AUTO)
+				{
+					ret = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, true);
+				}
+				else
+				{
+					ret = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, false);
+				}
+			}
+			else
+			{
+				ret = mode != MODE_AUTO;
+			}
+			break;
+
+		case YARP_FEATURE_GAIN:
+			if (mode == MODE_AUTO)
+			{
+				yCInfo(ULTRAPYTHON) << "GAIN: set mode auto";
+				ret = set_V4L2_control(V4L2_CID_AUTOGAIN, true);
+			}
+			else
+			{
+				yCInfo(ULTRAPYTHON) << "GAIN: set mode manual";
+				ret = set_V4L2_control(V4L2_CID_AUTOGAIN, false);
+			}
+			break;
+
+		case YARP_FEATURE_BRIGHTNESS:
+		{
+			hasAuto(YARP_FEATURE_BRIGHTNESS, &_tmpAuto);
+
+			if (_tmpAuto)
+			{
+				if (mode == MODE_AUTO)
+				{
+					ret = set_V4L2_control(V4L2_CID_AUTOBRIGHTNESS, true);
+				}
+				else
+				{
+					ret = set_V4L2_control(V4L2_CID_AUTOBRIGHTNESS, false);
+				}
+			}
+			else
+			{
+				ret = mode != MODE_AUTO;
+			}
+			break;
+		}
+
+		case YARP_FEATURE_HUE:
+			if (mode == MODE_AUTO)
+			{
+				ret = set_V4L2_control(V4L2_CID_HUE_AUTO, true);
+			}
+			else
+			{
+				ret = set_V4L2_control(V4L2_CID_HUE_AUTO, false);
+			}
+			break;
+
+		default:
+			yCError(ULTRAPYTHON) << "Feature " << feature << " does not support auto mode";
+			break;
+	}
+	return ret;
 }
 
-bool V4L_camera::hasFeature(int feature, bool *_hasFeature) {
-  bool tmpMan(false);
-  bool tmpAuto(false);
-  bool tmpOnce(false);
+bool V4L_camera::getMode(int feature, FeatureMode *mode)
+{
+	bool _tmpAuto;
+	switch (feature)
+	{
+		case YARP_FEATURE_WHITE_BALANCE:
+		{
+			double ret = get_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
+			*mode = toFeatureMode(ret != 0.0);
+			break;
+		}
 
-  if (param.camModel == ULTRAPYTON) {
-    if (feature == YARP_FEATURE_WHITE_BALANCE) {
-      tmpMan = pythonCameraHelper_.hasControl(V4L2_CID_RED_BALANCE) &&
-               pythonCameraHelper_.hasControl(V4L2_CID_BLUE_BALANCE);
-      tmpOnce = check_V4L2_control(V4L2_CID_DO_WHITE_BALANCE);
-      tmpAuto = check_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
-      *_hasFeature = tmpMan || tmpOnce || tmpAuto;
-      return true;
-    }
-    if (feature == YARP_FEATURE_EXPOSURE) {
-      *_hasFeature = true;
-      return true;
-    }
+		case YARP_FEATURE_EXPOSURE:
+		{
+			double ret = get_V4L2_control(V4L2_CID_EXPOSURE_AUTO);
+			if (ret == -1.0)
+			{
+				*mode = MODE_MANUAL;
+				break;
+			}
 
-    *_hasFeature = pythonCameraHelper_.hasControl(convertYARP_to_V4L(feature));
-    return true;
-  }
+			if (ret == V4L2_EXPOSURE_MANUAL)
+			{
+				*mode = MODE_MANUAL;
+			}
+			else
+			{
+				*mode = MODE_AUTO;
+			}
+			break;
+		}
 
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE:
-    tmpMan = check_V4L2_control(V4L2_CID_RED_BALANCE) &&
-             check_V4L2_control(V4L2_CID_BLUE_BALANCE);
-    tmpOnce = check_V4L2_control(V4L2_CID_DO_WHITE_BALANCE);
-    tmpAuto = check_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
-    break;
+		case YARP_FEATURE_BRIGHTNESS:
+			hasAuto(YARP_FEATURE_BRIGHTNESS, &_tmpAuto);
+			*mode = toFeatureMode(_tmpAuto);
+			if (!_tmpAuto)
+			{
+				*mode = MODE_MANUAL;
+			}
+			else
+			{
+				double ret = get_V4L2_control(V4L2_CID_AUTOBRIGHTNESS);
+				*mode = toFeatureMode(ret != 0.0);
+			}
+			break;
 
-  case YARP_FEATURE_EXPOSURE:
-    tmpMan = check_V4L2_control(V4L2_CID_EXPOSURE) ||
-             check_V4L2_control(V4L2_CID_EXPOSURE_ABSOLUTE);
-    tmpAuto = check_V4L2_control(V4L2_CID_EXPOSURE_AUTO);
-    break;
+		case YARP_FEATURE_GAIN:
+			hasAuto(YARP_FEATURE_GAIN, &_tmpAuto);
+			*mode = toFeatureMode(_tmpAuto);
+			if (!_tmpAuto)
+			{
+				*mode = MODE_MANUAL;
+			}
+			else
+			{
+				double ret = get_V4L2_control(V4L2_CID_AUTOGAIN);
+				*mode = toFeatureMode(ret != 0.0);
+			}
+			break;
 
-  default:
-    tmpMan = check_V4L2_control(convertYARP_to_V4L(feature));
-    break;
-  }
+		case YARP_FEATURE_HUE:
+			hasAuto(YARP_FEATURE_HUE, &_tmpAuto);
+			*mode = toFeatureMode(_tmpAuto);
+			if (!_tmpAuto)
+			{
+				*mode = MODE_MANUAL;
+			}
+			else
+			{
+				double ret = get_V4L2_control(V4L2_CID_HUE_AUTO);
+				*mode = toFeatureMode(ret != 0.0);
+			}
+			break;
 
-  *_hasFeature = tmpMan || tmpOnce || tmpAuto;
-  return true;
+		default:
+			*mode = MODE_MANUAL;
+			break;
+	}
+	return true;
 }
 
-bool V4L_camera::setFeature(int feature, double value) {
-  bool ret = false;
-  switch (feature) {
-  case YARP_FEATURE_EXPOSURE:
-    if (use_exposure_absolute) {
-      ret = set_V4L2_control(V4L2_CID_EXPOSURE_ABSOLUTE, value);
-    } else {
-      ret = set_V4L2_control(V4L2_CID_EXPOSURE, value);
-    }
-    break;
-
-  default:
-    ret = set_V4L2_control(convertYARP_to_V4L(feature), value);
-    break;
-  }
-  return ret;
-}
-
-bool V4L_camera::getFeature(int feature, double *value) {
-  double tmp = 0.0;
-  switch (feature) {
-  case YARP_FEATURE_EXPOSURE:
-    if (use_exposure_absolute) {
-      tmp = get_V4L2_control(V4L2_CID_EXPOSURE_ABSOLUTE);
-    } else {
-      tmp = get_V4L2_control(V4L2_CID_EXPOSURE);
-    }
-    break;
-
-  default:
-    tmp = get_V4L2_control(convertYARP_to_V4L(feature));
-    break;
-  }
-
-  if (tmp == -1) {
-    return false;
-  }
-
-  *value = tmp;
-  return true;
-}
-
-bool V4L_camera::setFeature(int feature, double value1, double value2) {
-  if (feature == YARP_FEATURE_WHITE_BALANCE) {
-    bool ret = true;
-    ret &= set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, false);
-    ret &= set_V4L2_control(V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
-                            V4L2_WHITE_BALANCE_MANUAL);
-    ret &= set_V4L2_control(V4L2_CID_RED_BALANCE, value1);
-    ret &= set_V4L2_control(V4L2_CID_BLUE_BALANCE, value2);
-    return ret;
-  }
-  return false;
-}
-
-bool V4L_camera::getFeature(int feature, double *value1, double *value2) {
-  if (feature == YARP_FEATURE_WHITE_BALANCE) {
-    *value1 = get_V4L2_control(V4L2_CID_RED_BALANCE);
-    *value2 = get_V4L2_control(V4L2_CID_BLUE_BALANCE);
-    return !((*value1 == -1) || (*value2 == -1));
-  }
-  return false;
-}
-
-bool V4L_camera::hasOnOff(int feature, bool *_hasOnOff) {
-  if (param.camModel == ULTRAPYTON) {
-    *_hasOnOff = false;
-    return true;
-  }
-
-  bool _hasAuto;
-  // I can't find any meaning of setting a feature to off on V4l ... what it is
-  // supposed to do????
-  switch (feature) {
-  // The following do have a way to set them auto/manual
-  case YARP_FEATURE_WHITE_BALANCE:
-  case YARP_FEATURE_EXPOSURE:
-    if (hasAuto(feature, &_hasAuto)) {
-      *_hasOnOff = true;
-    } else {
-      *_hasOnOff = false;
-    }
-    break;
-
-  // try it out
-  default:
-    hasAuto(feature, &_hasAuto);
-    if (_hasAuto) {
-      *_hasOnOff = true;
-    } else {
-      *_hasOnOff = false;
-    }
-    break;
-  }
-  return true;
-}
-
-bool V4L_camera::setActive(int feature, bool onoff) {
-  // I can't find any meaning of setting a feature to off on V4l ... what it is
-  // supposed to do????
-  bool tmp;
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE:
-    tmp = set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, onoff);
-    if (tmp) {
-      isActive_vector[feature] = onoff;
-    }
-    break;
-
-  case YARP_FEATURE_EXPOSURE:
-    if (onoff) {
-      set_V4L2_control(V4L2_LOCK_EXPOSURE, false);
-
-      hasAuto(feature, &tmp);
-      if (tmp) {
-        tmp = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_AUTO);
-      } else {
-        tmp = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL);
-      }
-
-      if (tmp) {
-        isActive_vector[feature] = onoff;
-      }
-    } else {
-      bool man = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL);
-      if (!man) {
-        man = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO,
-                               V4L2_EXPOSURE_SHUTTER_PRIORITY, true);
-        if (!man) {
-          yCError(ULTRAPYTHON) << "Cannot set manual exposure";
-        }
-      }
-      set_V4L2_control(V4L2_LOCK_EXPOSURE, true);
-      isActive_vector[feature] = onoff;
-    }
-    break;
-
-  default: // what to do in each case?
-    if (onoff) {
-      isActive_vector[feature] = true;
-      return true;
-    }
-    isActive_vector[feature] = false;
-    return false;
-  }
-  return true;
-}
-
-bool V4L_camera::getActive(int feature, bool *_isActive) {
-  if (param.camModel == ULTRAPYTON) {
-    if (feature == YARP_FEATURE_WHITE_BALANCE) {
-      return true;
-    }
-  }
-
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE: {
-    double tmp = get_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
-    if (tmp == 1) {
-      *_isActive = true;
-    } else {
-      *_isActive = false;
-    }
-    break;
-  }
-
-  case YARP_FEATURE_EXPOSURE: {
-    bool _hasMan(false);
-    bool _hasMan2(false);
-    hasFeature(V4L2_CID_EXPOSURE, &_hasMan) ||
-        hasFeature(V4L2_CID_EXPOSURE_ABSOLUTE,
-                   &_hasMan2); // check manual version (normal and asbolute)
-    double _hasAuto =
-        get_V4L2_control(V4L2_CID_EXPOSURE_AUTO, true); // check auto version
-
-    *_isActive = (_hasAuto == V4L2_EXPOSURE_AUTO) || _hasMan || _hasMan2;
-    break;
-  }
-
-  default:
-    *_isActive = true;
-    break;
-  }
-
-  return true;
-}
-
-bool V4L_camera::hasAuto(int feature, bool *_hasAuto) {
-  if (param.camModel == ULTRAPYTON) {
-    if (feature == YARP_FEATURE_WHITE_BALANCE) {
-      *_hasAuto = false;
-      return true;
-    }
-    if (feature == YARP_FEATURE_EXPOSURE) {
-      *_hasAuto = false;
-      return true;
-    }
-
-    return pythonCameraHelper_.hasAutoControl(convertYARP_to_V4L(feature));
-  }
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE:
-    *_hasAuto = check_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
-    break;
-
-  case YARP_FEATURE_BRIGHTNESS:
-    *_hasAuto = check_V4L2_control(V4L2_CID_AUTOBRIGHTNESS);
-    break;
-
-  case YARP_FEATURE_GAIN:
-    *_hasAuto = check_V4L2_control(V4L2_CID_AUTOGAIN);
-    break;
-
-  case YARP_FEATURE_EXPOSURE:
-    *_hasAuto = check_V4L2_control(V4L2_CID_EXPOSURE_AUTO);
-    break;
-
-  case YARP_FEATURE_HUE:
-    *_hasAuto = check_V4L2_control(V4L2_CID_HUE_AUTO);
-    break;
-
-  default:
-    *_hasAuto = false;
-    break;
-  }
-  return true;
-}
-
-bool V4L_camera::hasManual(int feature, bool *_hasManual) {
-  if (param.camModel == ULTRAPYTON) {
-    if (feature == YARP_FEATURE_WHITE_BALANCE) {
-      *_hasManual = true;
-      return true;
-    }
-
-    if (feature == YARP_FEATURE_EXPOSURE) {
-      *_hasManual = true;
-      return true;
-    }
-
-    *_hasManual = pythonCameraHelper_.hasControl(convertYARP_to_V4L(feature));
-    return true;
-  }
-
-  if (feature == YARP_FEATURE_WHITE_BALANCE) {
-    *_hasManual = check_V4L2_control(V4L2_CID_RED_BALANCE) &&
-                  check_V4L2_control(V4L2_CID_BLUE_BALANCE);
-    return true;
-  }
-
-  if (feature == YARP_FEATURE_EXPOSURE) {
-    *_hasManual = check_V4L2_control(V4L2_CID_EXPOSURE) ||
-                  check_V4L2_control(V4L2_CID_EXPOSURE_ABSOLUTE);
-    return true;
-  }
-  return hasFeature(feature, _hasManual);
-}
-
-bool V4L_camera::hasOnePush(int feature, bool *_hasOnePush) {
-  // I'm not able to map a 'onePush' request on V4L api
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE:
-    *_hasOnePush = check_V4L2_control(V4L2_CID_DO_WHITE_BALANCE);
-    return true;
-
-  default:
-    *_hasOnePush = false;
-    break;
-  }
-  return true;
-}
-
-bool V4L_camera::setMode(int feature, FeatureMode mode) {
-  bool _tmpAuto;
-  bool ret = false;
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE:
-    if (mode == MODE_AUTO) {
-      ret = set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, true);
-    } else {
-      ret = set_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE, false);
-    }
-    break;
-
-  case YARP_FEATURE_EXPOSURE:
-
-    hasAuto(V4L2_CID_EXPOSURE_AUTO, &_tmpAuto);
-
-    if (_tmpAuto) {
-      if (mode == MODE_AUTO) {
-        ret = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, true);
-      } else {
-        ret = set_V4L2_control(V4L2_CID_EXPOSURE_AUTO, false);
-      }
-    } else {
-      ret = mode != MODE_AUTO;
-    }
-    break;
-
-  case YARP_FEATURE_GAIN:
-    if (mode == MODE_AUTO) {
-      yCInfo(ULTRAPYTHON) << "GAIN: set mode auto";
-      ret = set_V4L2_control(V4L2_CID_AUTOGAIN, true);
-    } else {
-      yCInfo(ULTRAPYTHON) << "GAIN: set mode manual";
-      ret = set_V4L2_control(V4L2_CID_AUTOGAIN, false);
-    }
-    break;
-
-  case YARP_FEATURE_BRIGHTNESS: {
-    hasAuto(YARP_FEATURE_BRIGHTNESS, &_tmpAuto);
-
-    if (_tmpAuto) {
-      if (mode == MODE_AUTO) {
-        ret = set_V4L2_control(V4L2_CID_AUTOBRIGHTNESS, true);
-      } else {
-        ret = set_V4L2_control(V4L2_CID_AUTOBRIGHTNESS, false);
-      }
-    } else {
-      ret = mode != MODE_AUTO;
-    }
-    break;
-  }
-
-  case YARP_FEATURE_HUE:
-    if (mode == MODE_AUTO) {
-      ret = set_V4L2_control(V4L2_CID_HUE_AUTO, true);
-    } else {
-      ret = set_V4L2_control(V4L2_CID_HUE_AUTO, false);
-    }
-    break;
-
-  default:
-    yCError(ULTRAPYTHON) << "Feature " << feature
-                       << " does not support auto mode";
-    break;
-  }
-  return ret;
-}
-
-bool V4L_camera::getMode(int feature, FeatureMode *mode) {
-  bool _tmpAuto;
-  switch (feature) {
-  case YARP_FEATURE_WHITE_BALANCE: {
-    double ret = get_V4L2_control(V4L2_CID_AUTO_WHITE_BALANCE);
-    *mode = toFeatureMode(ret != 0.0);
-    break;
-  }
-
-  case YARP_FEATURE_EXPOSURE: {
-    double ret = get_V4L2_control(V4L2_CID_EXPOSURE_AUTO);
-    if (ret == -1.0) {
-      *mode = MODE_MANUAL;
-      break;
-    }
-
-    if (ret == V4L2_EXPOSURE_MANUAL) {
-      *mode = MODE_MANUAL;
-    } else {
-      *mode = MODE_AUTO;
-    }
-    break;
-  }
-
-  case YARP_FEATURE_BRIGHTNESS:
-    hasAuto(YARP_FEATURE_BRIGHTNESS, &_tmpAuto);
-    *mode = toFeatureMode(_tmpAuto);
-    if (!_tmpAuto) {
-      *mode = MODE_MANUAL;
-    } else {
-      double ret = get_V4L2_control(V4L2_CID_AUTOBRIGHTNESS);
-      *mode = toFeatureMode(ret != 0.0);
-    }
-    break;
-
-  case YARP_FEATURE_GAIN:
-    hasAuto(YARP_FEATURE_GAIN, &_tmpAuto);
-    *mode = toFeatureMode(_tmpAuto);
-    if (!_tmpAuto) {
-      *mode = MODE_MANUAL;
-    } else {
-      double ret = get_V4L2_control(V4L2_CID_AUTOGAIN);
-      *mode = toFeatureMode(ret != 0.0);
-    }
-    break;
-
-  case YARP_FEATURE_HUE:
-    hasAuto(YARP_FEATURE_HUE, &_tmpAuto);
-    *mode = toFeatureMode(_tmpAuto);
-    if (!_tmpAuto) {
-      *mode = MODE_MANUAL;
-    } else {
-      double ret = get_V4L2_control(V4L2_CID_HUE_AUTO);
-      *mode = toFeatureMode(ret != 0.0);
-    }
-    break;
-
-  default:
-    *mode = MODE_MANUAL;
-    break;
-  }
-  return true;
-}
-
-bool V4L_camera::setOnePush(int feature) {
-  // I'm not able to map a 'onePush' request on each V4L api
-  if (feature == YARP_FEATURE_WHITE_BALANCE) {
-    return set_V4L2_control(V4L2_CID_DO_WHITE_BALANCE, true);
-  }
-  return false;
+bool V4L_camera::setOnePush(int feature)
+{
+	// I'm not able to map a 'onePush' request on each V4L api
+	if (feature == YARP_FEATURE_WHITE_BALANCE)
+	{
+		return set_V4L2_control(V4L2_CID_DO_WHITE_BALANCE, true);
+	}
+	return false;
 }
