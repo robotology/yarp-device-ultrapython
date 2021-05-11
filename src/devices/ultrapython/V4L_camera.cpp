@@ -284,65 +284,7 @@ bool V4L_camera::open(yarp::os::Searchable &config) {
     return true;
   }
 
-  // open device
-  param.fd =
-      v4l2_open(param.deviceId.c_str(), O_RDWR /* required */ | O_NONBLOCK, 0);
-
-  // check if opening was successfull
-  if (-1 == param.fd) {
-    yCError(ULTRAPYTHON, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
-            errno, strerror(errno));
-    return false;
-  }
-
-  // if previous instance crashed, maybe will help (?)
-  captureStop();
-  deviceUninit();
-  v4l2_close(param.fd);
-
-  yarp::os::Time::delay(1);
-  // re-open device
-  param.fd =
-      v4l2_open(param.deviceId.c_str(), O_RDWR /* required */ | O_NONBLOCK, 0);
-
-  // check if opening was successfull
-  if (-1 == param.fd) {
-    yCError(ULTRAPYTHON, "Cannot open '%s': %d, %s", param.deviceId.c_str(),
-            errno, strerror(errno));
-    return false;
-  }
-
-  // Initting video device
-  deviceInit();
-  if (verbose) {
-    enumerate_controls();
-  }
-  if (!check_V4L2_control(V4L2_CID_EXPOSURE)) {
-    use_exposure_absolute = check_V4L2_control(V4L2_CID_EXPOSURE_ABSOLUTE);
-  }
-  captureStart();
-  yarp::os::Time::delay(0.5);
-  start();
-
-  populateConfigurations();
-
-  // Configure the device settings from input file
-  setFeature(YARP_FEATURE_GAIN, checkDouble(config, "gain"));
-  setFeature(YARP_FEATURE_EXPOSURE, checkDouble(config, "exposure"));
-  setFeature(YARP_FEATURE_BRIGHTNESS, checkDouble(config, "brightness"));
-  setFeature(YARP_FEATURE_SHARPNESS, checkDouble(config, "sharpness"));
-  yarp::os::Bottle &white_balance = config.findGroup("white_balance");
-  if (!white_balance.isNull()) {
-    setFeature(YARP_FEATURE_WHITE_BALANCE, white_balance.get(2).asFloat64(),
-               white_balance.get(1).asFloat64());
-  }
-  setFeature(YARP_FEATURE_HUE, checkDouble(config, "hue"));
-  setFeature(YARP_FEATURE_SATURATION, checkDouble(config, "saturation"));
-  setFeature(YARP_FEATURE_GAMMA, checkDouble(config, "gamma"));
-  setFeature(YARP_FEATURE_SHUTTER, checkDouble(config, "shutter"));
-  setFeature(YARP_FEATURE_IRIS, checkDouble(config, "iris"));
-
-  return true;
+  return false;
 }
 
 int V4L_camera::getRgbHeight() { return height(); }
@@ -361,25 +303,17 @@ bool V4L_camera::getRgbResolution(int &width, int &height) {
 }
 
 bool V4L_camera::setRgbResolution(int width, int height) {
-  mutex.wait();
-  captureStop();
-  deviceUninit();
-  param.user_width = width;
-  param.user_height = height;
-  bool res = deviceInit();
-  captureStart();
-  mutex.post();
-  return res;
+  yCError(ULTRAPYTHON) << "cannot setRgbResolution";
+  return false;
 }
 
 bool V4L_camera::getRgbFOV(double &horizontalFov, double &verticalFov) {
-  horizontalFov = param.horizontalFov;
-  verticalFov = param.verticalFov;
-  return configFx && configFy;
+  yCError(ULTRAPYTHON) << "cannot getRgbFOV";
+  return false;
 }
 
 bool V4L_camera::setRgbFOV(double horizontalFov, double verticalFov) {
-  yCError(ULTRAPYTHON) << "cannot set fov";
+  yCError(ULTRAPYTHON) << "cannot setRgbFOV";
   return false;
 }
 
@@ -432,31 +366,8 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
   }
 
   if (param.camModel != ULTRAPYTON) {
-    if (!config.check("width")) {
-      yCDebug(ULTRAPYTHON) << "width parameter not found, using default value of "
-                         << DEFAULT_WIDTH;
-      param.user_width = DEFAULT_WIDTH;
-    } else {
-      param.user_width = config.find("width").asInt32();
-    }
-
-    if (!config.check("height")) {
-      yCDebug(ULTRAPYTHON)
-          << "height parameter not found, using default value of "
-          << DEFAULT_HEIGHT;
-      param.user_height = DEFAULT_HEIGHT;
-    } else {
-      param.user_height = config.find("height").asInt32();
-    }
-
-    if (!config.check("framerate")) {
-      yCDebug(ULTRAPYTHON)
-          << "framerate parameter not found, using default value of "
-          << DEFAULT_FRAMERATE;
-      param.fps = DEFAULT_FRAMERATE;
-    } else {
-      param.fps = config.find("framerate").asInt32();
-    }
+      yCError(ULTRAPYTHON) << "Only Ultrapython camera supported";
+      return false;
   }
 
   if (param.camModel == ULTRAPYTON) {
@@ -513,42 +424,6 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
   param.deviceId = config.find("d").asString();
   param.flip = config.check("flip", Value("false")).asBool();
-
-  // Check for addictional leopard parameter for debugging purpose
-  if (param.camModel == LEOPARD_PYTHON) {
-    yCDebug(ULTRAPYTHON)
-        << "-------------------------------\nusbCamera: Using leopard camera!!";
-    bit_shift =
-        config.check("shift", Value(bit_shift), "right shift of <n> bits")
-            .asInt32();
-    bit_bayer = config
-                    .check("bit_bayer", Value(bit_bayer),
-                           "uses <n> bits bayer conversion")
-                    .asInt32();
-    switch (bit_bayer) {
-    case 8:
-      pixel_fmt_leo = V4L2_PIX_FMT_SGRBG8;
-      break;
-
-    case 10:
-      pixel_fmt_leo = V4L2_PIX_FMT_SGRBG10;
-      break;
-
-    case 12:
-      pixel_fmt_leo = V4L2_PIX_FMT_SGRBG12;
-      break;
-
-    default:
-      yCError(ULTRAPYTHON) << "bayer conversion with " << bit_bayer
-                         << "not supported";
-      return false;
-    }
-
-    yCDebug(ULTRAPYTHON) << "--------------------------------";
-    yCDebug(ULTRAPYTHON) << bit_shift
-                       << "bits of right shift applied to raw data";
-    yCDebug(ULTRAPYTHON) << "Bits used for de-bayer " << bit_bayer;
-  }
 
   // crop is used to pass from 16:9 to 4:3
   if (config.check("crop")) {
@@ -731,307 +606,6 @@ void V4L_camera::run() {
 void V4L_camera::threadRelease() { yCTrace(ULTRAPYTHON); }
 
 /**
- *    initialize device
- */
-bool V4L_camera::deviceInit() {
-  struct v4l2_capability cap;
-  struct v4l2_cropcap cropcap;
-  struct v4l2_crop crop;
-  struct v4l2_streamparm frameint;
-  configured = false;
-
-  if (-1 == xioctl(param.fd, VIDIOC_QUERYCAP, &cap)) {
-    if (EINVAL == errno) {
-      yCError(ULTRAPYTHON, "%s is no V4L2 device", param.deviceId.c_str());
-    }
-    return false;
-  }
-
-  if (verbose) {
-    list_cap_v4l2(param.fd);
-  }
-
-  if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-    yCError(ULTRAPYTHON, "%s is no video capture device", param.deviceId.c_str());
-    return false;
-  }
-
-  yCInfo(ULTRAPYTHON, "%s is good V4L2_CAP_VIDEO_CAPTURE",
-         param.deviceId.c_str());
-
-  switch (param.io) {
-  case IO_METHOD_READ:
-    if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-      yCError(ULTRAPYTHON, "%s does not support read i/o",
-              param.deviceId.c_str());
-      return false;
-    }
-    break;
-
-  case IO_METHOD_MMAP:
-  case IO_METHOD_USERPTR:
-    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-      yCError(ULTRAPYTHON, "%s does not support streaming i/o",
-              param.deviceId.c_str());
-      return false;
-    }
-    break;
-
-  default:
-    yCError(ULTRAPYTHON, "Unknown io method for device %s",
-            param.deviceId.c_str());
-    return false;
-    break;
-  }
-
-  CLEAR(cropcap);
-  cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-  if (0 == xioctl(param.fd, VIDIOC_CROPCAP, &cropcap)) {
-    crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    crop.c = cropcap.defrect; /* reset to default */
-
-    /* Reset cropping to default if possible.
-     * Don't care about errors
-     */
-    xioctl(param.fd, VIDIOC_S_CROP, &crop);
-  }
-
-  CLEAR(param.src_fmt);
-  CLEAR(param.dst_fmt);
-
-  _v4lconvert_data = v4lconvert_create(param.fd);
-  if (_v4lconvert_data == nullptr) {
-    yCError(ULTRAPYTHON) << "Failed to initialize v4lconvert. Conversion to "
-                          "required format may not work";
-  }
-
-  /*
-   * dst_fmt is the image format the user require.
-   * With try_format, V4l does an handshake with the camera and the best match
-   * from the available formats provided by the camera is selected. src_fmt will
-   * contain the source format, i.e. the configuration to be sent to the camera
-   * to optimize the conversion which will be done afterwards.
-   *
-   * VERY IMPORTANT NOTE:
-   *
-   * In case no match is found for the user input provided in dst_fmt, than
-   * dst_fmt itself may be changed to provide the best conversion possible
-   * similar to user input. In particular, pixel format conversion together with
-   * rescaling may not be possible to achieve. In this case only pixel format
-   * conversion will be done and we need to take care of the rescaling.
-   */
-
-  param.dst_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  param.dst_fmt.fmt.pix.width = param.user_width;
-  param.dst_fmt.fmt.pix.height = param.user_height;
-  param.dst_fmt.fmt.pix.field = V4L2_FIELD_NONE;
-  param.dst_fmt.fmt.pix.pixelformat = param.pixelType;
-
-  if (v4lconvert_try_format(_v4lconvert_data, &(param.dst_fmt),
-                            &(param.src_fmt)) != 0) {
-    yCError(ULTRAPYTHON, "v4lconvert_try_format -> Error is: %s",
-            v4lconvert_get_error_message(_v4lconvert_data));
-    return false;
-  }
-
-  // Check if dst_fmt has been changed by the v4lconvert_try_format
-  if (param.dst_fmt.fmt.pix.width != param.user_width ||
-      param.dst_fmt.fmt.pix.height != param.user_height ||
-      param.dst_fmt.fmt.pix.pixelformat != param.pixelType) {
-    yCWarning(ULTRAPYTHON)
-        << "Conversion from HW supported configuration into user requested "
-           "format will require addictional step.\n"
-        << "Performance issue may arise.";
-
-    param.addictionalResize = true;
-
-    // Compute offsets for cropping image in case the source image and the one
-    // required by the user have different form factors, i.e 16/9 vs 4/3
-    double inputFF = (double)param.dst_fmt.fmt.pix.width /
-                     (double)param.dst_fmt.fmt.pix.height;
-    double outputFF = (double)param.user_width / (double)param.user_height;
-
-    if (outputFF < inputFF) {
-      // Use all vertical pixels, crop lateral pixels to get the central portion
-      // of the image
-      param.resizeOffset_y = 0;
-      param.resizeHeight = param.dst_fmt.fmt.pix.height;
-
-      if (!param.dual) {
-        param.resizeOffset_x = (param.dst_fmt.fmt.pix.width -
-                                (param.dst_fmt.fmt.pix.height * outputFF)) /
-                               2;
-        param.resizeWidth =
-            param.dst_fmt.fmt.pix.width - param.resizeOffset_x * 2;
-      } else {
-        param.resizeOffset_x =
-            (param.dst_fmt.fmt.pix.width -
-             (param.dst_fmt.fmt.pix.height * outputFF)) /
-            4; //  "/4" is  "/2"  2 times because there are 2 images
-        param.resizeWidth =
-            param.dst_fmt.fmt.pix.width / 2 - param.resizeOffset_x * 2;
-      }
-    } else {
-      // Use all horizontal pixels, crop top/bottom pixels to get the central
-      // portion of the image
-      param.resizeOffset_x = 0;
-
-      if (!param.dual) {
-        param.resizeWidth = param.dst_fmt.fmt.pix.width;
-        param.resizeOffset_y = (param.dst_fmt.fmt.pix.height -
-                                (param.dst_fmt.fmt.pix.width / outputFF)) /
-                               2;
-        param.resizeHeight =
-            param.dst_fmt.fmt.pix.height - param.resizeOffset_y * 2;
-      } else {
-        param.resizeWidth = param.dst_fmt.fmt.pix.width / 2;
-        param.resizeOffset_y = (param.dst_fmt.fmt.pix.height -
-                                (param.dst_fmt.fmt.pix.width / outputFF)) /
-                               2;
-        param.resizeHeight =
-            param.dst_fmt.fmt.pix.height - param.resizeOffset_y * 2;
-      }
-    }
-  } else {
-    param.addictionalResize = false;
-    param.resizeOffset_x = 0;
-    param.resizeWidth = param.user_width / 2;
-    param.resizeOffset_y = 0;
-    param.resizeHeight = param.user_height;
-  }
-
-  if (-1 == xioctl(param.fd, VIDIOC_S_FMT, &param.src_fmt)) {
-    yCError(ULTRAPYTHON) << "xioctl error VIDIOC_S_FMT" << strerror(errno);
-    return false;
-  }
-
-  /* If the user has set the fps to -1, don't try to set the frame interval */
-  if (param.fps != -1) {
-    CLEAR(frameint);
-
-    /* Attempt to set the frame interval. */
-    frameint.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    frameint.parm.capture.timeperframe.numerator = 1;
-    frameint.parm.capture.timeperframe.denominator = param.fps;
-    if (-1 == xioctl(param.fd, VIDIOC_S_PARM, &frameint)) {
-      yCError(ULTRAPYTHON, "Unable to set frame interval.");
-    }
-  }
-
-  param.src_image_size = param.src_fmt.fmt.pix.sizeimage;
-  param.src_image = new unsigned char[param.src_image_size];
-
-  param.dst_image_size_rgb =
-      param.dst_fmt.fmt.pix.width * param.dst_fmt.fmt.pix.height * 3;
-  param.dst_image_rgb = new unsigned char[param.dst_image_size_rgb];
-
-  // raw image is for non-standard type only, for example leopard_python
-  if (param.camModel == LEOPARD_PYTHON) {
-    /* This camera sends bayer 10bit over 2bytes for each piece of information,
-     * therefore the total size of the image is 2 times the number of pixels.
-     */
-    param.raw_image_size =
-        param.src_fmt.fmt.pix.width * param.src_fmt.fmt.pix.height * 2;
-    param.raw_image = new unsigned char[param.raw_image_size];
-    param.read_image =
-        param.raw_image; // store the image read in the raw_image buffer
-  } else // This buffer should not be used for STANDARD_UVC cameras
-  {
-    param.read_image =
-        param.src_image; // store the image read in the src_image buffer
-    param.raw_image_size = 0;
-    param.raw_image = YARP_NULLPTR;
-  }
-
-  switch (param.io) {
-  case IO_METHOD_READ:
-    readInit(param.src_fmt.fmt.pix.sizeimage);
-    break;
-
-  case IO_METHOD_MMAP:
-    mmapInit();
-    break;
-
-  case IO_METHOD_USERPTR:
-    userptrInit(param.src_fmt.fmt.pix.sizeimage);
-    break;
-  }
-
-  if (verbose) {
-    query_current_image_fmt_v4l2(param.fd);
-  }
-  configured = true;
-
-  return true;
-}
-
-bool V4L_camera::deviceUninit() {
-  unsigned int i;
-  bool ret = true;
-  configured = false;
-
-  switch (param.io) {
-  case IO_METHOD_READ:
-    free(param.buffers[0].start);
-    break;
-
-  case IO_METHOD_MMAP:
-    for (i = 0; i < param.n_buffers; ++i) {
-      if (-1 == v4l2_munmap(param.buffers[i].start, param.buffers[i].length)) {
-        ret = false;
-      }
-    }
-
-    CLEAR(param.req);
-    //             memset(param.req, 0, sizeof(struct v4l2_requestbuffers));
-    param.req.count = 0;
-    param.req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    param.req.memory = V4L2_MEMORY_MMAP;
-    if (xioctl(param.fd, VIDIOC_REQBUFS, &param.req) < 0) {
-      yCError(ULTRAPYTHON,
-              "VIDIOC_REQBUFS - Failed to delete buffers: %s (errno %d)",
-              strerror(errno), errno);
-      return false;
-    }
-
-    break;
-
-  case IO_METHOD_USERPTR:
-    for (i = 0; i < param.n_buffers; ++i) {
-      free(param.buffers[i].start);
-    }
-    break;
-  }
-
-  if (param.buffers != nullptr) {
-    free(param.buffers);
-  }
-
-  if (param.raw_image != YARP_NULLPTR) {
-    delete[] param.raw_image;
-    param.raw_image = YARP_NULLPTR;
-  }
-
-  if (param.src_image != YARP_NULLPTR) {
-    delete[] param.src_image;
-    param.src_image = YARP_NULLPTR;
-  }
-
-  if (param.dst_image_rgb != YARP_NULLPTR) {
-    delete[] param.dst_image_rgb;
-    param.dst_image_rgb = YARP_NULLPTR;
-  }
-
-  if (_v4lconvert_data != YARP_NULLPTR) {
-    v4lconvert_destroy(_v4lconvert_data);
-    _v4lconvert_data = YARP_NULLPTR;
-  }
-
-  return ret;
-}
-
-/**
  *    close device
  */
 bool V4L_camera::close() {
@@ -1043,17 +617,7 @@ bool V4L_camera::close() {
     return pythonCameraHelper_.closeAll();
   }
 
-  if (param.fd != -1) {
-    captureStop();
-    deviceUninit();
-
-    if (-1 == v4l2_close(param.fd)) {
-      yCError(ULTRAPYTHON) << "Error closing V4l2 device";
-    }
-    return false;
-  }
-  param.fd = -1;
-  return true;
+  return false;
 }
 
 void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size) {
@@ -1091,29 +655,6 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer) {
   mutex.post();
   return true;
 }
-
-// IFrameGrabber Interface
-bool V4L_camera::getRawBuffer(unsigned char *buffer) {
-  if (param.camModel == ULTRAPYTON) {
-    yCError(ULTRAPYTHON)
-        << "unable to get the RAW buffer not awailable for ULTRAPYTHON";
-    return false;
-  }
-  bool res = false;
-  mutex.wait();
-  if (configured) {
-    imagePreProcess();
-    memcpy(buffer, param.src_image, param.src_image_size);
-    res = true;
-  } else {
-    yCError(ULTRAPYTHON) << "unable to get the buffer, device uninitialized";
-    res = false;
-  }
-  mutex.post();
-  return res;
-}
-
-int V4L_camera::getRawBufferSize() { return param.src_image_size; }
 
 /**
  * Return the height of each frame.

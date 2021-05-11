@@ -225,12 +225,6 @@ private:
 
   double checkDouble(yarp::os::Searchable &config, const char *key);
 
-  // initialize device
-  bool deviceInit();
-
-  // de-initialize device
-  bool deviceUninit();
-
   void captureStart();
   void captureStop();
 
