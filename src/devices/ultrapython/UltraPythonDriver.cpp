@@ -48,11 +48,7 @@ bool UltraPythonDriver::open(yarp::os::Searchable &config)
 	// open OS dependant device
 	yCTrace(ULTRAPYTHON) << "input params are " << config.toString();
 
-#if defined(_MSC_VER)
-	os_device = (DeviceDriver *)new WIN_camera;
-#elif defined __unix
 	os_device = (DeviceDriver *)new V4L_camera;
-#endif
 
 	yarp::os::Property prop;
 	prop.fromString(config.toString());

@@ -97,7 +97,7 @@ int V4L_camera::convertYARP_to_V4L(int feature) {
 }
 
 V4L_camera::V4L_camera()
-    : PeriodicThread(1.0 / DEFAULT_FRAMERATE), doCropping(false),
+    :
       toEpochOffset(getEpochTimeShift()), pythonCameraHelper_(nullptr) {
   yCTrace(ULTRAPYTHON) << "-------------------------------------------";
   yCTrace(ULTRAPYTHON) << "------UsbCamera device ready to start------";
@@ -280,7 +280,6 @@ bool V4L_camera::open(yarp::os::Searchable &config) {
       return false;
     configured = true;
     yarp::os::Time::delay(0.5);
-    start();
     return true;
   }
 
@@ -412,8 +411,6 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
             << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
       }
     }
-    setPeriod(1.0); // Thread period, this thread is not used for UltraPython --
-                    // void V4L_camera::run() --
   }
 
   if (!config.check("d")) {
@@ -580,38 +577,11 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config) {
 
 int V4L_camera::getfd() { return param.fd; }
 
-bool V4L_camera::threadInit() {
-  yCTrace(ULTRAPYTHON);
-
-  timeStart = timeNow = timeElapsed = yarp::os::Time::now();
-  return true;
-}
-
-void V4L_camera::run() {
-  static Statistics stat("frames read by DRIVER", 0);
-
-  if (param.camModel == ULTRAPYTON) {
-    // This thread is not used by UltraPython, called directly getRgbBuffer()
-    // from yarpdev
-    return;
-  }
-
-  if (full_FrameRead()) {
-    stat.add();
-  } else {
-    yCError(ULTRAPYTHON) << "Failed acquiring new frame";
-  }
-}
-
-void V4L_camera::threadRelease() { yCTrace(ULTRAPYTHON); }
-
 /**
  *    close device
  */
 bool V4L_camera::close() {
   yCTrace(ULTRAPYTHON);
-
-  stop(); // stop yarp thread acquiring images
 
   if (param.camModel == ULTRAPYTON) {
     return pythonCameraHelper_.closeAll();
