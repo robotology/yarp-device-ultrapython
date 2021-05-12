@@ -143,11 +143,12 @@ class UltraPythonCameraHelper
 	bool openPipeline();
 	bool initDevice();
 	bool startCapturing();
-	bool setDefaultControl();					   // Set some important default controls
+	bool setDefaultControl();								  // Set some important default controls
 	uint32_t remapControlV4LtoXilinx(uint32_t v4lCtr) const;  // Remap different id from the official v4l ones
-  public:
-  int remapControlYARPtoV4L(int feature) const;
-  private:
+   public:
+	int remapControlYARPtoV4L(int feature) const;
+
+   private:
 	bool setControl(uint32_t v4lCtrl, int fd, double value, bool absolute);
 	double getControl(uint32_t v4lCtrl, int fd);
 	bool setSubDevFormat(int width, int height);

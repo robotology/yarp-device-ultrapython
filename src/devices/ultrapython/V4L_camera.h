@@ -37,7 +37,6 @@
 #include <yarp/dev/FrameGrabberInterfaces.h>
 #include <yarp/dev/IPreciselyTimed.h>
 #include <yarp/dev/IVisualParams.h>
-#include <yarp/os/PeriodicThread.h>
 #include <yarp/os/Semaphore.h>
 
 #include <cerrno>
@@ -64,7 +63,7 @@ typedef struct
 } Video_params;
 
 
-class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabberRgb, public yarp::dev::IFrameGrabberControls, public yarp::dev::IPreciselyTimed, public yarp::dev::IRgbVisualParams
+class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabberRgb, public yarp::dev::IFrameGrabberControls,  public yarp::dev::IRgbVisualParams
 {
    public:
 	V4L_camera();
@@ -72,9 +71,6 @@ class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabb
 	// DeviceDriver Interface
 	bool open(yarp::os::Searchable &config) override;
 	bool close() override;
-
-	// IPreciselyTimed    Interface
-	yarp::os::Stamp getLastInputStamp() override;
 
 	// IFrameGrabberRgb    Interface
 	bool getRgbBuffer(unsigned char *buffer) override;

@@ -489,10 +489,3 @@ bool V4L_camera::setRgbResolution(int width, int height)
 	yCError(ULTRAPYTHON) << "setRgbResolution - not supported";
 	return false;
 }
-
-yarp::os::Stamp V4L_camera::getLastInputStamp()
-{
-	yCError(ULTRAPYTHON) << "getLastInputStamp - not supported";
-	yarp::os::Stamp timeStamp;
-	return timeStamp;
-}
