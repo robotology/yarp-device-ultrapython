@@ -63,7 +63,6 @@ V4L_camera::V4L_camera() : pythonCameraHelper_(nullptr)
 		}
 	});
 
-	param.camModel = ULTRAPYTON;
 	param.user_width = pythonCameraHelper_.lowresWidth_;
 	param.user_height = pythonCameraHelper_.lowresHeight_;
 }
@@ -78,17 +77,11 @@ bool V4L_camera::open(yarp::os::Searchable &config)
 		return false;
 	}
 
-	if (param.camModel == ULTRAPYTON)
-	{
-		yCTrace(ULTRAPYTHON) << "ULTRAPYTON";
-		if (!pythonCameraHelper_.openAll())
-			return false;
-		configured_ = true;
-		yarp::os::Time::delay(0.5);
-		return true;
-	}
-
-	return false;
+	if (!pythonCameraHelper_.openAll())
+		return false;
+	configured_ = true;
+	yarp::os::Time::delay(0.5);
+	return true;
 }
 
 int V4L_camera::getRgbHeight()
@@ -110,67 +103,55 @@ bool V4L_camera::getRgbResolution(int &width, int &height)
 
 bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 {
-	if (!config.check("camModel"))
-	{
-		yCInfo(ULTRAPYTHON) << "No 'camModel' was specified, working with ulrapython";
-	}
-
-	auto tmp = config.find("camModel");
-	if (tmp.asString() != pythonCameraHelper_.ultraPythonName)
-	{
-		yCError(ULTRAPYTHON) << "camModel - not supported";
-		return false;
-	}
-
-	param.camModel = ULTRAPYTON;
-
 	if (config.check("verbose"))
 	{
 		verbose = true;
 	}
 
-	if (param.camModel == ULTRAPYTON)
+	int period = 28;
+	if (config.check("period"))
 	{
-		int period = 28;
-		if (config.check("period"))
-		{
-			auto tmp = config.find("period");
-			period = tmp.asInt32();
-			yCInfo(ULTRAPYTHON) << "Period used:" << period;
-			pythonCameraHelper_.setStepPeriod(period);	// For exposition setting check
-		}
+		auto tmp = config.find("period");
+		period = tmp.asInt32();
+		yCInfo(ULTRAPYTHON) << "Period used:" << period;
+		pythonCameraHelper_.setStepPeriod(period);	// For exposition setting check
+	}
 
-		if (config.check("honorfps"))
-		{
-			bool honor;
-			auto tmp = config.find("honorfps");
-			honor = tmp.asBool();
-			yCInfo(ULTRAPYTHON) << "HonorFps:" << honor;
-			pythonCameraHelper_.setHonorFps(honor);
-		}
+	if (config.check("honorfps"))
+	{
+		bool honor;
+		auto tmp = config.find("honorfps");
+		honor = tmp.asBool();
+		yCInfo(ULTRAPYTHON) << "HonorFps:" << honor;
+		pythonCameraHelper_.setHonorFps(honor);
+	}
 
-		if (!config.check("subsampling"))
+	if (!config.check("subsampling"))
+	{
+		yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
+		pythonCameraHelper_.setSubsamplingProperty(false);
+		param.user_height = 1024;
+		param.user_width = 2560;
+		if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_)
 		{
-			yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
-			pythonCameraHelper_.setSubsamplingProperty(false);
-			param.user_height = 1024;
-			param.user_width = 2560;
-			if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_)
-			{
-				yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
-			}
+			yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
 		}
-		else
+	}
+	else
+	{
+		yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
+		pythonCameraHelper_.setSubsamplingProperty(true);
+		param.user_height = 512;
+		param.user_width = 1280;
+		if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_)
 		{
-			yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
-			pythonCameraHelper_.setSubsamplingProperty(true);
-			param.user_height = 512;
-			param.user_width = 1280;
-			if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_)
-			{
-				yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
-			}
+			yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
 		}
+	}
+
+	if (config.check("cammodel"))
+	{
+		yCError(ULTRAPYTHON) << "cammodel - param not supported.)";
 	}
 
 	if (config.check("d"))
@@ -229,7 +210,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 		yCError(ULTRAPYTHON) << "distortionModel - param not supported.";
 	}
 
-	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << param.user_width << "x" << param.user_height << "; camModel is " << param.camModel;
+	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << param.user_width << "x" << param.user_height;
 	return true;
 }
 
@@ -237,12 +218,7 @@ bool V4L_camera::close()
 {
 	yCTrace(ULTRAPYTHON);
 
-	if (param.camModel == ULTRAPYTON)
-	{
-		return pythonCameraHelper_.closeAll();
-	}
-
-	return false;
+	return pythonCameraHelper_.closeAll();
 }
 
 void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size)
@@ -261,17 +237,14 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer)
 
 	mutex.wait();
 
-	if (param.camModel == ULTRAPYTON)
+	static Statistics stat("frames read by YARP", pythonCameraHelper_.getCurrentExposure());
+	if (pythonCameraHelper_.step(buffer))
 	{
-		static Statistics stat("frames read by YARP", pythonCameraHelper_.getCurrentExposure());
-		if (pythonCameraHelper_.step(buffer))
-		{
-			stat.add();
-		}
-		else
-		{
-			yCError(ULTRAPYTHON) << "Failed acquiring new frame";
-		}
+		stat.add();
+	}
+	else
+	{
+		yCError(ULTRAPYTHON) << "Failed acquiring new frame";
 	}
 
 	mutex.post();
@@ -288,44 +261,11 @@ int V4L_camera::width() const
 	return param.user_width;
 }
 
-bool V4L_camera::set_V4L2_control(uint32_t id, double value, bool verbatim)
-{
-	if (param.camModel == ULTRAPYTON)
-	{
-		return pythonCameraHelper_.setControl(id, value, false);
-	}
-
-	return false;
-}
-
-bool V4L_camera::check_V4L2_control(uint32_t id)
-{
-	if (param.camModel == ULTRAPYTON)
-	{
-		return pythonCameraHelper_.checkControl(id);
-	}
-
-	return false;
-}
-
-double V4L_camera::get_V4L2_control(uint32_t id, bool verbatim)
-{
-	if (param.camModel == ULTRAPYTON)
-	{
-		return pythonCameraHelper_.getControl(id);
-	}
-	return false;
-}
-
 bool V4L_camera::getCameraDescription(CameraDescriptor *camera)
 {
-	if (param.camModel == ULTRAPYTON)
-	{
-		camera->busType = BUS_UNKNOWN;
-		camera->deviceDescription = "UltraPython camera";
-		return true;
-	}
-	return false;
+	camera->busType = BUS_UNKNOWN;
+	camera->deviceDescription = "UltraPython camera";
+	return true;
 }
 
 bool V4L_camera::hasFeature(int feature, bool *_hasFeature)
@@ -348,7 +288,7 @@ bool V4L_camera::hasFeature(int feature, bool *_hasFeature)
 bool V4L_camera::getFeature(int feature, double *value)
 {
 	double tmp = 0.0;
-	tmp = get_V4L2_control(pythonCameraHelper_.remapControlYARPtoV4L(feature));
+	tmp = pythonCameraHelper_.getControl(pythonCameraHelper_.remapControlYARPtoV4L(feature));
 	if (tmp == -1)
 	{
 		*value = 0;
@@ -363,8 +303,8 @@ bool V4L_camera::getFeature(int feature, double *value1, double *value2)
 {
 	if (feature == YARP_FEATURE_WHITE_BALANCE)
 	{
-		*value1 = get_V4L2_control(V4L2_CID_RED_BALANCE);
-		*value2 = get_V4L2_control(V4L2_CID_BLUE_BALANCE);
+		*value1 = pythonCameraHelper_.getControl(V4L2_CID_RED_BALANCE);
+		*value2 = pythonCameraHelper_.getControl(V4L2_CID_BLUE_BALANCE);
 		return !((*value1 == -1) || (*value2 == -1));
 	}
 	return false;
@@ -372,7 +312,7 @@ bool V4L_camera::getFeature(int feature, double *value1, double *value2)
 
 bool V4L_camera::setFeature(int feature, double value)
 {
-	bool ret = set_V4L2_control(pythonCameraHelper_.remapControlYARPtoV4L(feature), value);
+	bool ret = pythonCameraHelper_.setControl(pythonCameraHelper_.remapControlYARPtoV4L(feature), value, false);
 	return ret;
 }
 
@@ -381,8 +321,8 @@ bool V4L_camera::setFeature(int feature, double value1, double value2)
 	if (feature == YARP_FEATURE_WHITE_BALANCE)
 	{
 		bool ret = true;
-		ret &= set_V4L2_control(V4L2_CID_RED_BALANCE, value1);
-		ret &= set_V4L2_control(V4L2_CID_BLUE_BALANCE, value2);
+		ret &= pythonCameraHelper_.setControl(V4L2_CID_RED_BALANCE, value1, false);
+		ret &= pythonCameraHelper_.setControl(V4L2_CID_BLUE_BALANCE, value2, false);
 		return ret;
 	}
 	return false;
@@ -390,13 +330,8 @@ bool V4L_camera::setFeature(int feature, double value1, double value2)
 
 bool V4L_camera::hasOnOff(int feature, bool *_hasOnOff)
 {
-	if (param.camModel == ULTRAPYTON)
-	{
-		*_hasOnOff = false;
-		return true;
-	}
-
-	return false;
+	*_hasOnOff = false;
+	return true;
 }
 
 bool V4L_camera::getActive(int feature, bool *_isActive)

@@ -50,16 +50,10 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-typedef enum
-{
-	ULTRAPYTON
-} supported_cams;
-
 typedef struct
 {
 	__u32 user_width;
 	__u32 user_height;
-	supported_cams camModel;  // In case some camera requires custom procedure
 } Video_params;
 
 
@@ -112,15 +106,10 @@ class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabb
 	Video_params param;
 	yarp::os::Semaphore mutex;
 	bool configured_{false};
-	bool isActive_vector[YARP_FEATURE_NUMBER_OF];
 
 	bool fromConfig(yarp::os::Searchable &config);
 
    private:
-	bool check_V4L2_control(uint32_t id);
-	bool set_V4L2_control(u_int32_t id, double value, bool verbatim = false);
-	double get_V4L2_control(uint32_t id,
-							bool verbatim = false);	 // verbatim = do not convert value, for enum types
 
 	UltraPythonCameraHelper pythonCameraHelper_;
 	void pythonPreprocess(const void *pythonbuffer, size_t size);
