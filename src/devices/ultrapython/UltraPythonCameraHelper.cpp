@@ -28,11 +28,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <yarp/dev/FrameGrabberInterfaces.h>
 
 #include <chrono>
 #include <sstream>
-
-#include <yarp/dev/FrameGrabberInterfaces.h>
 
 #include "xilinx-v4l2-controls.h"
 
@@ -690,7 +689,7 @@ int UltraPythonCameraHelper::readFrame(unsigned char *yarpbuffer)
 		   buf.bytesused);										 // Copy to out Yarp buffer
 	processImage(mMapBuffers_[buf.index].start, buf.bytesused);	 // Nothing to do
 	//**Debug for Kernel start
-	// memset(mMapBuffers_[buf.index].start, 255, buf.bytesused);
+	memset(mMapBuffers_[buf.index].start, 111, buf.bytesused);
 	//**Debug end
 	if (interfaceCApi_->xioctl(mainSubdeviceFd_, VIDIOC_QBUF, &buf) == -1)
 	{
@@ -787,6 +786,17 @@ void UltraPythonCameraHelper::setInjectedLock(std::function<void()> toinJect)
 void UltraPythonCameraHelper::setSubsamplingProperty(bool value)
 {
 	subsamplingEnabledProperty_ = value;
+
+	if (value)
+	{
+		currentHeight = lowresHeight_;
+		currentWidth = lowresWidth_;
+	}
+	else
+	{
+		currentHeight = hiresHeight_;
+		currentWidth = hiresWidth_;
+	}
 }
 
 bool UltraPythonCameraHelper::openAll()
@@ -985,8 +995,8 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl)
 		}
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	 // V4L2_CID_RED_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	 // V4L2_CID_BLUE_BALANCE
-		case V4L2_EXPOSURE_ULTRA_PYTHON:  // EXPOSURE trg_l
-		case V4L2_DEADTIME_ULTRA_PYTHON:  // trg_h
+		case V4L2_EXPOSURE_ULTRA_PYTHON:	 // EXPOSURE trg_l
+		case V4L2_DEADTIME_ULTRA_PYTHON:	 // trg_h
 			return getControl(v4lCtrl, mainSubdeviceFd_);
 		default:
 			return -1.0;
@@ -1045,8 +1055,8 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, int fd)
 
 bool UltraPythonCameraHelper::hasControl(uint32_t v4lCtrl) const
 {
-	uint32_t remappedControl= remapControlV4LtoXilinx(v4lCtrl);
-	bool ret=false;
+	uint32_t remappedControl = remapControlV4LtoXilinx(v4lCtrl);
+	bool ret = false;
 	switch (remappedControl)
 	{
 		case V4L2_CID_GAIN:
@@ -1057,28 +1067,28 @@ bool UltraPythonCameraHelper::hasControl(uint32_t v4lCtrl) const
 		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	 // EXPOSURE  trg_l
 		case V4L2_DEADTIME_ULTRA_PYTHON:	 // trg_h
-			ret= true;
+			ret = true;
 			break;
 		default:
-			ret=false;
+			ret = false;
 	}
-	Log(*this, Severity::debug) << "hascontrol for original:"<<v4lCtrl<<" remapped:" << remappedControl<<" value:"<<ret;
+	Log(*this, Severity::debug) << "hascontrol for original:" << v4lCtrl << " remapped:" << remappedControl << " value:" << ret;
 	return ret;
 }
 
 bool UltraPythonCameraHelper::hasAutoControl(uint32_t v4lCtrl) const
 {
-	//Do nothing
+	// Do nothing
 	v4lCtrl = remapControlV4LtoXilinx(v4lCtrl);
-	Log(*this, Severity::debug) << "hasauto for:" << v4lCtrl<<" value:"<<0;
+	Log(*this, Severity::debug) << "hasauto for:" << v4lCtrl << " value:" << 0;
 	return false;
 }
 
 bool UltraPythonCameraHelper::hasManualControl(uint32_t v4lCtrl) const
 {
-	//Do nothing
+	// Do nothing
 	v4lCtrl = remapControlV4LtoXilinx(v4lCtrl);
-	Log(*this, Severity::debug) << "hasmanual for:" << v4lCtrl<<" value:"<<1;
+	Log(*this, Severity::debug) << "hasmanual for:" << v4lCtrl << " value:" << 1;
 	return true;
 }
 

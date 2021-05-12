@@ -62,9 +62,6 @@ V4L_camera::V4L_camera() : pythonCameraHelper_(nullptr)
 				break;
 		}
 	});
-
-	param.user_width = pythonCameraHelper_.lowresWidth_;
-	param.user_height = pythonCameraHelper_.lowresHeight_;
 }
 
 bool V4L_camera::open(yarp::os::Searchable &config)
@@ -96,8 +93,8 @@ int V4L_camera::getRgbWidth()
 
 bool V4L_camera::getRgbResolution(int &width, int &height)
 {
-	width = param.user_width;
-	height = param.user_height;
+	width = pythonCameraHelper_.currentWidth;
+	height = pythonCameraHelper_.currentHeight;
 	return true;
 }
 
@@ -130,9 +127,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 	{
 		yCDebug(ULTRAPYTHON) << "Python cam full-sampling ";
 		pythonCameraHelper_.setSubsamplingProperty(false);
-		param.user_height = 1024;
-		param.user_width = 2560;
-		if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_)
+			if (1000.0 / (double)period > UltraPythonCameraHelper::hiresFrameRate_)
 		{
 			yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for hires:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::hiresFrameRate_;
 		}
@@ -141,8 +136,6 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 	{
 		yCDebug(ULTRAPYTHON) << "Python cam sub-sampling ";
 		pythonCameraHelper_.setSubsamplingProperty(true);
-		param.user_height = 512;
-		param.user_width = 1280;
 		if (1000.0 / (double)period > UltraPythonCameraHelper::lowresFrameRate_)
 		{
 			yCWarning(ULTRAPYTHON) << "FPS exceed suggested FPS for lowres:" << 1000.0 / (double)period << " suggested:" << UltraPythonCameraHelper::lowresFrameRate_;
@@ -210,7 +203,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 		yCError(ULTRAPYTHON) << "distortionModel - param not supported.";
 	}
 
-	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << param.user_width << "x" << param.user_height;
+	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << pythonCameraHelper_.currentWidth << "x" << pythonCameraHelper_.currentHeight;
 	return true;
 }
 
@@ -236,7 +229,6 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer)
 	}
 
 	mutex.wait();
-
 	static Statistics stat("frames read by YARP", pythonCameraHelper_.getCurrentExposure());
 	if (pythonCameraHelper_.step(buffer))
 	{
@@ -246,19 +238,18 @@ bool V4L_camera::getRgbBuffer(unsigned char *buffer)
 	{
 		yCError(ULTRAPYTHON) << "Failed acquiring new frame";
 	}
-
 	mutex.post();
 	return true;
 }
 
 int V4L_camera::height() const
 {
-	return param.user_height;
+	return pythonCameraHelper_.currentHeight;
 }
 
 int V4L_camera::width() const
 {
-	return param.user_width;
+	return pythonCameraHelper_.currentWidth;
 }
 
 bool V4L_camera::getCameraDescription(CameraDescriptor *camera)

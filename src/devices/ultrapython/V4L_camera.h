@@ -50,13 +50,6 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-typedef struct
-{
-	__u32 user_width;
-	__u32 user_height;
-} Video_params;
-
-
 class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabberRgb, public yarp::dev::IFrameGrabberControls,  public yarp::dev::IRgbVisualParams
 {
    public:
@@ -103,7 +96,6 @@ class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabb
    private:
 	bool verbose{false};
 
-	Video_params param;
 	yarp::os::Semaphore mutex;
 	bool configured_{false};
 

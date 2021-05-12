@@ -89,7 +89,7 @@ class UltraPythonCameraHelper
 	static constexpr const char *pipelineRxifName = "PYTHON1300_RXIF";
 
 	// Buffers
-	static constexpr unsigned int requestBufferNumber_ = {8};
+	static constexpr unsigned int requestBufferNumber_ = {4};
 	static constexpr unsigned int pipelineMaxLen = {16};
 
 	// Native resolution for cam
@@ -173,6 +173,11 @@ class UltraPythonCameraHelper
 	bool forceFormatProperty_{true};  // Overwrite preesistent format
 	double currentExposure_{0};		  // Only for logging purpouse
 
+   public:
+	int currentHeight{0};
+	int currentWidth{0};
+
+   private:
 	// Image memory map
 	MmapBuffer mMapBuffers_[requestBufferNumber_];
 
