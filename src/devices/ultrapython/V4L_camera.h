@@ -51,49 +51,20 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-// minimum number of buffers to request in VIDIOC_REQBUFS call
-#define DEFAULT_WIDTH 640
-#define DEFAULT_HEIGHT 480
-#define DEFAULT_FRAMERATE 30
-#define VIDIOC_REQBUFS_COUNT 2
-
-typedef enum
-{
-	IO_METHOD_READ,
-	IO_METHOD_MMAP,
-	IO_METHOD_USERPTR,
-} io_method;
-
 typedef enum
 {
 	ULTRAPYTON
 } supported_cams;
 
-struct buffer
-{
-	void *start;
-	size_t length;
-};
-
 typedef struct
 {
-	
 	__u32 user_width;
 	__u32 user_height;
-		
-	
-		supported_cams camModel;  // In case some camera requires custom procedure
+	supported_cams camModel;  // In case some camera requires custom procedure
 } Video_params;
 
-/*
- *  Device handling
- */
 
-class V4L_camera : public yarp::dev::DeviceDriver,
-				   public yarp::dev::IFrameGrabberRgb,
-				   public yarp::dev::IFrameGrabberControls,
-				   public yarp::dev::IPreciselyTimed,
-				   public yarp::dev::IRgbVisualParams
+class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabberRgb, public yarp::dev::IFrameGrabberControls, public yarp::dev::IPreciselyTimed, public yarp::dev::IRgbVisualParams
 {
    public:
 	V4L_camera();
@@ -102,7 +73,7 @@ class V4L_camera : public yarp::dev::DeviceDriver,
 	bool open(yarp::os::Searchable &config) override;
 	bool close() override;
 
-// IPreciselyTimed    Interface
+	// IPreciselyTimed    Interface
 	yarp::os::Stamp getLastInputStamp() override;
 
 	// IFrameGrabberRgb    Interface
@@ -141,31 +112,20 @@ class V4L_camera : public yarp::dev::DeviceDriver,
 
    private:
 	bool verbose{false};
-	v4lconvert_data *_v4lconvert_data;
-	bool use_exposure_absolute;
 
-	yarp::os::Stamp timeStamp;
 	Video_params param;
 	yarp::os::Semaphore mutex;
-	bool configured;
+	bool configured_{false};
 	bool isActive_vector[YARP_FEATURE_NUMBER_OF];
-	double timeStart, timeTot, timeNow, timeElapsed;
 
 	bool fromConfig(yarp::os::Searchable &config);
 
-	int convertV4L_to_YARP_format(int format);
-
-	  private:
-
-	int convertYARP_to_V4L(int feature);
+   private:
 	bool check_V4L2_control(uint32_t id);
 	bool set_V4L2_control(u_int32_t id, double value, bool verbatim = false);
 	double get_V4L2_control(uint32_t id,
 							bool verbatim = false);	 // verbatim = do not convert value, for enum types
 
-	// Only for PythonCamera
 	UltraPythonCameraHelper pythonCameraHelper_;
 	void pythonPreprocess(const void *pythonbuffer, size_t size);
-	unsigned char *pythonBuffer_;
-	unsigned int pythonBufferSize_{0};
 };
