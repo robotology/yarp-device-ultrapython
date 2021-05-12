@@ -71,6 +71,7 @@ class UltraPythonCameraHelper
 	static constexpr unsigned int V4L2_DEADTIME_ULTRA_PYTHON{0x0098cb02};	  // trg_h
 	static constexpr unsigned int V4L2_EXTTRIGGGER_ULTRA_PYTHON{0x0098cc03};  // ext_trigger
 	static constexpr unsigned int V4L2_REDBALANCE_ULTRA_PYTHON{0x0098c9a3};	  // Red Balance
+  static constexpr unsigned int V4L2_GREENBALANCE_ULTRA_PYTHON{0x0098c9a4};	  // Green Balance
 	static constexpr unsigned int V4L2_BLUEBALANCE_ULTRA_PYTHON{0x0098c9a5};  // Blue balance
 	static constexpr unsigned int V4L2_ANALOGGAIN_ULTRA_PYTHON{0x009e0903};	  // Analog gain
 

@@ -266,11 +266,6 @@ bool V4L_camera::hasFeature(int feature, bool *_hasFeature)
 		*_hasFeature = pythonCameraHelper_.hasControl(V4L2_CID_RED_BALANCE) && pythonCameraHelper_.hasControl(V4L2_CID_BLUE_BALANCE);
 		return true;
 	}
-	if (feature == YARP_FEATURE_EXPOSURE)
-	{
-		*_hasFeature = false;
-		return true;
-	}
 
 	*_hasFeature = pythonCameraHelper_.hasControl(pythonCameraHelper_.remapControlYARPtoV4L(feature));
 	return true;

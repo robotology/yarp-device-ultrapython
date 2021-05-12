@@ -874,6 +874,7 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 			out = out & setControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex2_], value, absolute);
 			return out;
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	 // V4L2_CID_RED_BALANCE
+		case V4L2_GREENBALANCE_ULTRA_PYTHON:	 // V4L2_CID_BLUE_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	 // V4L2_CID_BLUE_BALANCE
 		case V4L2_DEADTIME_ULTRA_PYTHON:	 // trg_h
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	 // EXPOSURE trg_l
@@ -994,6 +995,7 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl)
 			return left;
 		}
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	 // V4L2_CID_RED_BALANCE
+		case V4L2_GREENBALANCE_ULTRA_PYTHON:	 // V4L2_CID_GREEN_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	 // V4L2_CID_BLUE_BALANCE
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	 // EXPOSURE trg_l
 		case V4L2_DEADTIME_ULTRA_PYTHON:	 // trg_h
@@ -1063,6 +1065,7 @@ bool UltraPythonCameraHelper::hasControl(uint32_t v4lCtrl) const
 		case V4L2_ANALOGGAIN_ULTRA_PYTHON:
 		case V4L2_CID_BRIGHTNESS:
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	 // V4L2_CID_RED_BALANCE
+		case V4L2_GREENBALANCE_ULTRA_PYTHON:	 // V4L2_CID_GREEN_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	 // V4L2_CID_BLUE_BALANCE
 		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	 // EXPOSURE  trg_l
@@ -1137,6 +1140,10 @@ uint32_t UltraPythonCameraHelper::remapControlV4LtoXilinx(uint32_t v4lCtr) const
 			out = V4L2_REDBALANCE_ULTRA_PYTHON;
 			Log(*this, Severity::debug) << "remap RED BALANCE";
 			break;
+		case V4L2_GREENBALANCE_ULTRA_PYTHON://Doesn't exist for V4L
+			out = V4L2_GREENBALANCE_ULTRA_PYTHON;
+			Log(*this, Severity::debug) << "remap GREEN BALANCE";
+			break;
 		case V4L2_CID_BLUE_BALANCE:
 			out = V4L2_BLUEBALANCE_ULTRA_PYTHON;
 			Log(*this, Severity::debug) << "remap BLUE BALANCE";
@@ -1157,37 +1164,12 @@ int UltraPythonCameraHelper::remapControlYARPtoV4L(int feature) const
 	{
 		case YARP_FEATURE_BRIGHTNESS:
 			return V4L2_CID_BRIGHTNESS;
-		case YARP_FEATURE_SHUTTER:	// this maps also on exposure
-		case YARP_FEATURE_EXPOSURE:
+		case YARP_FEATURE_SHUTTER:	
+		//case YARP_FEATURE_EXPOSURE: // shutter used
 			return V4L2_CID_EXPOSURE;
-		case YARP_FEATURE_SHARPNESS:
-			return V4L2_CID_SHARPNESS;
-		case YARP_FEATURE_HUE:
-			return V4L2_CID_HUE;
-		case YARP_FEATURE_SATURATION:
-			return V4L2_CID_SATURATION;
-		case YARP_FEATURE_GAMMA:
-			return V4L2_CID_GAMMA;
 		case YARP_FEATURE_GAIN:
 			return V4L2_CID_GAIN;
-		case YARP_FEATURE_IRIS:
-			return V4L2_CID_IRIS_ABSOLUTE;
-
-			//         case YARP_FEATURE_WHITE_BALANCE:  -> this has to e mapped on the
-			//         couple V4L2_CID_BLUE_BALANCE && V4L2_CID_RED_BALANCE
-
-			//////////////////////////
-			// not yet implemented  //
-			//////////////////////////
-			//         case YARP_FEATURE_FOCUS:          return DC1394_FEATURE_FOCUS;
-			//         case YARP_FEATURE_TEMPERATURE:    return
-			//         DC1394_FEATURE_TEMPERATURE; case YARP_FEATURE_TRIGGER: return
-			//         DC1394_FEATURE_TRIGGER; case YARP_FEATURE_TRIGGER_DELAY:  return
-			//         DC1394_FEATURE_TRIGGER_DELAY; case YARP_FEATURE_FRAME_RATE:
-			//         return DC1394_FEATURE_FRAME_RATE; case YARP_FEATURE_ZOOM: return
-			//         DC1394_FEATURE_ZOOM; case YARP_FEATURE_PAN:            return
-			//         DC1394_FEATURE_PAN; case YARP_FEATURE_TILT:           return
-			//         DC1394_FEATURE_TILT;
+		//case YARP_FEATURE_WHITE_BALANCE:  -> this has to e mapped on the RED,GREE,BLUE gain
 	}
 	return -1;
 }
