@@ -28,12 +28,10 @@
 
 #include "UltraPythonCameraHelper.h"
 
-class UltraPythonDriver : public yarp::dev::DeviceDriver,
-						  public yarp::dev::IPreciselyTimed,
-						  public yarp::dev::IFrameGrabberRgb,
-						  public yarp::dev::IFrameGrabberControls,
-						  public yarp::dev::IRgbVisualParams,
-						  public yarp::dev::IFrameGrabberImage
+class UltraPythonDriver : 	public yarp::dev::DeviceDriver, 
+							public yarp::dev::IPreciselyTimed, 
+							public yarp::dev::IFrameGrabberControls, 
+							public yarp::dev::IFrameGrabberImage
 {
 	UltraPythonDriver(const UltraPythonDriver &) = delete;
 	void operator=(const UltraPythonDriver &) = delete;
@@ -42,10 +40,11 @@ class UltraPythonDriver : public yarp::dev::DeviceDriver,
 	UltraPythonDriver();
 	~UltraPythonDriver() override;
 
+	// Implements DeviceDriver
 	bool open(yarp::os::Searchable &config) override;
 	bool close() override;
 
-	// Implements FrameGrabber basic interface.
+	// Implements IFrameGrabberImage basic interface.
 	int height() const override;
 	int width() const override;
 	bool getImage(yarp::sig::ImageOf<yarp::sig::PixelRgb> &image) override;
@@ -53,7 +52,7 @@ class UltraPythonDriver : public yarp::dev::DeviceDriver,
 	// Implements the IPreciselyTimed interface.
 	yarp::os::Stamp getLastInputStamp() override;
 
-	// Implementation of IFrameGrabberControls2 interface
+	// Implementation of IFrameGrabberControls interface
 	bool getCameraDescription(CameraDescriptor *camera) override;
 	bool hasFeature(int feature, bool *hasFeature) override;
 	bool setFeature(int feature, double value) override;
@@ -69,19 +68,6 @@ class UltraPythonDriver : public yarp::dev::DeviceDriver,
 	bool setMode(int feature, FeatureMode mode) override;
 	bool getMode(int feature, FeatureMode *mode) override;
 	bool setOnePush(int feature) override;
-
-	// IFrameGrabberRgb
-	bool getRgbBuffer(unsigned char *buffer) override;
-	int getRgbHeight() override;
-	int getRgbWidth() override;
-	bool getRgbSupportedConfigurations(yarp::sig::VectorOf<yarp::dev::CameraConfig> &configurations) override;
-	bool getRgbResolution(int &width, int &height) override;
-	bool setRgbResolution(int width, int height) override;
-	bool getRgbFOV(double &horizontalFov, double &verticalFov) override;
-	bool setRgbFOV(double horizontalFov, double verticalFov) override;
-	bool getRgbIntrinsicParam(yarp::os::Property &intrinsic) override;
-	bool getRgbMirroring(bool &mirror) override;
-	bool setRgbMirroring(bool mirror) override;
 
    private:
 	yarp::os::Semaphore mutex;
