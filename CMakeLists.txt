@@ -48,7 +48,8 @@ include(AddUninstallTarget)
 
 find_package(YARP 3.4 COMPONENTS os sig dev OPTIONAL_COMPONENTS math REQUIRED)
 set(CMAKE_C_FLAGS "${YARP_C_FLAGS} ${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${YARP_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${YARP_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 yarp_configure_plugins_installation(yarp-device-ultrapython)
 

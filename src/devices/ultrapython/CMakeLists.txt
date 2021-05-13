@@ -7,7 +7,7 @@
 yarp_prepare_plugin(ultrapython
   CATEGORY device
   TYPE UltraPythonDriver
-  INCLUDE UltraPythonDriverGeneric.h
+  INCLUDE UltraPythonDriver.h
   EXTRA_CONFIG WRAPPER=grabberDual
   DEPENDS "OpenCV_FOUND;UDev_FOUND"
   DEFAULT ON
@@ -18,8 +18,8 @@ if(ENABLE_ultrapython)
 
   target_sources(yarp_ultrapython
   PRIVATE
-      UltraPythonDriverGeneric.cpp
-      UltraPythonDriverGeneric.h
+      UltraPythonDriver.cpp
+      UltraPythonDriver.h
       UltraPythonCameraLogComponent.cpp
       UltraPythonCameraLogComponent.h
       V4L_camera.cpp

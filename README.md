@@ -676,3 +676,13 @@ cd test
 ```
 
 <img src="video/2cams.gif" width="500px">
+
+# Bash command
+
+```
+  fgc set feat 33 0.5
+  yarp rpc /grabber
+  echo "fgc set feat 33 0.5" | yarp rpc /grabber
+
+  echo "fgc set feat 33 0.5" | yarp write ... /grabber
+```
