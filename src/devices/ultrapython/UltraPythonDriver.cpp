@@ -28,7 +28,6 @@
 #include "Statistics.h"
 #include "UltraPythonCameraLogComponent.h"
 
-
 using namespace yarp::os;
 using namespace yarp::dev;
 
@@ -133,14 +132,12 @@ int UltraPythonDriver::getRgbWidth()
 	return 0;
 }
 
-
 bool UltraPythonDriver::getRgbResolution(int &width, int &height)
 {
 	width = pythonCameraHelper_.currentWidth;
 	height = pythonCameraHelper_.currentHeight;
 	return true;
 }
-
 
 bool UltraPythonDriver::getImage(yarp::sig::ImageOf<yarp::sig::PixelRgb> &image)
 {
@@ -435,4 +432,9 @@ bool UltraPythonDriver::fromConfig(yarp::os::Searchable &config)
 
 	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << pythonCameraHelper_.currentWidth << "x" << pythonCameraHelper_.currentHeight;
 	return true;
+}
+
+void UltraPythonDriver::pythonPreprocess(const void *pythonbuffer, size_t size)
+{
+	// Nothing to do
 }
