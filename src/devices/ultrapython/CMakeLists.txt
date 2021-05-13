@@ -22,8 +22,6 @@ if(ENABLE_ultrapython)
       UltraPythonDriver.h
       UltraPythonCameraLogComponent.cpp
       UltraPythonCameraLogComponent.h
-      V4L_camera.cpp
-      V4L_camera.h
       UltraPythonCameraHelper.cpp
       UltraPythonCameraHelper.h
       xilinx-v4l2-controls.h
