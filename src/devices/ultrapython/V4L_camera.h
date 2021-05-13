@@ -48,9 +48,10 @@
 
 #include "UltraPythonCameraHelper.h"
 
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
-
-class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabberRgb, public yarp::dev::IFrameGrabberControls,  public yarp::dev::IRgbVisualParams
+class V4L_camera : public yarp::dev::DeviceDriver, 
+				   public yarp::dev::IFrameGrabberRgb, 
+				   public yarp::dev::IFrameGrabberControls,  
+				   public yarp::dev::IRgbVisualParams
 {
    public:
 	V4L_camera();
@@ -94,14 +95,11 @@ class V4L_camera : public yarp::dev::DeviceDriver, public yarp::dev::IFrameGrabb
 	bool setOnePush(int feature) override;
 
    private:
-	bool verbose{false};
 
 	yarp::os::Semaphore mutex;
 	bool configured_{false};
 
 	bool fromConfig(yarp::os::Searchable &config);
-
-   private:
 
 	UltraPythonCameraHelper pythonCameraHelper_;
 	void pythonPreprocess(const void *pythonbuffer, size_t size);

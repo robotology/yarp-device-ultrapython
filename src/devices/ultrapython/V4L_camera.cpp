@@ -31,7 +31,6 @@
 #include "InterfaceForCApi.h"
 #include "Statistics.h"
 #include "UltraPythonCameraLogComponent.h"
-#include "list.h"
 
 using namespace yarp::os;
 using namespace yarp::dev;
@@ -102,7 +101,7 @@ bool V4L_camera::fromConfig(yarp::os::Searchable &config)
 {
 	if (config.check("verbose"))
 	{
-		verbose = true;
+		//TODO
 	}
 
 	int period = 28;
