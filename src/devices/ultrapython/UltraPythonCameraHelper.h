@@ -178,6 +178,7 @@ class UltraPythonCameraHelper
 	int currentHeight{0};
 	int currentWidth{0};
 
+	void mapBufferFill(unsigned char* tofillWith,unsigned int index);//Test only
    private:
 	// Image memory map
 	MmapBuffer mMapBuffers_[requestBufferNumber_];

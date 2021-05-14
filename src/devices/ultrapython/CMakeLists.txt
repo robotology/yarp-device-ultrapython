@@ -4,6 +4,19 @@
 # This software may be modified and distributed under the terms of the
 # BSD-3-Clause license. See the accompanying LICENSE file for details.
 
+#test
+include(FetchContent)
+if(COMPILE_WITHUNITTEST_ULTRAPYTHON)
+  FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY "https://github.com/google/googletest"
+      GIT_TAG        master
+  )
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+  add_subdirectory(unittest)
+  endif()
+
 yarp_prepare_plugin(ultrapython
   CATEGORY device
   TYPE UltraPythonDriver

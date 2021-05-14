@@ -14,14 +14,14 @@ set(SOURCES gtest_main.cc
             testControlBrigthness.cpp
             testUltraPytonRunning.cpp
             testDefalutOrNotUsedParam.cpp
-            ../linux/InterfaceForCApi.h
-            ../linux/UltraPythonCameraHelper.h
-            ../linux/UltraPythonCameraHelper.cpp
+            ../InterfaceForCApi.h
+            ../UltraPythonCameraHelper.h
+            ../UltraPythonCameraHelper.cpp
             )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-target_link_libraries(${PROJECT_NAME} gmock gtest udev)
+target_link_libraries(${PROJECT_NAME} PRIVATE gmock gtest ${UDev_LIBRARIES} YARP::YARP_dev)
 
 # install
 install(TARGETS ${PROJECT_NAME}

@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "../linux/UltraPythonCameraHelper.h"
+#include "../UltraPythonCameraHelper.h"
 #include "CApiMock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -47,7 +47,8 @@ TEST(UltraPython, step_base_ok) {
   EXPECT_CALL(*interface, xioctl(_, VIDIOC_QBUF, _)).WillOnce(Return(1));
 
   // when
-  unsigned char yarpbuffer[10000000];
+  unsigned char yarpbuffer[1000000];
+  helper.mapBufferFill(yarpbuffer,1);
   bool out = helper.step(yarpbuffer);
 
   // then
@@ -75,7 +76,8 @@ TEST(UltraPython, step_base_error1) {
   EXPECT_CALL(*interface, xioctl(_, VIDIOC_QBUF, _)).Times(0);
 
   // when
-  unsigned char yarpbuffer[10000000];
+  unsigned char yarpbuffer[1000000];
+  helper.mapBufferFill(yarpbuffer,1);
   bool out = helper.step(yarpbuffer);
 
   // then
@@ -93,7 +95,8 @@ TEST(UltraPython, step_base_timeout_ko) {
       .WillOnce(Return(0));
 
   // when
-  unsigned char yarpbuffer[10000000];
+  unsigned char yarpbuffer[1000000];
+  helper.mapBufferFill(yarpbuffer,1);
   bool out = helper.step(yarpbuffer);
 
   // then
@@ -111,7 +114,8 @@ TEST(UltraPython, step_base_error_ko) {
       .WillOnce(Return(-1));
 
   // when
-  unsigned char yarpbuffer[10000000];
+  unsigned char yarpbuffer[1000000];
+  helper.mapBufferFill(yarpbuffer,1);
   bool out = helper.step(yarpbuffer);
 
   // then

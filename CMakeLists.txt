@@ -58,4 +58,6 @@ find_package(UDev REQUIRED)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES)
 
+option(COMPILE_WITHUNITTEST_ULTRAPYTHON "Compile also unittest for UltraPython" OFF)
+
 add_subdirectory(src)

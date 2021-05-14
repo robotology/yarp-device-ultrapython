@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "../linux/InterfaceForCApi.h"
+#include "../InterfaceForCApi.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

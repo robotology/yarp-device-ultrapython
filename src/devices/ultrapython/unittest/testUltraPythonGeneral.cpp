@@ -16,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "../linux/InterfaceForCApi.h"
-#include "../linux/UltraPythonCameraHelper.h"
+#include "../InterfaceForCApi.h"
+#include "../UltraPythonCameraHelper.h"
 #include "CApiMock.h"
 
 #include "gmock/gmock.h"

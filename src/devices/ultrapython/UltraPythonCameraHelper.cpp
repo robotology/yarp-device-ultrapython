@@ -1223,3 +1223,9 @@ double UltraPythonCameraHelper::getCurrentExposure() const
 {
 	return currentExposure_;
 };
+
+//Test only
+void UltraPythonCameraHelper::mapBufferFill(unsigned char* tofillWith,unsigned int index)
+{
+	mMapBuffers_[index].start=tofillWith;
+}
