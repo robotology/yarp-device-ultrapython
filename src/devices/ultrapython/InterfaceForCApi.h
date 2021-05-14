@@ -31,7 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// Wraper for test use of c style API
+// Wraper for unittest use of c style API
 class InterfaceForCApi {
 public:
   virtual int open_c(const char *path, int oflag) { return open(path, oflag); }

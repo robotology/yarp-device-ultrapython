@@ -28,7 +28,6 @@
 #include "Statistics.h"
 #include "UltraPythonCameraLogComponent.h"
 
-
 using namespace yarp::os;
 using namespace yarp::dev;
 
@@ -103,11 +102,6 @@ int UltraPythonDriver::height() const
 	return pythonCameraHelper_.currentHeight;
 }
 
-bool UltraPythonDriver::getRgbBuffer(unsigned char *buff)
-{
-	return false;
-}
-
 yarp::os::Stamp UltraPythonDriver::getLastInputStamp()
 {
 	/*
@@ -119,28 +113,6 @@ yarp::os::Stamp UltraPythonDriver::getLastInputStamp()
 */
 	return yarp::os::Stamp();
 }
-
-int UltraPythonDriver::getRgbHeight()
-{
-	yCError(ULTRAPYTHON) << "getRgbHeight - not supported";
-	return 0;
-	return 0;
-}
-
-int UltraPythonDriver::getRgbWidth()
-{
-	yCError(ULTRAPYTHON) << "getRgbWidth - not supported";
-	return 0;
-}
-
-
-bool UltraPythonDriver::getRgbResolution(int &width, int &height)
-{
-	width = pythonCameraHelper_.currentWidth;
-	height = pythonCameraHelper_.currentHeight;
-	return true;
-}
-
 
 bool UltraPythonDriver::getImage(yarp::sig::ImageOf<yarp::sig::PixelRgb> &image)
 {
@@ -286,48 +258,6 @@ bool UltraPythonDriver::setOnePush(int feature)
 	return false;
 }
 
-bool UltraPythonDriver::getRgbFOV(double &horizontalFov, double &verticalFov)
-{
-	yCError(ULTRAPYTHON) << "getRgbFOV - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::setRgbFOV(double horizontalFov, double verticalFov)
-{
-	yCError(ULTRAPYTHON) << "setRgbFOV - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::getRgbIntrinsicParam(yarp::os::Property &intrinsic)
-{
-	yCError(ULTRAPYTHON) << "getRgbIntrinsicParam - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::getRgbMirroring(bool &mirror)
-{
-	yCError(ULTRAPYTHON) << "getRgbMirroring - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::setRgbMirroring(bool mirror)
-{
-	yCError(ULTRAPYTHON) << "setRgbMirroring - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::getRgbSupportedConfigurations(yarp::sig::VectorOf<CameraConfig> &configurations)
-{
-	yCError(ULTRAPYTHON) << "getRgbSupportedConfigurations - not supported";
-	return false;
-}
-
-bool UltraPythonDriver::setRgbResolution(int width, int height)
-{
-	yCError(ULTRAPYTHON) << "setRgbResolution - not supported";
-	return false;
-}
-
 bool UltraPythonDriver::fromConfig(yarp::os::Searchable &config)
 {
 	if (config.check("verbose"))
@@ -441,4 +371,3 @@ void UltraPythonDriver::pythonPreprocess(const void *pythonbuffer, size_t size)
 {
 	// Nothing to do
 }
-
