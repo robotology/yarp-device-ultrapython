@@ -436,3 +436,9 @@ bool UltraPythonDriver::fromConfig(yarp::os::Searchable &config)
 	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << pythonCameraHelper_.currentWidth << "x" << pythonCameraHelper_.currentHeight;
 	return true;
 }
+
+void UltraPythonDriver::pythonPreprocess(const void *pythonbuffer, size_t size)
+{
+	// Nothing to do
+}
+

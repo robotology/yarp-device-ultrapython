@@ -68,10 +68,6 @@ bool V4L_camera::close()
 
 }
 
-void V4L_camera::pythonPreprocess(const void *pythonbuffer, size_t size)
-{
-	// Nothing to do
-}
 
 // IFrameGrabberRgb Interface
 bool V4L_camera::getRgbBuffer(unsigned char *buffer)
