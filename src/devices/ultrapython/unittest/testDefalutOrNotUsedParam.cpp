@@ -36,14 +36,12 @@ TEST(UltraPython, notusedparams_ok) {
   // when
   bool force = helper.getForceFormatProperty();
   bool crop = helper.getCropEnabledProperty();
-  bool autoCtrl = helper.hasAutoControl(1);
-  bool honor = helper.getHonorFps();
+    bool honor = helper.getHonorFps();
   double step = helper.getStepPeriod();
 
   // then
   EXPECT_FALSE(crop);
   EXPECT_TRUE(force);
-  EXPECT_FALSE(autoCtrl);
   EXPECT_FALSE(honor);
   EXPECT_EQ(40, step);
 
