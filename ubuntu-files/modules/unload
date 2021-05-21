@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rmmod xilinx_tpg
+rmmod xilinx_vtc
+rmmod xilinx_video
+rmmod python1300
+rmmod imgfusion
+rmmod xilinx_python1300_rxif
+rmmod xilinx_demosaic
+rmmod xilinx_vpss_csc
+rmmod xilinx_vip
+rmmod xilinx_frmbuf
