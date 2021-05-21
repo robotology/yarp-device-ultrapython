@@ -193,7 +193,7 @@ cd /root/icubtech/yarp-device-ultrapython/ubuntu-files/yarp.local
 
 By default, modules should be loaded on startup.
 
-## Ultrapython UI
+## 2.1. Ultrapython UI
 
 The UI for UltraPython is called `ultrapythonui` and is self-explaining.<br>  
 <img src="img/UI001.png" width="500px">  
@@ -208,7 +208,7 @@ the name is without rpc and the port name usually is /grabber. For name look at 
 
 frameGrabberGui2 is not the best choice for UltraPyhton.
 
-## 2.1. The .ini files
+## 2.2. The .ini files
 
 The .ini files for the UltraPython are in:
 
@@ -239,7 +239,7 @@ honorfps false
 
 ```
 
-## 2.2. Reading the log on console
+## 2.3. Reading the log on console
 
 TODO
 
@@ -794,6 +794,6 @@ cd ~/icubtech/yarp-device-ultrapython/obsolete/test
 ./testScript.sh
 ```
 
-# 9.Others
+# 9. Others
 
 sudo apt-get install apt-transport-https ca-certificates -y
