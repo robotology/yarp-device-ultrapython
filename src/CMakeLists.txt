@@ -5,6 +5,7 @@
 # BSD-3-Clause license. See the accompanying LICENSE file for details.
 
 add_subdirectory(devices)
+add_subdirectory(common)
 
 if(COMPILE_WITHUI_ULTRAPYTHON)
     add_subdirectory(ui)

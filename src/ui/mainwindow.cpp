@@ -26,6 +26,7 @@
 #include <thread>
 
 #include "./ui_mainwindow.h"
+#include "common.h"
 
 MainWindow::MainWindow(const std::string& remotePort, QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -89,7 +90,7 @@ bool MainWindow::readAndShowValues()
 	ui->exposureAbs->setText(ss.str().c_str());
 	ui->exposureSlider->setValue(exposureValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_CAPTURE_SIZE;
+	feature = (cameraFeature_id_t)YARP_FEATURE_RED_GAIN;
 	double redGainValue;
 	res = grabber_->getFeature(feature, &redGainValue);
 	if (!res)
@@ -101,7 +102,7 @@ bool MainWindow::readAndShowValues()
 	ui->redGainAbs->setText(ss.str().c_str());
 	ui->redGainSlider->setValue(redGainValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_MIRROR;
+	feature = (cameraFeature_id_t)YARP_FEATURE_BLUE_GAIN;
 	double blueGainValue;
 	res = grabber_->getFeature(feature, &blueGainValue);
 	if (!res)
@@ -113,7 +114,7 @@ bool MainWindow::readAndShowValues()
 	ui->blueGainAbs->setText(ss.str().c_str());
 	ui->blueGainSlider->setValue(blueGainValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_CAPTURE_QUALITY;
+	feature = (cameraFeature_id_t)YARP_FEATURE_GREEN_GAIN;
 	double greenGainValue;
 	res = grabber_->getFeature(feature, &greenGainValue);
 	if (!res)
@@ -214,7 +215,7 @@ void MainWindow::on_brightnessSlider_sliderReleased()
 
 void MainWindow::on_redGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_CAPTURE_SIZE;
+	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_RED_GAIN;
 	auto value = ui->redGainSlider->value();
 	double redGainValue = (double)value / 100;
 	std::cout << "Slider:" << redGainValue << std::endl;
@@ -230,7 +231,7 @@ void MainWindow::on_redGainSlider_sliderReleased()
 
 void MainWindow::on_blueGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_MIRROR;
+	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_BLUE_GAIN;
 	auto value = ui->blueGainSlider->value();
 	double blueGainValue = (double)value / 100;
 	std::cout << "Slider:" << blueGainValue << std::endl;
@@ -246,7 +247,7 @@ void MainWindow::on_blueGainSlider_sliderReleased()
 
 void MainWindow::on_greenGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_CAPTURE_QUALITY;
+	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_GREEN_GAIN;
 	auto value = ui->greenGainSlider->value();
 	double greenGainValue = (double)value / 100;
 	std::cout << "Slider:" << greenGainValue << std::endl;

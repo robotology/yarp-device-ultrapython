@@ -32,6 +32,7 @@ class UltraPythonDriver : 	public yarp::dev::DeviceDriver,
 							public yarp::dev::IPreciselyTimed, 
 							public yarp::dev::IFrameGrabberControls, 
 							public yarp::dev::IFrameGrabberImage
+							//public yarp::dev::IRgbVisualParams 
 {
 	UltraPythonDriver(const UltraPythonDriver &) = delete;
 	void operator=(const UltraPythonDriver &) = delete;

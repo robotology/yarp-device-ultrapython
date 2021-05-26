@@ -27,6 +27,7 @@
 #include "InterfaceForCApi.h"
 #include "Statistics.h"
 #include "UltraPythonCameraLogComponent.h"
+#include "common.h"
 
 using namespace yarp::os;
 using namespace yarp::dev;
@@ -104,13 +105,8 @@ int UltraPythonDriver::height() const
 
 yarp::os::Stamp UltraPythonDriver::getLastInputStamp()
 {
-	/*
-	TODO
-	if (deviceTimed != nullptr)
-	{
-		return deviceTimed->getLastInputStamp();
-	}
-*/
+
+	//TODO
 	return yarp::os::Stamp();
 }
 
@@ -388,13 +384,13 @@ int UltraPythonDriver::remapControlYARPtoXilinx(int feature) const
 		case YARP_FEATURE_GAIN:
 			yCDebug(ULTRAPYTHON) << "remap gain";
 			return V4L2_CID_GAIN;
-		case YARP_FEATURE_CAPTURE_SIZE:	 // Temporary RED gain
+		case YARP_FEATURE_RED_GAIN:	
 			yCDebug(ULTRAPYTHON) << "remap RED gain";
 			return UltraPythonCameraHelper::V4L2_REDBALANCE_ULTRA_PYTHON;
-		case YARP_FEATURE_CAPTURE_QUALITY:	// Temporary GREEN gain
+		case YARP_FEATURE_GREEN_GAIN:
 			yCDebug(ULTRAPYTHON) << "remap GREEN gain";
 			return UltraPythonCameraHelper::V4L2_GREENBALANCE_ULTRA_PYTHON;
-		case YARP_FEATURE_MIRROR:  // Temporary BLUE gain
+		case YARP_FEATURE_BLUE_GAIN:
 			yCDebug(ULTRAPYTHON) << "remap BLUE gain";
 			return UltraPythonCameraHelper::V4L2_BLUEBALANCE_ULTRA_PYTHON;
 	}

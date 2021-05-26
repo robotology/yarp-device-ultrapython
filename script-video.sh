@@ -13,7 +13,7 @@
 
 ####ULTRAPYTHONUI
 #ultrapythonui --remote /grabber &
-#sleep 1
+sleep 1
 
 ####YARPVIEW
 yarpview &

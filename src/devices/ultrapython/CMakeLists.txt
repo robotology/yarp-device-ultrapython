@@ -48,6 +48,7 @@ if(ENABLE_ultrapython)
       YARP::YARP_os
       YARP::YARP_sig
       YARP::YARP_dev
+      ultrapythoncommon
   )
 
   target_include_directories(yarp_ultrapython SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})

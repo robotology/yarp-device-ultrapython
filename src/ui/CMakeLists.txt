@@ -46,6 +46,7 @@ PRIVATE
   YARP::YARP_init
   YARP::YARP_sig
   YARP::YARP_dev
+  ultrapythoncommon
 )
 
 target_include_directories(ultrapythonui SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
