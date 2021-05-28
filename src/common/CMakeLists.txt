@@ -14,6 +14,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_library(ultrapythoncommon STATIC
   )
 
+  target_link_libraries(ultrapythoncommon
+    PRIVATE
+      YARP::YARP_os
+      YARP::YARP_sig
+      YARP::YARP_dev
+  )
+
 target_sources(ultrapythoncommon
     PRIVATE
     common.h

@@ -22,24 +22,36 @@
 
 #include <string>
 
-#include <yarp/os/LogComponent.h>
+#include "Statistics.h"
 
-YARP_DECLARE_LOG_COMPONENT(ULTRAPYTHONSTAT)
+YARP_LOG_COMPONENT(ULTRAPYTHONSTAT, "yarp.device.UltraPythonStatistics")
 
-// For FPS statistics purpouse
-class Statistics
+Statistics::Statistics(const std::string &info, double exposure) : info_(info), exposure_(exposure)
 {
-   public:
-	explicit Statistics(const std::string &info, double exposure);
-	void add();
-	double getFps() const;
-	void setExposure(double value);
-
-   private:
-	std::string info_;
-	double exposure_{0};
-	double timeStart_{0};
-	double latestFps_{0};
-	unsigned int frameCounter_{0};
-	static constexpr double statPeriod_{5.0};
+	timeStart_ = yarp::os::Time::now();
 };
+
+void Statistics::add()
+{
+	++frameCounter_;
+	double timeNow = yarp::os::Time::now();
+	double timeElapsed;
+	if ((timeElapsed = timeNow - timeStart_) >= statPeriod_)
+	{
+		latestFps_ = (static_cast<double>(frameCounter_)) / statPeriod_;
+		yCInfo(ULTRAPYTHONSTAT) << info_ << " frame number:" << frameCounter_ << " fps:" << latestFps_ << " interval:" << timeElapsed << " sec."
+							<< " exposition:" << exposure_ << " msec.";
+		frameCounter_ = 0;
+		timeStart_ = timeNow;
+	}
+}
+
+double Statistics::getFps() const
+{
+	return latestFps_;
+}
+
+void Statistics::setExposure(double value)
+{
+	exposure_ = value;
+}

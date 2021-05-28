@@ -33,12 +33,12 @@ if(ENABLE_ultrapython)
   PRIVATE
       UltraPythonDriver.cpp
       UltraPythonDriver.h
-      UltraPythonCameraLogComponent.cpp
-      UltraPythonCameraLogComponent.h
       UltraPythonCameraHelper.cpp
       UltraPythonCameraHelper.h
       xilinx-v4l2-controls.h
       InterfaceForCApi.h
+      Statistics.h
+      Statistics.cpp
     )
 
   target_compile_features(yarp_ultrapython PRIVATE cxx_std_17)

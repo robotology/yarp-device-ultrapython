@@ -16,207 +16,218 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "../UltraPythonCameraHelper.h"
-#include "CApiMock.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <linux/v4l2-controls.h>
 
 #include <chrono>
-#include <linux/v4l2-controls.h>
 #include <thread>
+
+#include "../UltraPythonCameraHelper.h"
+#include "CApiMock.h"
+#include "../Statistics.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using namespace std::chrono_literals;
 using namespace testing;
 
-TEST(UltraPython, setExposition_absolute_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(100);
+TEST(UltraPython, setExposition_absolute_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 20;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 20;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 20, true);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);
 
-  // then
-  EXPECT_TRUE(res);
+	// then
+	EXPECT_TRUE(res);
 
-  delete interface;
+	delete interface;
 }
-TEST(UltraPython, setExposition_absolute_honoryes_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(90);
-  helper.setHonorFps(true);
+TEST(UltraPython, setExposition_absolute_honoryes_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(90);
+	helper.setHonorFps(true);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 20;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 20;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 20, true);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);
 
-  // then
-  EXPECT_TRUE(res);
+	// then
+	EXPECT_TRUE(res);
 
-  delete interface;
-}
-
-TEST(UltraPython, setExposition_absolute_honoryes_ko) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(20);
-  helper.setHonorFps(true);
-
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 20;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
-
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 20, true);
-
-  // then
-  EXPECT_FALSE(res);
-
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_absolute_honorno_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(20);
-  helper.setHonorFps(false);
+TEST(UltraPython, setExposition_absolute_honoryes_ko)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(20);
+	helper.setHonorFps(true);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 20;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 20;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 20, true);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);
 
-  // then
-  EXPECT_TRUE(res);
+	// then
+	EXPECT_FALSE(res);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_absolute_negative) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(100);
+TEST(UltraPython, setExposition_absolute_honorno_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(20);
+	helper.setHonorFps(false);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = -20;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 20;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, -20, true);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);
 
-  // then
-  EXPECT_FALSE(res);
+	// then
+	EXPECT_TRUE(res);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_normalized_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(100);
+TEST(UltraPython, setExposition_absolute_negative)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 57;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = -20;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 0.5, false);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, -20, true);
 
-  // then
-  EXPECT_TRUE(res);
+	// then
+	EXPECT_FALSE(res);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_normalized_honoryes_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(90);
-  helper.setHonorFps(true);
+TEST(UltraPython, setExposition_normalized_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 57;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 57;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 0.5, false);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 0.5, false);
 
-  // then
-  EXPECT_TRUE(res);
+	// then
+	EXPECT_TRUE(res);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_normalized_honoryes_k0) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(30);
-  helper.setHonorFps(true);
+TEST(UltraPython, setExposition_normalized_honoryes_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(90);
+	helper.setHonorFps(true);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = 57;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 57;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, 0.5, false);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 0.5, false);
 
-  // then
-  EXPECT_FALSE(res);
+	// then
+	EXPECT_TRUE(res);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, setExposition_normalized_negative) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
-  helper.setStepPeriod(100);
+TEST(UltraPython, setExposition_normalized_honoryes_k0)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(30);
+	helper.setHonorFps(true);
 
-  struct v4l2_control control1;
-  control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
-  control1.value = -57;
-  EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = 57;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).WillOnce(Return(1));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
 
-  // when
-  bool res = helper.setControl(V4L2_CID_EXPOSURE, -0.5, false);
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, 0.5, false);
 
-  // then
-  EXPECT_FALSE(res);
+	// then
+	EXPECT_FALSE(res);
 
-  delete interface;
+	delete interface;
+}
+
+TEST(UltraPython, setExposition_normalized_negative)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
+
+	struct v4l2_control control1;
+	control1.id = UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
+	control1.value = -57;
+	EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(0);
+
+	// when
+	bool res = helper.setControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON, -0.5, false);
+
+	// then
+	EXPECT_FALSE(res);
+
+	delete interface;
 }

@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include "InterfaceForCApi.h"
+#include "Statistics.h"
 
 struct v4l2_format;
 
@@ -53,18 +54,8 @@ enum class Severity
 class UltraPythonCameraHelper
 {
    public:
-	// Main properties
-	static constexpr unsigned int hiresWidth_{2560};										 // HI RES width image
-	static constexpr unsigned int hiresHeight_{1024};										 // HI RES height image
-	static constexpr unsigned int lowresWidth_{1280};										 // LOW RES width image
-	static constexpr unsigned int lowresHeight_{512};										 // LOW RES height image
-	static constexpr unsigned int hiresImageBufferSize_{hiresWidth_ * hiresHeight_ * 3};	 // HI RES buffer size
-	static constexpr unsigned int lowresImageBufferSize_{lowresWidth_ * lowresHeight_ * 3};	 // LOW RES buffer size
 	static constexpr int lowresFrameRate_{35};
 	static constexpr int hiresFrameRate_{14};
-	static constexpr unsigned int deadTime_{10};
-	static constexpr unsigned int minPermittedExposition_{15};
-	static constexpr unsigned int maxPermittedExposition_{100};
 
 	// V4l ctrl for UltraPython
 	static constexpr unsigned int V4L2_EXPOSURE_ULTRA_PYTHON{0x0098cb03};	   // trg_l
@@ -75,9 +66,20 @@ class UltraPythonCameraHelper
 	static constexpr unsigned int V4L2_BLUEBALANCE_ULTRA_PYTHON{0x0098c9a5};   // Blue balance
 	static constexpr unsigned int V4L2_ANALOGGAIN_ULTRA_PYTHON{0x009e0903};	   // Analog gain
 
+   private:
+	// Main properties
+	static constexpr unsigned int hiresWidth_{2560};										 // HI RES width image
+	static constexpr unsigned int hiresHeight_{1024};										 // HI RES height image
+	static constexpr unsigned int lowresWidth_{1280};										 // LOW RES width image
+	static constexpr unsigned int lowresHeight_{512};										 // LOW RES height image
+	static constexpr unsigned int hiresImageBufferSize_{hiresWidth_ * hiresHeight_ * 3};	 // HI RES buffer size
+	static constexpr unsigned int lowresImageBufferSize_{lowresWidth_ * lowresHeight_ * 3};	 // LOW RES buffer size
+	static constexpr unsigned int deadTime_{10};
+	static constexpr unsigned int minPermittedExposition_{15};
+	static constexpr unsigned int maxPermittedExposition_{100};
+
 	static constexpr const char *ultraPythonName = "ultrapython";
 
-   private:
 	inline static constexpr const char *mediaName_ = "/dev/media0";
 
 	// Pipeline string
@@ -100,19 +102,18 @@ class UltraPythonCameraHelper
    public:
 	// Main
 	bool openAll();
-	bool step(unsigned char *yarpbuffer);//Get current image
+	bool step(unsigned char *yarpbuffer);  // Get current image
 	bool closeAll();
 
 	// Settings
 	void setSubsamplingProperty(bool value);
 	bool setControl(uint32_t v4lCtrl, double value,
 					bool absolute);	 // if absolute==false, normalized between 0-1
-	bool hasControl(uint32_t v4lCtrl) const;
 	void setStepPeriod(double msec);
 	void setHonorFps(bool value);
 
 	// Getter
-	double getControl(uint32_t v4lCtrl);  // Normalized control value
+	double getControl(uint32_t v4lCtrl, bool absolute);	 // if absolute==false, normalized between 0-1
 	bool getCropEnabledProperty() const;
 	bool getForceFormatProperty() const;
 	bool getHonorFps() const;
@@ -126,12 +127,17 @@ class UltraPythonCameraHelper
 	void setInjectedLog(std::function<void(const std::string &, Severity severity)> toinJect);
 
 	// General
-	explicit UltraPythonCameraHelper(InterfaceForCApi *interfaceC);
+	explicit UltraPythonCameraHelper(InterfaceForCApi *interfaceCt);
 	UltraPythonCameraHelper(const UltraPythonCameraHelper &) = delete;
 	UltraPythonCameraHelper &operator=(const UltraPythonCameraHelper &) = delete;
 	UltraPythonCameraHelper(UltraPythonCameraHelper &&) = delete;
 	UltraPythonCameraHelper &operator=(UltraPythonCameraHelper &&) = delete;
 	~UltraPythonCameraHelper();
+
+	int currentHeight_{0};
+	int currentWidth_{0};
+
+	void mapBufferFill(unsigned char *tofillWith, unsigned int index);	// Test only
 
    private:
 	InterfaceForCApi *interfaceCApi_;  // Unittest purpouse c API interface
@@ -139,9 +145,9 @@ class UltraPythonCameraHelper
 	bool openPipeline();
 	bool initDevice();
 	bool startCapturing();
-	bool setDefaultControl();								  // Set some important default controls
+	bool setDefaultControl();  // Set some important default controls
 	bool setControl(uint32_t v4lCtrl, int fd, double value, bool absolute);
-	double getControl(uint32_t v4lCtrl, int fd);
+	double getControl(uint32_t v4lCtrl, int fd, bool absolute);
 	bool setSubDevFormat(int width, int height);
 	bool setFormat();
 	bool setSubsampling();
@@ -157,6 +163,7 @@ class UltraPythonCameraHelper
 	void log(const std::string &toBeLogged, Severity severity = Severity::debug);
 	bool checkIndex();
 	bool setGain(double value, bool absolute);
+	bool internalHasControl(uint32_t v4lCtrl) const;
 
 	// Property
 	bool subsamplingEnabledProperty_{true};
@@ -164,12 +171,6 @@ class UltraPythonCameraHelper
 	bool forceFormatProperty_{true};  // Overwrite preesistent format
 	double currentExposure_{0};		  // Only for logging purpouse
 
-   public:
-	int currentHeight{0};
-	int currentWidth{0};
-
-	void mapBufferFill(unsigned char *tofillWith, unsigned int index);	// Test only
-   private:
 	// Image memory map
 	MmapBuffer mMapBuffers_[requestBufferNumber_];
 
@@ -202,6 +203,9 @@ class UltraPythonCameraHelper
 	int cropTop_{0};
 	int cropHeight_{0};
 	int cropWidth_{0};
+
+	// Other
+	Statistics statistics_{"frames read by YARP",0};
 
 	// injected functionality
 	std::function<void(const void *, int)> injectedProcessImage_;  // Process image external

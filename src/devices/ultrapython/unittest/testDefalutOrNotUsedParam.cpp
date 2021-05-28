@@ -16,65 +16,63 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "../UltraPythonCameraHelper.h"
-#include "CApiMock.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <linux/v4l2-controls.h>
+#include <yarp/dev/FrameGrabberInterfaces.h>
 
 #include <chrono>
-#include <linux/v4l2-controls.h>
 #include <thread>
+
+#include "../Statistics.h"
+#include "../UltraPythonCameraHelper.h"
+#include "CApiMock.h"
+#include "common.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using namespace std::chrono_literals;
 using namespace testing;
 
-TEST(UltraPython, notusedparams_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+TEST(UltraPython, notusedparams_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
 
-  // when
-  bool force = helper.getForceFormatProperty();
-  bool crop = helper.getCropEnabledProperty();
-    bool honor = helper.getHonorFps();
-  double step = helper.getStepPeriod();
+	// when
+	bool force = helper.getForceFormatProperty();
+	bool crop = helper.getCropEnabledProperty();
+	bool honor = helper.getHonorFps();
+	double step = helper.getStepPeriod();
 
-  // then
-  EXPECT_FALSE(crop);
-  EXPECT_TRUE(force);
-  EXPECT_FALSE(honor);
-  EXPECT_EQ(40, step);
+	// then
+	EXPECT_FALSE(crop);
+	EXPECT_TRUE(force);
+	EXPECT_FALSE(honor);
+	EXPECT_EQ(40, step);
 
-  delete interface;
+	delete interface;
 }
 
-TEST(UltraPython, hasControls_ok) {
-  // given
-  InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+TEST(UltraPython, hasControls_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
 
-  // when
-  bool ret1 = helper.hasControl(V4L2_CID_GAIN);
-  bool ret2 = helper.hasControl(V4L2_CID_BRIGHTNESS);
-  bool ret3 =
-      helper.hasControl(UltraPythonCameraHelper::V4L2_ANALOGGAIN_ULTRA_PYTHON);
-  bool ret4 =
-      helper.hasControl(UltraPythonCameraHelper::V4L2_EXTTRIGGGER_ULTRA_PYTHON);
-  bool ret5 =
-      helper.hasControl(UltraPythonCameraHelper::V4L2_REDBALANCE_ULTRA_PYTHON);
-  bool ret6 =
-      helper.hasControl(UltraPythonCameraHelper::V4L2_DEADTIME_ULTRA_PYTHON);
-  bool ret7 =
-      helper.hasControl(UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON);
+	// when
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_BRIGHTNESS));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_SHUTTER));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_EXPOSURE));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GAIN));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_RED_GAIN));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_BLUE_GAIN));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GREEN_GAIN));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GAIN_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_EXPOSURE_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_BRIGHTNESS_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_FPS));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_HONOR_FPS));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_SUBSAMPLING));
 
-  // then
-  EXPECT_TRUE(ret1);
-  EXPECT_TRUE(ret2);
-  EXPECT_TRUE(ret3);
-  EXPECT_TRUE(ret4);
-  EXPECT_TRUE(ret5);
-  EXPECT_TRUE(ret6);
-  EXPECT_TRUE(ret7);
-
-  delete interface;
+	delete interface;
 }

@@ -18,7 +18,82 @@
 
 #include "common.h"
 
-bool checkFeature(int feature)
+#include <yarp/dev/FrameGrabberInterfaces.h>
+
+bool FeatureHelper::existsForWrite(int feature)
 {
-    return true;
+	switch (feature)
+	{
+		case YARP_FEATURE_BRIGHTNESS:
+		case YARP_FEATURE_SHUTTER:
+		case YARP_FEATURE_EXPOSURE:
+		case YARP_FEATURE_GAIN:
+		case YARP_FEATURE_RED_GAIN:
+		case YARP_FEATURE_BLUE_GAIN:
+		case YARP_FEATURE_GREEN_GAIN:
+		case YARP_FEATURE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_EXPOSURE_ABSOLUTE:
+		case YARP_FEATURE_BRIGHTNESS_ABSOLUTE:
+		case YARP_FEATURE_RED_GAIN_ABSOLUTE:
+		case YARP_FEATURE_BLUE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_GREEN_GAIN_ABSOLUTE:
+		case YARP_FEATURE_HONOR_FPS:
+			return true;
+	}
+	return false;
+}
+bool FeatureHelper::existsForRead(int feature)
+{
+	switch (feature)
+	{
+		case YARP_FEATURE_BRIGHTNESS:
+		case YARP_FEATURE_SHUTTER:
+		case YARP_FEATURE_EXPOSURE:
+		case YARP_FEATURE_GAIN:
+		case YARP_FEATURE_RED_GAIN:
+		case YARP_FEATURE_BLUE_GAIN:
+		case YARP_FEATURE_GREEN_GAIN:
+		case YARP_FEATURE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_EXPOSURE_ABSOLUTE:
+		case YARP_FEATURE_BRIGHTNESS_ABSOLUTE:
+		case YARP_FEATURE_FPS:
+		case YARP_FEATURE_SUBSAMPLING:
+		case YARP_FEATURE_RED_GAIN_ABSOLUTE:
+		case YARP_FEATURE_BLUE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_GREEN_GAIN_ABSOLUTE:
+		case YARP_FEATURE_HONOR_FPS:
+			return true;
+	}
+	return false;
+}
+
+bool FeatureHelper::exists(int feature)
+{
+	return existsForWrite(feature) || existsForRead(feature);
+}
+
+bool FeatureHelper::isAbsolute(int feature)
+{
+	switch (feature)
+	{
+		case YARP_FEATURE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_EXPOSURE_ABSOLUTE:
+		case YARP_FEATURE_BRIGHTNESS_ABSOLUTE:
+		case YARP_FEATURE_RED_GAIN_ABSOLUTE:
+		case YARP_FEATURE_BLUE_GAIN_ABSOLUTE:
+		case YARP_FEATURE_GREEN_GAIN_ABSOLUTE:
+			return true;
+	}
+	return false;
+}
+
+bool FeatureHelper::isV4Lcontrol(int feature)
+{
+	switch (feature)
+	{
+		case YARP_FEATURE_HONOR_FPS:
+		case YARP_FEATURE_FPS:
+			return false;
+	}
+	return true;
 }

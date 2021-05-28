@@ -16,7 +16,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-
 #pragma once
 
 #include <yarp/dev/DeviceDriver.h>
@@ -33,6 +32,8 @@
 #include <yarp/sig/Image.h>
 
 #include <QMainWindow>
+#include <memory>
+#include <thread>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -46,33 +47,38 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
    public:
-	MainWindow(const std::string& remotePort,QWidget *parent = nullptr);
+	MainWindow(const std::string& remotePort, QWidget* parent = nullptr);
 	~MainWindow();
 
-private slots:
+   private slots:
 
-    void on_gainSlider_sliderReleased();
+	void on_gainSlider_sliderReleased();
 
+	void on_exposureSlider_sliderReleased();
 
-    void on_exposureSlider_sliderReleased();
+	void on_brightnessSlider_sliderReleased();
 
-    void on_brightnessSlider_sliderReleased();
+	void on_redGainSlider_sliderReleased();
 
-    void on_redGainSlider_sliderReleased();
+	void on_blueGainSlider_sliderReleased();
 
-    void on_blueGainSlider_sliderReleased();
+	void on_greenGainSlider_sliderReleased();
 
-    void on_greenGainSlider_sliderReleased();
+	void on_honorFPS_stateChanged(int arg1);
 
-private:
-	Ui::MainWindow *ui;
+   private:
+	Ui::MainWindow* ui;
 
 	bool readAndShowValues();
 
-    yarp::os::Network yarp;
-    yarp::dev::PolyDriver device_;
+	yarp::os::Network yarp;
+	yarp::dev::PolyDriver device_;
 	bool initYarp(const std::string& remotePort);
-	yarp::dev::IFrameGrabberControls *grabber_;
+	yarp::dev::IFrameGrabberControls* grabber_;
 
-    void emitError(const std::string& text);
+	void emitError(const std::string& text);
+
+	std::shared_ptr<std::thread> fpsShow_;
+	void showFps();
+	bool activeShowFps_{true};
 };

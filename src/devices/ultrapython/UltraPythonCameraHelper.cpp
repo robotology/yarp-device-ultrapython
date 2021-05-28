@@ -33,6 +33,8 @@
 #include <chrono>
 #include <sstream>
 
+#include "Statistics.h"
+#include "common.h"
 #include "xilinx-v4l2-controls.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
@@ -645,6 +647,9 @@ bool UltraPythonCameraHelper::step(unsigned char *yarpbuffer)
 		Log(*this, Severity::warning) << "dropped frame..";
 		sequence = seq + 1;
 	}
+
+	statistics_.setExposure(getCurrentExposure());
+	statistics_.add();
 	return true;
 }
 
@@ -789,13 +794,13 @@ void UltraPythonCameraHelper::setSubsamplingProperty(bool value)
 
 	if (value)
 	{
-		currentHeight = lowresHeight_;
-		currentWidth = lowresWidth_;
+		currentHeight_ = lowresHeight_;
+		currentWidth_ = lowresWidth_;
 	}
 	else
 	{
-		currentHeight = hiresHeight_;
-		currentWidth = hiresWidth_;
+		currentHeight_ = hiresHeight_;
+		currentWidth_ = hiresWidth_;
 	}
 }
 
@@ -853,7 +858,20 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 		}
 	}
 
-	if (!hasControl(v4lCtrl))
+	if (!FeatureHelper::isV4Lcontrol(v4lCtrl))
+	{
+		switch (v4lCtrl)
+		{
+			case YARP_FEATURE_HONOR_FPS:
+				honorfps_ = (bool)value;
+				return true;
+			default:
+				Log(*this, Severity::error) << "setControl wrong not v4l control id:" << v4lCtrl;
+				return -1;
+		}
+	}
+
+	if (!internalHasControl(v4lCtrl))
 	{
 		Log(*this, Severity::error) << "setControl Missing ctr id:" << v4lCtrl;
 		return false;
@@ -965,9 +983,24 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, int fd, double value,
 	return true;
 }
 
-double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl)
+double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, bool absolute)
 {
-	if (!hasControl(v4lCtrl))
+	if (!FeatureHelper::isV4Lcontrol(v4lCtrl))
+	{
+		switch (v4lCtrl)
+		{
+			case YARP_FEATURE_HONOR_FPS:
+				return honorfps_;
+			case YARP_FEATURE_FPS:
+				return statistics_.getFps();
+
+			default:
+				Log(*this, Severity::error) << "getControl wrong not v4l control id:" << v4lCtrl;
+				return -1;
+		}
+	}
+
+	if (!internalHasControl(v4lCtrl))
 	{
 		Log(*this, Severity::error) << "getControl Missing ctr id:" << v4lCtrl;
 		return false;
@@ -980,8 +1013,8 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl)
 		case V4L2_CID_BRIGHTNESS:
 		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 		{
-			double left = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex1_]);
-			double right = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex2_]);
+			double left = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex1_], absolute);
+			double right = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex2_], absolute);
 			if (left != right)
 			{
 				Log(*this, Severity::error) << "getControl left and right different";
@@ -993,18 +1026,20 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl)
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	  // V4L2_CID_BLUE_BALANCE
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	  // EXPOSURE trg_l
 		case V4L2_DEADTIME_ULTRA_PYTHON:	  // trg_h
-			return getControl(v4lCtrl, mainSubdeviceFd_);
+			return getControl(v4lCtrl, mainSubdeviceFd_, absolute);
 		default:
 			return -1.0;
 	}
 }
 
-double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, int fd)
+double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, int fd, bool absolute)
 {
 	if (v4lCtrl == V4L2_CID_GAIN)
 	{
 		double min = gainMap_.begin()->first;
 		double max = gainMap_.end()->first;
+		if (absolute)
+			return currentGainValue_;
 		return (currentGainValue_ - min) / (max - min);
 	}
 
@@ -1045,11 +1080,12 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, int fd)
 		queryctrl.minimum = minPermittedExposition_;
 	}
 
-	Log(*this, Severity::info) << "getControl OK:" << v4lCtrl;
+	if (absolute)
+		return control.value;
 	return static_cast<double>(control.value - queryctrl.minimum) / (queryctrl.maximum - queryctrl.minimum);
 }
 
-bool UltraPythonCameraHelper::hasControl(uint32_t v4lCtrl) const
+bool UltraPythonCameraHelper::internalHasControl(uint32_t v4lCtrl) const
 {
 	bool ret = false;
 	switch (v4lCtrl)
@@ -1068,7 +1104,7 @@ bool UltraPythonCameraHelper::hasControl(uint32_t v4lCtrl) const
 		default:
 			ret = false;
 	}
-	Log(*this, Severity::debug) << "hascontrol for original:" << v4lCtrl << " value:" << ret;
+	Log(*this, Severity::debug) << "internalHasControl for original:" << v4lCtrl << " value:" << ret;
 	return ret;
 }
 

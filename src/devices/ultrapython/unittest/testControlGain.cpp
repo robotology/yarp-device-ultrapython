@@ -18,6 +18,7 @@
 
 #include "../UltraPythonCameraHelper.h"
 #include "CApiMock.h"
+#include "../Statistics.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -31,7 +32,7 @@ using namespace testing;
 TEST(UltraPython, setGainAbsolute_value1_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_control control1;
   control1.id = V4L2_CID_GAIN;
@@ -56,7 +57,7 @@ TEST(UltraPython, setGainAbsolute_value1_ok) {
 TEST(UltraPython, setGainAbsolute_value2_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_control control1;
   control1.id = V4L2_CID_GAIN;
@@ -84,7 +85,7 @@ TEST(UltraPython, setGainAbsolute_value2_ok) {
 TEST(UltraPython, setGainAbsolute_value11_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_control control1;
   control1.id = V4L2_CID_GAIN;
@@ -112,7 +113,7 @@ TEST(UltraPython, setGainAbsolute_value11_ok) {
 TEST(UltraPython, setGainAbsolute_value12_fail) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
   EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, _)).Times(0);
@@ -129,7 +130,7 @@ TEST(UltraPython, setGainAbsolute_value12_fail) {
 TEST(UltraPython, setGain_value05_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_control control1;
   control1.id = V4L2_CID_GAIN;
@@ -157,7 +158,7 @@ TEST(UltraPython, setGain_value05_ok) {
 TEST(UltraPython, setGain_value07_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_control control1;
   control1.id = V4L2_CID_GAIN;
@@ -185,7 +186,7 @@ TEST(UltraPython, setGain_value07_ok) {
 TEST(UltraPython, setGain_value15_fail) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
   EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, _)).Times(0);
@@ -202,7 +203,7 @@ TEST(UltraPython, setGain_value15_fail) {
 TEST(UltraPython, setGain_valuenegative_fail) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   EXPECT_CALL(*interface, ioctl_query_c(_, _, _)).Times(0);
   EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, _)).Times(0);

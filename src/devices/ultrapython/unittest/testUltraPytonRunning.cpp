@@ -18,6 +18,7 @@
 
 #include "../UltraPythonCameraHelper.h"
 #include "CApiMock.h"
+#include "../Statistics.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -31,7 +32,7 @@ using namespace testing;
 TEST(UltraPython, step_base_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_buffer buf;
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -47,7 +48,7 @@ TEST(UltraPython, step_base_ok) {
   EXPECT_CALL(*interface, xioctl(_, VIDIOC_QBUF, _)).WillOnce(Return(1));
 
   // when
-  unsigned char yarpbuffer[1000000];
+  unsigned char *yarpbuffer=new unsigned char[10000000];
   helper.mapBufferFill(yarpbuffer,1);
   bool out = helper.step(yarpbuffer);
 
@@ -60,7 +61,7 @@ TEST(UltraPython, step_base_ok) {
 TEST(UltraPython, step_base_error1) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   struct v4l2_buffer buf;
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -89,7 +90,7 @@ TEST(UltraPython, step_base_error1) {
 TEST(UltraPython, step_base_timeout_ko) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   EXPECT_CALL(*interface, select_c(_, _, nullptr, nullptr, _))
       .WillOnce(Return(0));
@@ -108,7 +109,7 @@ TEST(UltraPython, step_base_timeout_ko) {
 TEST(UltraPython, step_base_error_ko) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
 
   EXPECT_CALL(*interface, select_c(_, _, nullptr, nullptr, _))
       .WillOnce(Return(-1));

@@ -59,6 +59,7 @@ target_include_directories(ultrapythonui SYSTEM PRIVATE ${UDev_INCLUDE_DIRS})
 target_link_libraries(ultrapythonui
 PRIVATE 
   ${UDev_LIBRARIES}
+  pthread
 )
 
 target_compile_features(ultrapythonui PRIVATE cxx_std_17)

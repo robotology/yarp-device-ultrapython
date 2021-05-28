@@ -241,7 +241,15 @@ honorfps false
 
 ## 2.3. Reading the log on console
 
-TODO
+At run-time the log will be like this repeated:
+```
+[INFO] |yarp.dev.Drivers| device active in background...
+[DEBUG] |yarp.device.UltraPython| not remapped feature: 70
+[DEBUG] |yarp.device.UltraPython| getControl feature: 70  value: 16.8
+[INFO] |yarp.device.UltraPythonStatistics| frames read by YARP  frame number: 84  fps: 16.8  interval: 5.03997  sec.  exposition: 0  msec.
+
+```
+Every 5 seconds a statistic is issued with current fps.
 
 # 3. UltraPython specifications for yarpdev
 
@@ -304,23 +312,32 @@ The subdevices:
 
 ## 3.6. V4L parameters that can be used together with the UltraPython
 
-Currently exposed parameters:
-|Name|Code|Default|Min|Max|Note|Status|
+Currently exposed parameters:  
+|Name|YARP Code|Default|Min|Max|Note|Read-write|
 |-|-|-|-|-|-|-|
-|Gain|0x00980913|1|1|11|mapped to a combination of digital and analog gain of the board|Working|
-|Exposure/shutter|0x0098cb03|20msec|1msec|100000msec|limited between 15 msec and 100msec mapped on **tag_l**|Working|
-|White balance|0x0098c9a3-0x0098c9a4|50|0|100|mapped to to the read and blue gain|Working|
-|Brightness|0x0098c9a1|50|0|100|mapped to to the read and blue gain|Working|
-|Subsampling|0x0098cc01|0|0|1|1==subsampling, via specific API|Working|
+|Gain|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
+|Exposure<br>Shutter|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
+|Red gain|YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
+|Blue gain|YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
+|Green gain|YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
+|Gain absolute|YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
+|Exposure absolute|YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
+|Brightness absolute|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|0|0|4055|Only read for now|R|
+|Red gain absolute|YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Blue gain absolute|YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Green gain bsolute|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Fps|YARP_FEATURE_FPS|-|-|-|-|R|
+|Subsampling|YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented|-|
+|Honor fps|YARP_FEATURE_HONOR_FPS|0|0|1|-|R/W|
 
 Internal parameters setted by default:
-|Name|Code|Default|Min|Max|Note|Status|
+|Name|Code|Default|Min|Max|Note|R/W|
 |-|-|-|-|-|-|-|
-|ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|Working|
-|tag_h|0x0098cb02|8msec|1msec|100000msec|Dead time between exposures|Working|
+|ext_trigger|0x0098cc03|1|0|1|Need to be set to 1|-|
+|tag_h|0x0098cb02|10ms|-|-|Dead time between exposures|-|
 
 Only manual parameters are available for now no auto settings.  
-_Note_ that can be accepted parameters normalized between 0-1 or absolute value. In the video, the Grabber send normalized (0-1) parameters.
+:exclamation: _Important note_: for not ```_ABSOLUTE_``` can only be accepted parameters normalized between 0-1.
 
 ## 3.7. FPS (frame per seconds)
 
@@ -444,6 +461,8 @@ COMPILE_WITHUNITTEST_ULTRAPYTH   ON
 
 The unit test takes advantage of the use of class `InterfaceForCApi` this class wrap low-level C API to C++ API. Also the unit test mock, with the `gmock` library, the low level working. This makes it possible to create tests without using low-level SW.
 
+<img src="img/UML004.png" width="400px">
+
 ## 4.9. Development environment
 
 To develop the software on the Enclustra board is necessary to setup a remote development environment, as Enclustra can't be used with a UI.  
@@ -534,8 +553,51 @@ It is possible to use `v4l` command for checking the board status:
 ```
 v4l2-ctl -l
 ```
+That shows the available low-level controls:
+```
+User Controls
 
-or to set
+                     brightness 0x00980900 (int)    : min=1 max=4096 step=1 default=128 value=82 flags=slider
+                       exposure 0x00980911 (int)    : min=1 max=100000 step=1 default=50 value=50 flags=inactive
+                           gain 0x00980913 (int)    : min=1 max=4 step=1 default=1 value=1
+        test_pattern_color_mask 0x0098c903 (bitmask): max=0x00000007 default=0x00000000 value=0x00000000
+      test_pattern_motion_speed 0x0098c907 (int)    : min=0 max=255 step=1 default=4 value=4 flags=slider
+   test_pattern_cross_hairs_row 0x0098c908 (int)    : min=0 max=4095 step=1 default=100 value=100 flags=slider
+ test_pattern_cross_hairs_colum 0x0098c909 (int)    : min=0 max=4095 step=1 default=100 value=100 flags=slider
+ test_pattern_zplate_horizontal 0x0098c90a (int)    : min=0 max=65535 step=1 default=30 value=30 flags=slider
+ test_pattern_zplate_horizontal 0x0098c90b (int)    : min=0 max=65535 step=1 default=0 value=0 flags=slider
+ test_pattern_zplate_vertical_s 0x0098c90c (int)    : min=0 max=65535 step=1 default=1 value=1 flags=slider
+ test_pattern_zplate_vertical_s 0x0098c90d (int)    : min=0 max=65535 step=1 default=0 value=0 flags=slider
+          test_pattern_box_size 0x0098c90e (int)    : min=0 max=4095 step=1 default=50 value=50 flags=slider
+ test_pattern_box_color_rgb_ycb 0x0098c90f (int)    : min=0 max=16777215 step=1 default=0 value=0
+ test_pattern_foreground_patter 0x0098c912 (menu)   : min=0 max=2 default=0 value=0
+                 csc_brightness 0x0098c9a1 (int)    : min=0 max=100 step=1 default=50 value=50 flags=slider
+                   csc_contrast 0x0098c9a2 (int)    : min=0 max=100 step=1 default=50 value=50 flags=slider
+                   csc_red_gain 0x0098c9a3 (int)    : min=0 max=100 step=1 default=50 value=0 flags=slider
+                 csc_green_gain 0x0098c9a4 (int)    : min=0 max=100 step=1 default=50 value=99 flags=slider
+                  csc_blue_gain 0x0098c9a5 (int)    : min=0 max=100 step=1 default=50 value=99 flags=slider
+           low_latency_controls 0x0098ca21 (int)    : min=2 max=8 step=1 default=4 value=4
+                  remapper_mode 0x0098cb01 (menu)   : min=0 max=1 default=0 value=1
+                          trg_h 0x0098cb02 (int)    : min=0 max=100000 step=1 default=50 value=10
+                          trg_l 0x0098cb03 (int)    : min=0 max=100000 step=1 default=50 value=50
+                    subsampling 0x0098cc01 (bool)   : default=0 value=1
+                          debug 0x0098cc02 (int)    : min=0 max=7 step=1 default=0 value=0
+                    ext_trigger 0x0098cc03 (bool)   : default=0 value=1
+                      test_mode 0x0098cd01 (menu)   : min=0 max=6 default=0 value=0
+
+Image Source Controls
+
+              vertical_blanking 0x009e0901 (int)    : min=3 max=8159 step=1 default=100 value=100
+            horizontal_blanking 0x009e0902 (int)    : min=3 max=8159 step=1 default=100 value=100
+                  analogue_gain 0x009e0903 (int)    : min=1 max=9 step=1 default=1 value=1
+
+Image Processing Controls
+
+                   test_pattern 0x009f0903 (menu)   : min=0 max=16 default=9 value=0
+```
+
+
+the controls can als be set
 
 ```
 v4l2-ctl -d /dev/video0 -c "testmode=5"
@@ -568,6 +630,12 @@ Would resolve the problem.
 
 :warning: **Not properly tested.**
 
+## 6.5. Certificates
+If problems on certificates on git:
+```
+sudo apt-get install apt-transport-https ca-certificates -y
+```
+:warning: **Workaround.**
 # 7. Ubuntu SD card creation for Enclustra
 
 :exclamation:**Disclaimed:**
@@ -793,7 +861,3 @@ In folder test execute:
 cd ~/icubtech/yarp-device-ultrapython/obsolete/test
 ./testScript.sh
 ```
-
-# 9. Others
-
-sudo apt-get install apt-transport-https ca-certificates -y

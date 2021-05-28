@@ -25,14 +25,12 @@
 #include <yarp/os/Stamp.h>
 
 #include "InterfaceForCApi.h"
-#include "Statistics.h"
-#include "UltraPythonCameraLogComponent.h"
 #include "common.h"
 
 using namespace yarp::os;
 using namespace yarp::dev;
 
-///////////////// generic device //////////////////////////
+YARP_LOG_COMPONENT(ULTRAPYTHON, "yarp.device.UltraPython")
 
 UltraPythonDriver::UltraPythonDriver() : pythonCameraHelper_(nullptr)
 {
@@ -95,18 +93,17 @@ bool UltraPythonDriver::close()
 
 int UltraPythonDriver::width() const
 {
-	return pythonCameraHelper_.currentWidth;
+	return pythonCameraHelper_.currentWidth_;
 }
 
 int UltraPythonDriver::height() const
 {
-	return pythonCameraHelper_.currentHeight;
+	return pythonCameraHelper_.currentHeight_;
 }
 
 yarp::os::Stamp UltraPythonDriver::getLastInputStamp()
 {
-
-	//TODO
+	// TODO
 	return yarp::os::Stamp();
 }
 
@@ -124,10 +121,8 @@ bool UltraPythonDriver::getImage(yarp::sig::ImageOf<yarp::sig::PixelRgb> &image)
 	}
 
 	mutex.wait();
-	static Statistics stat("frames read by YARP", pythonCameraHelper_.getCurrentExposure());
 	if (pythonCameraHelper_.step(image.getRawImage()))
 	{
-		stat.add();
 	}
 	else
 	{
@@ -146,26 +141,47 @@ bool UltraPythonDriver::getCameraDescription(CameraDescriptor *camera)
 
 bool UltraPythonDriver::hasFeature(int feature, bool *_hasFeature)
 {
-	if (feature == YARP_FEATURE_WHITE_BALANCE)
+	if (!FeatureHelper::exists(feature))
 	{
-		*_hasFeature = pythonCameraHelper_.hasControl(V4L2_CID_RED_BALANCE) && pythonCameraHelper_.hasControl(V4L2_CID_BLUE_BALANCE);
-		return true;
+		yCError(ULTRAPYTHON) << "This feature is not supported:" << feature;
+		return false;
 	}
-
-	*_hasFeature = pythonCameraHelper_.hasControl(remapControlYARPtoXilinx(feature));
 	return true;
 }
 
 bool UltraPythonDriver::setFeature(int feature, double value)
 {
-	bool ret = pythonCameraHelper_.setControl(remapControlYARPtoXilinx(feature), value, false);
+	if (!FeatureHelper::existsForWrite(feature))
+	{
+		yCError(ULTRAPYTHON) << "This feature is not for write:" << feature;
+		return false;
+	}
+
+	bool absolute{false};
+	if (FeatureHelper::isAbsolute(feature))
+	{
+		absolute = true;
+	}
+	bool ret = pythonCameraHelper_.setControl(remapControlYARPtoXilinx(feature), value, absolute);
 	return ret;
 }
 
 bool UltraPythonDriver::getFeature(int feature, double *value)
 {
+	if (!FeatureHelper::existsForRead(feature))
+	{
+		yCError(ULTRAPYTHON) << "This feature is not for read:" << feature;
+		return false;
+	}
+
+	bool absolute{false};
+	if (FeatureHelper::isAbsolute(feature))
+	{
+		absolute = true;
+	}
+
 	double tmp = 0.0;
-	tmp = pythonCameraHelper_.getControl(remapControlYARPtoXilinx(feature));
+	tmp = pythonCameraHelper_.getControl(remapControlYARPtoXilinx(feature), absolute);
 	if (tmp == -1)
 	{
 		*value = 0;
@@ -173,29 +189,20 @@ bool UltraPythonDriver::getFeature(int feature, double *value)
 	}
 
 	*value = tmp;
+
+	yCDebug(ULTRAPYTHON) << "getControl feature:" << feature<<" value:"<<*value;
 	return true;
 }
 
 bool UltraPythonDriver::getFeature(int feature, double *value1, double *value2)
 {
-	if (feature == YARP_FEATURE_WHITE_BALANCE)
-	{
-		*value1 = pythonCameraHelper_.getControl(V4L2_CID_RED_BALANCE);
-		*value2 = pythonCameraHelper_.getControl(V4L2_CID_BLUE_BALANCE);
-		return !((*value1 == -1) || (*value2 == -1));
-	}
+	yCError(ULTRAPYTHON) << "getFeature double param - not supported";
 	return false;
 }
 
 bool UltraPythonDriver::setFeature(int feature, double value1, double value2)
 {
-	if (feature == YARP_FEATURE_WHITE_BALANCE)
-	{
-		bool ret = true;
-		ret &= pythonCameraHelper_.setControl(V4L2_CID_BLUE_BALANCE, value1, false);
-		ret &= pythonCameraHelper_.setControl(V4L2_CID_RED_BALANCE, value2, false);
-		return ret;
-	}
+	yCError(ULTRAPYTHON) << "setFeature double param - not supported";
 	return false;
 }
 
@@ -220,8 +227,8 @@ bool UltraPythonDriver::hasAuto(int feature, bool *_hasAuto)
 bool UltraPythonDriver::hasManual(int feature, bool *_hasManual)
 {
 	*_hasManual = false;
-	if (pythonCameraHelper_.hasControl(feature))
-		*_hasManual = true;	
+	if (FeatureHelper::exists(feature))
+		*_hasManual = true;
 	return true;
 }
 
@@ -361,7 +368,7 @@ bool UltraPythonDriver::fromConfig(yarp::os::Searchable &config)
 		yCError(ULTRAPYTHON) << "distortionModel - param not supported.";
 	}
 
-	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << pythonCameraHelper_.currentWidth << "x" << pythonCameraHelper_.currentHeight;
+	yCDebug(ULTRAPYTHON) << "Ultrapython with the configuration: " << pythonCameraHelper_.currentWidth_ << "x" << pythonCameraHelper_.currentHeight_;
 	return true;
 }
 
@@ -375,25 +382,31 @@ int UltraPythonDriver::remapControlYARPtoXilinx(int feature) const
 	switch (feature)
 	{
 		case YARP_FEATURE_BRIGHTNESS:
+		case YARP_FEATURE_BRIGHTNESS_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "Feature " << feature << " does not support auto mode";
 			return V4L2_CID_BRIGHTNESS;
 		case YARP_FEATURE_SHUTTER:
-		case YARP_FEATURE_EXPOSURE:	 // shutter used
+		case YARP_FEATURE_EXPOSURE:			  // shutter used
+		case YARP_FEATURE_EXPOSURE_ABSOLUTE:  // shutter used
 			yCDebug(ULTRAPYTHON) << "remap exposure";
 			return UltraPythonCameraHelper::V4L2_EXPOSURE_ULTRA_PYTHON;
 		case YARP_FEATURE_GAIN:
+		case YARP_FEATURE_GAIN_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "remap gain";
 			return V4L2_CID_GAIN;
-		case YARP_FEATURE_RED_GAIN:	
+		case YARP_FEATURE_RED_GAIN:
+		case YARP_FEATURE_RED_GAIN_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "remap RED gain";
 			return UltraPythonCameraHelper::V4L2_REDBALANCE_ULTRA_PYTHON;
 		case YARP_FEATURE_GREEN_GAIN:
+		case YARP_FEATURE_GREEN_GAIN_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "remap GREEN gain";
 			return UltraPythonCameraHelper::V4L2_GREENBALANCE_ULTRA_PYTHON;
 		case YARP_FEATURE_BLUE_GAIN:
+		case YARP_FEATURE_BLUE_GAIN_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "remap BLUE gain";
 			return UltraPythonCameraHelper::V4L2_BLUEBALANCE_ULTRA_PYTHON;
 	}
-	yCWarning(ULTRAPYTHON) << "not remapped feature:" << feature;
+	yCDebug(ULTRAPYTHON) << "not remapped feature:" << feature;
 	return feature;
 }

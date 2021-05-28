@@ -20,7 +20,7 @@
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::GTEST_FLAG(filter) = "UltraPython.step*";
+  //::testing::GTEST_FLAG(filter) = "UltraPython.openAll_ko_000";
 
   return RUN_ALL_TESTS();
 }

@@ -18,6 +18,7 @@
 
 #include "../UltraPythonCameraHelper.h"
 #include "CApiMock.h"
+#include "../Statistics.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -31,7 +32,7 @@ using namespace testing;
 TEST(UltraPython, setBrithness_absolute_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
   helper.setStepPeriod(100);
 
   struct v4l2_control control1;
@@ -54,7 +55,7 @@ TEST(UltraPython, setBrithness_absolute_ok) {
 TEST(UltraPython, setBrithness_relative_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
-  UltraPythonCameraHelper helper(interface);
+  	UltraPythonCameraHelper helper(interface);
   helper.setStepPeriod(100);
 
   struct v4l2_queryctrl queryctrl;

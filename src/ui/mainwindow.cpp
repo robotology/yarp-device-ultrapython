@@ -22,6 +22,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <ratio>
 #include <thread>
 
@@ -38,12 +39,16 @@ MainWindow::MainWindow(const std::string& remotePort, QWidget* parent) : QMainWi
 		QMessageBox msgBox;
 		msgBox.setText("Can not read control values.");
 		msgBox.exec();
-		//exit(-1);
+		// exit(-1);
 	}
+
+	fpsShow_ = std::make_shared<std::thread>(&MainWindow::showFps, this);
 }
 
 MainWindow::~MainWindow()
 {
+	activeShowFps_ = false;
+	fpsShow_->join();
 	delete ui;
 }
 
@@ -54,7 +59,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_GAIN;
+	int feature = (int)YARP_FEATURE_GAIN;
 	double gainValue;
 	bool res = grabber_->getFeature(feature, &gainValue);
 	if (!res)
@@ -62,11 +67,22 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	std::stringstream ss;
-	ss << std::setprecision(2) << gainValue;
-	ui->gainAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << gainValue << "%";
+	ui->gainNorm->setText(ss.str().c_str());
 	ui->gainSlider->setValue(gainValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_BRIGHTNESS;
+	feature = (int)YARP_FEATURE_GAIN_ABSOLUTE;
+	double gainAbsoluteValue;
+	res = grabber_->getFeature(feature, &gainAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)gainAbsoluteValue;
+	ui->gainAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_BRIGHTNESS;
 	double brightnessValue;
 	res = grabber_->getFeature(feature, &brightnessValue);
 	if (!res)
@@ -74,11 +90,22 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << brightnessValue;
-	ui->brightnessAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << brightnessValue << "%";
+	ui->brightnessNorm->setText(ss.str().c_str());
 	ui->brightnessSlider->setValue(brightnessValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_EXPOSURE;
+	feature = (int)YARP_FEATURE_BRIGHTNESS_ABSOLUTE;
+	double brightnessAbsoluteValue;
+	res = grabber_->getFeature(feature, &brightnessAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)brightnessAbsoluteValue;
+	ui->brightnessAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_EXPOSURE;
 	double exposureValue;
 	res = grabber_->getFeature(feature, &exposureValue);
 	if (!res)
@@ -86,11 +113,22 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << exposureValue;
-	ui->exposureAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << exposureValue << "%";
+	ui->exposureNorm->setText(ss.str().c_str());
 	ui->exposureSlider->setValue(exposureValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_RED_GAIN;
+	feature = (int)YARP_FEATURE_EXPOSURE_ABSOLUTE;
+	double exposureAbsoluteValue;
+	res = grabber_->getFeature(feature, &exposureAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)exposureAbsoluteValue;
+	ui->exposureAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_RED_GAIN;
 	double redGainValue;
 	res = grabber_->getFeature(feature, &redGainValue);
 	if (!res)
@@ -98,11 +136,22 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << redGainValue;
-	ui->redGainAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << redGainValue << "%";
+	ui->redGainNorm->setText(ss.str().c_str());
 	ui->redGainSlider->setValue(redGainValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_BLUE_GAIN;
+	feature = (int)YARP_FEATURE_RED_GAIN_ABSOLUTE;
+	double redGainAbsoluteValue;
+	res = grabber_->getFeature(feature, &redGainAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)redGainAbsoluteValue;
+	ui->redGainAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_BLUE_GAIN;
 	double blueGainValue;
 	res = grabber_->getFeature(feature, &blueGainValue);
 	if (!res)
@@ -110,11 +159,22 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << blueGainValue;
-	ui->blueGainAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << blueGainValue << "%";
+	ui->blueGainNorm->setText(ss.str().c_str());
 	ui->blueGainSlider->setValue(blueGainValue * 100);
 
-	feature = (cameraFeature_id_t)YARP_FEATURE_GREEN_GAIN;
+	feature = (int)YARP_FEATURE_BLUE_GAIN_ABSOLUTE;
+	double blueGainAbsoluteValue;
+	res = grabber_->getFeature(feature, &blueGainAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)blueGainAbsoluteValue;
+	ui->blueGainAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_GREEN_GAIN;
 	double greenGainValue;
 	res = grabber_->getFeature(feature, &greenGainValue);
 	if (!res)
@@ -122,9 +182,43 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << greenGainValue;
-	ui->greenGainAbs->setText(ss.str().c_str());
+	ss << std::setprecision(2) << greenGainValue << "%";
+	ui->greenGainNorm->setText(ss.str().c_str());
 	ui->greenGainSlider->setValue(greenGainValue * 100);
+
+	feature = (int)YARP_FEATURE_GREEN_GAIN_ABSOLUTE;
+	double greenGainAbsoluteValue;
+	res = grabber_->getFeature(feature, &greenGainAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)greenGainAbsoluteValue;
+	ui->greenGainAbs->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_HONOR_FPS;
+	double honorFpsValue;
+	res = grabber_->getFeature(feature, &honorFpsValue);
+	if (!res)
+	{
+		return false;
+	}
+	if (honorFpsValue == 0)
+		ui->honorFPS->setChecked(false);
+	else
+		ui->honorFPS->setChecked(true);
+
+	feature = (int)YARP_FEATURE_FPS;
+	double fpsValue{44};
+	res = grabber_->getFeature(feature, &fpsValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << fpsValue;
+	ui->fps->setText(ss.str().c_str());
 
 	return true;
 }
@@ -167,7 +261,7 @@ bool MainWindow::initYarp(const std::string& remotePort)
 
 void MainWindow::on_gainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_GAIN;
+	int feature = (int)YARP_FEATURE_GAIN;
 	auto value = ui->gainSlider->value();
 	double gainValue = (double)value / 100;
 	std::cout << "Slider:" << gainValue << std::endl;
@@ -183,7 +277,7 @@ void MainWindow::on_gainSlider_sliderReleased()
 
 void MainWindow::on_exposureSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_EXPOSURE;
+	int feature = (int)YARP_FEATURE_EXPOSURE;
 	auto value = ui->exposureSlider->value();
 	double exposureValue = (double)value / 100;
 	std::cout << "Slider:" << exposureValue << std::endl;
@@ -199,7 +293,7 @@ void MainWindow::on_exposureSlider_sliderReleased()
 
 void MainWindow::on_brightnessSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_BRIGHTNESS;
+	int feature = (int)YARP_FEATURE_BRIGHTNESS;
 	auto value = ui->brightnessSlider->value();
 	double brigthnessValue = (double)value / 100;
 	std::cout << "Slider:" << brigthnessValue << std::endl;
@@ -215,7 +309,7 @@ void MainWindow::on_brightnessSlider_sliderReleased()
 
 void MainWindow::on_redGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_RED_GAIN;
+	int feature = (int)YARP_FEATURE_RED_GAIN;
 	auto value = ui->redGainSlider->value();
 	double redGainValue = (double)value / 100;
 	std::cout << "Slider:" << redGainValue << std::endl;
@@ -231,7 +325,7 @@ void MainWindow::on_redGainSlider_sliderReleased()
 
 void MainWindow::on_blueGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_BLUE_GAIN;
+	int feature = (int)YARP_FEATURE_BLUE_GAIN;
 	auto value = ui->blueGainSlider->value();
 	double blueGainValue = (double)value / 100;
 	std::cout << "Slider:" << blueGainValue << std::endl;
@@ -247,7 +341,7 @@ void MainWindow::on_blueGainSlider_sliderReleased()
 
 void MainWindow::on_greenGainSlider_sliderReleased()
 {
-	cameraFeature_id_t feature = (cameraFeature_id_t)YARP_FEATURE_GREEN_GAIN;
+	int feature = (int)YARP_FEATURE_GREEN_GAIN;
 	auto value = ui->greenGainSlider->value();
 	double greenGainValue = (double)value / 100;
 	std::cout << "Slider:" << greenGainValue << std::endl;
@@ -272,4 +366,32 @@ void MainWindow::emitError(const std::string& text)
 	QMessageBox msgBox;
 	msgBox.setText(ss.str().c_str());
 	msgBox.exec();
+}
+
+void MainWindow::on_honorFPS_stateChanged(int arg1)
+{
+	int feature = (int)YARP_FEATURE_HONOR_FPS;
+	bool value = ui->honorFPS->isChecked();
+
+	bool res = grabber_->setFeature(feature, value);
+}
+
+using namespace std::chrono_literals;
+void MainWindow::showFps()
+{
+	while (activeShowFps_)
+	{
+		std::this_thread::sleep_for(1s);
+		int feature = (int)YARP_FEATURE_FPS;
+		double fpsValue{44};
+		bool res = grabber_->getFeature(feature, &fpsValue);
+		if (!res)
+		{
+			return;
+		}
+		std::stringstream ss;
+		ss.str("");
+		ss << fpsValue;
+		ui->fps->setText(ss.str().c_str());
+	}
 }

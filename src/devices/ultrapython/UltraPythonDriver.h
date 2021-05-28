@@ -21,12 +21,12 @@
 #include <yarp/dev/DeviceDriver.h>
 #include <yarp/dev/FrameGrabberInterfaces.h>
 #include <yarp/dev/IPreciselyTimed.h>
-#include <yarp/dev/IVisualParams.h>
-#include <yarp/os/Bottle.h>
 #include <yarp/os/Semaphore.h>
 #include <yarp/os/Stamp.h>
 
 #include "UltraPythonCameraHelper.h"
+
+YARP_DECLARE_LOG_COMPONENT(ULTRAPYTHON)
 
 class UltraPythonDriver : 	public yarp::dev::DeviceDriver, 
 							public yarp::dev::IPreciselyTimed, 
