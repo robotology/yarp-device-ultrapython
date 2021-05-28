@@ -18,7 +18,11 @@
 
 #include "gtest/gtest.h"
 
+#include <yarp/os/Network.h>
+
 int main(int argc, char **argv) {
+	yarp::os::Network::init();
+
   ::testing::InitGoogleTest(&argc, argv);
   //::testing::GTEST_FLAG(filter) = "UltraPython.openAll_ko_000";
 

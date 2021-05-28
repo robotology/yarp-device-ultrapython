@@ -23,9 +23,13 @@ set(SOURCES gtest_main.cc
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_link_libraries(${PROJECT_NAME} PRIVATE   gmock 
-                                                gtest ultrapythoncommon  
+                                                gtest 
+                                                ultrapythoncommon  
                                                 ${UDev_LIBRARIES} 
-                                                YARP::YARP_dev       
+                                                YARP::YARP_os
+                                                YARP::YARP_init
+                                                YARP::YARP_dev
+                                                YARP::YARP_conf       
                         )
 
 # install
