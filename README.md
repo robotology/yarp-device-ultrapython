@@ -206,7 +206,7 @@ ultrapythonui --remote /name
 **NOTE**:  
 the name is without rpc and the port name usually is /grabber. For name look at .ini file **name** field.
 
-frameGrabberGui2 is not the best choice for UltraPyhton.
+`frameGrabberGui2` is not the right choice for the UltraPyhton camera system.
 
 ## 2.2. The .ini files
 
@@ -317,17 +317,18 @@ Currently exposed parameters:
 |-|-|-|-|-|-|-|
 |Gain|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
 |Exposure<br>Shutter|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
+|Brightness|YARP_FEATURE_BRIGHTNESS|200|0|4055|-|R/W|
 |Red gain|YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
 |Blue gain|YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
 |Green gain|YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
 |Gain absolute|YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
 |Exposure absolute|YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
-|Brightness absolute|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|0|0|4055|Only read for now|R|
+|Brightness absolute|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|200|0|4055|Only read for now|R|
 |Red gain absolute|YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Blue gain absolute|YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Green gain bsolute|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Fps|YARP_FEATURE_FPS|-|-|-|-|R|
-|Subsampling|YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented|-|
+|Subsampling|YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented<br>set only via config file|-|
 |Honor fps|YARP_FEATURE_HONOR_FPS|0|0|1|-|R/W|
 
 Internal parameters setted by default:
