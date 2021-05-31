@@ -329,7 +329,7 @@ Currently exposed parameters:
 |Green gain bsolute|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Fps|YARP_FEATURE_FPS|-|-|-|-|R|
 |Subsampling|YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented<br>set only via config file|-|
-|Honor fps|YARP_FEATURE_HONOR_FPS|0|0|1|-|R/W|
+|Honor fps|YARP_FEATURE_HONOR_FPS|0|0|1|When set at runtime exposition is set to minimum|R/W|
 
 Internal parameters setted by default:
 |Name|Code|Default|Min|Max|Note|R/W|

@@ -205,7 +205,7 @@ class UltraPythonCameraHelper
 	int cropWidth_{0};
 
 	// Other
-	Statistics statistics_{"frames read by YARP",0};
+	Statistics statistics_{"frames read by YARP", 0};
 
 	// injected functionality
 	std::function<void(const void *, int)> injectedProcessImage_;  // Process image external

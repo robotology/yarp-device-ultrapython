@@ -67,7 +67,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	std::stringstream ss;
-	ss << std::setprecision(2) << gainValue *100<< "%";
+	ss << std::setprecision(2) << gainValue * 100 << "%";
 	ui->gainNorm->setText(ss.str().c_str());
 	ui->gainSlider->setValue(gainValue * 100);
 
@@ -90,7 +90,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << brightnessValue *100<< "%";
+	ss << std::setprecision(2) << brightnessValue * 100 << "%";
 	ui->brightnessNorm->setText(ss.str().c_str());
 	ui->brightnessSlider->setValue(brightnessValue * 100);
 
@@ -113,7 +113,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << exposureValue *100<< "%";
+	ss << std::setprecision(2) << exposureValue * 100 << "%";
 	ui->exposureNorm->setText(ss.str().c_str());
 	ui->exposureSlider->setValue(exposureValue * 100);
 
@@ -136,7 +136,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << redGainValue *100<< "%";
+	ss << std::setprecision(2) << redGainValue * 100 << "%";
 	ui->redGainNorm->setText(ss.str().c_str());
 	ui->redGainSlider->setValue(redGainValue * 100);
 
@@ -159,7 +159,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << blueGainValue *100<< "%";
+	ss << std::setprecision(2) << blueGainValue * 100 << "%";
 	ui->blueGainNorm->setText(ss.str().c_str());
 	ui->blueGainSlider->setValue(blueGainValue * 100);
 
@@ -182,7 +182,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << greenGainValue *100<< "%";
+	ss << std::setprecision(2) << greenGainValue * 100 << "%";
 	ui->greenGainNorm->setText(ss.str().c_str());
 	ui->greenGainSlider->setValue(greenGainValue * 100);
 
@@ -219,6 +219,20 @@ bool MainWindow::readAndShowValues()
 	ss.str("");
 	ss << fpsValue;
 	ui->fps->setText(ss.str().c_str());
+
+	feature = (int)YARP_FEATURE_SUBSAMPLING;
+	double resolution{0};
+	res = grabber_->getFeature(feature, &resolution);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	if (resolution == 0)
+		ss << "High";
+	else
+		ss << "Low";
+	ui->resolution->setText(ss.str().c_str());
 
 	return true;
 }
@@ -374,6 +388,8 @@ void MainWindow::on_honorFPS_stateChanged(int arg1)
 	bool value = ui->honorFPS->isChecked();
 
 	bool res = grabber_->setFeature(feature, value);
+
+	readAndShowValues();
 }
 
 using namespace std::chrono_literals;

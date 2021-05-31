@@ -478,7 +478,7 @@
    <widget class="QLabel" name="fps">
     <property name="geometry">
      <rect>
-      <x>190</x>
+      <x>150</x>
       <y>430</y>
       <width>41</width>
       <height>19</height>
@@ -500,7 +500,7 @@
    <widget class="QLabel" name="expoureLb_5">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>120</x>
       <y>430</y>
       <width>26</width>
       <height>16</height>
@@ -514,6 +514,47 @@
     </property>
     <property name="text">
      <string>FPS</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="resolution">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>430</y>
+      <width>41</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="text">
+     <string>Hi</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="expoureLb_6">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>430</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="text">
+     <string>Resolution</string>
     </property>
    </widget>
   </widget>

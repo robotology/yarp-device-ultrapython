@@ -93,6 +93,7 @@ bool FeatureHelper::isV4Lcontrol(int feature)
 	{
 		case YARP_FEATURE_HONOR_FPS:
 		case YARP_FEATURE_FPS:
+		case YARP_FEATURE_SUBSAMPLING:
 			return false;
 	}
 	return true;

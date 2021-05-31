@@ -835,6 +835,10 @@ void UltraPythonCameraHelper::setStepPeriod(double msec)
 void UltraPythonCameraHelper::setHonorFps(bool value)
 {
 	honorfps_ = value;
+	if (value)
+	{
+		setControl(V4L2_EXPOSURE_ULTRA_PYTHON, minPermittedExposition_, true);
+	}
 }
 
 void UltraPythonCameraHelper::setInjectedLog(std::function<void(const std::string &, Severity)> toinJect)
@@ -863,20 +867,18 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 		switch (v4lCtrl)
 		{
 			case YARP_FEATURE_HONOR_FPS:
-				honorfps_ = (bool)value;
+				setHonorFps((bool)value);
 				return true;
 			default:
 				Log(*this, Severity::error) << "setControl wrong not v4l control id:" << v4lCtrl;
 				return -1;
 		}
 	}
-
 	if (!internalHasControl(v4lCtrl))
 	{
 		Log(*this, Severity::error) << "setControl Missing ctr id:" << v4lCtrl;
 		return false;
 	}
-
 	Log(*this, Severity::debug) << "try setControl for:" << v4lCtrl << " value:" << value;
 	switch (v4lCtrl)
 	{
@@ -993,7 +995,10 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, bool absolute)
 				return honorfps_;
 			case YARP_FEATURE_FPS:
 				return statistics_.getFps();
-
+			case YARP_FEATURE_SUBSAMPLING:
+				if (subsamplingEnabledProperty_)
+					return 1;
+				return 0;
 			default:
 				Log(*this, Severity::error) << "getControl wrong not v4l control id:" << v4lCtrl;
 				return -1;
