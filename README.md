@@ -249,7 +249,7 @@ At run-time the log will be like this repeated:
 [INFO] |yarp.device.UltraPythonStatistics| frames read by YARP  frame number: 84  fps: 16.8  interval: 5.03997  sec.  exposition: 0  msec.
 
 ```
-Every 5 seconds a statistic is issued with current fps.
+Every 5 seconds a statistic is issued with current FPS.
 
 # 3. UltraPython specifications for yarpdev
 
@@ -308,9 +308,9 @@ The subdevices:
 - `period` YARP read period in msec. The period is the
 - `capabilities` --> COLOR
 - `twoCameras` --> false
-- `honorfps` --> false or true if fps must be constant
+- `honorfps` --> false or true if FPS must be constant
 
-## 3.6. V4L parameters that can be used together with the UltraPython
+## 3.6. YARP-V4L feature that can be used together with the UltraPython
 
 Currently exposed parameters:  
 |Name|YARP Code|Default|Min|Max|Note|Read-write|
@@ -340,7 +340,12 @@ Internal parameters setted by default:
 Only manual parameters are available for now no auto settings.  
 :exclamation: _Important note_: for not ```_ABSOLUTE_``` can only be accepted parameters normalized between 0-1.
 
-## 3.7. FPS (frame per seconds)
+## 3.7. How programmatially set YARP-V4L feature
+For a complete example, please reference to the UI project folder:  
+ ```https://github.com/robotology/yarp-device-ultrapython/tree/master/src/ui```
+
+
+## 3.8. FPS (frame per seconds)
 
 It is possible to specify the desired FPS, however, FPS has a relation with the exposure.
 
@@ -360,7 +365,15 @@ The following table is calculated.
 | 40  | 0.025                  |
 | 45  | 0.022                  |
 
-**Note** that the yarpdev parameter `period` is used by YARP to sample images from the drive at the given period in msec.
+**Note** that the yarpdev parameter `period` is used by YARP to sample images from the drive at the given period in msec. Fps can be calculated as `1/period`
+
+### 3.8.1. Avoid FPS oscillations
+Due to the band limits on the TCP, the following hints should be followed.
+The min `period` value for UltraPyton, for an uncompressed stream, to avoid FPS oscillations is:
+|Resolution|period|FPS|
+|-|-|-|
+|Low resolution|31|32.2|
+|Hi resolution|80|12.5|
 
 # 4. The Ultrapython device
 
@@ -598,13 +611,11 @@ Image Processing Controls
 ```
 
 
-the controls can als be set
+The controls can be set:
 
 ```
 v4l2-ctl -d /dev/video0 -c "testmode=5"
 ```
-
-//TODO show output
 
 ## 6.2. Password and users
 

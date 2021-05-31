@@ -67,7 +67,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	std::stringstream ss;
-	ss << std::setprecision(2) << gainValue << "%";
+	ss << std::setprecision(2) << gainValue *100<< "%";
 	ui->gainNorm->setText(ss.str().c_str());
 	ui->gainSlider->setValue(gainValue * 100);
 
@@ -90,7 +90,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << brightnessValue << "%";
+	ss << std::setprecision(2) << brightnessValue *100<< "%";
 	ui->brightnessNorm->setText(ss.str().c_str());
 	ui->brightnessSlider->setValue(brightnessValue * 100);
 
@@ -113,7 +113,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << exposureValue << "%";
+	ss << std::setprecision(2) << exposureValue *100<< "%";
 	ui->exposureNorm->setText(ss.str().c_str());
 	ui->exposureSlider->setValue(exposureValue * 100);
 
@@ -136,7 +136,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << redGainValue << "%";
+	ss << std::setprecision(2) << redGainValue *100<< "%";
 	ui->redGainNorm->setText(ss.str().c_str());
 	ui->redGainSlider->setValue(redGainValue * 100);
 
@@ -159,7 +159,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << blueGainValue << "%";
+	ss << std::setprecision(2) << blueGainValue *100<< "%";
 	ui->blueGainNorm->setText(ss.str().c_str());
 	ui->blueGainSlider->setValue(blueGainValue * 100);
 
@@ -182,7 +182,7 @@ bool MainWindow::readAndShowValues()
 		return false;
 	}
 	ss.str("");
-	ss << std::setprecision(2) << greenGainValue << "%";
+	ss << std::setprecision(2) << greenGainValue *100<< "%";
 	ui->greenGainNorm->setText(ss.str().c_str());
 	ui->greenGainSlider->setValue(greenGainValue * 100);
 
