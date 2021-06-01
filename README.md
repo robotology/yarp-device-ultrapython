@@ -218,6 +218,8 @@ cd ~/icubtech/yarp-device-ultrapython/ini
 
 The ini files for lowres
 
+
+
 ```
 device grabberDual
 subdevice ultrapython
