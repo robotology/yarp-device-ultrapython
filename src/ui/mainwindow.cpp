@@ -106,8 +106,8 @@ bool MainWindow::readAndShowValues()
 	ui->brightnessAbs->setText(ss.str().c_str());
 
 	feature = (int)YARP_FEATURE_CONTRAST;
-	double brightnessValue;
-	res = grabber_->getFeature(feature, &brightnessValue);
+	double contrastValue;
+	res = grabber_->getFeature(feature, &contrastValue);
 	if (!res)
 	{
 		return false;
