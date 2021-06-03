@@ -886,6 +886,7 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 			return setGain(value, absolute);
 		case V4L2_ANALOGGAIN_ULTRA_PYTHON:
 		case V4L2_CID_BRIGHTNESS:
+		case V4L2_CID_CONTRAST:
 		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 			bool out;
 			out = setControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex1_], value, absolute);
