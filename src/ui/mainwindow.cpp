@@ -321,6 +321,22 @@ void MainWindow::on_brightnessSlider_sliderReleased()
 	readAndShowValues();
 }
 
+void MainWindow::on_contrastSlider_sliderReleased()
+{
+	int feature = (int)YARP_FEATURE_CONTRAST;
+	auto value = ui->contrastSlider->value();
+	double contrastValue = (double)value / 100;
+	std::cout << "Slider:" << contrastValue << std::endl;
+
+	bool res = grabber_->setFeature(feature, contrastValue);
+	if (!res)
+	{
+		emitError("contrast");
+		return;
+	}
+	readAndShowValues();
+}
+
 void MainWindow::on_redGainSlider_sliderReleased()
 {
 	int feature = (int)YARP_FEATURE_RED_GAIN;
