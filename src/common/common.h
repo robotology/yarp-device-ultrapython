@@ -39,6 +39,8 @@ constexpr int YARP_FEATURE_GREEN_GAIN_ABSOLUTE = 65;
 constexpr int YARP_FEATURE_FPS = 70;
 constexpr int YARP_FEATURE_SUBSAMPLING = 72;
 constexpr int YARP_FEATURE_HONOR_FPS = 73;
+constexpr int YARP_FEATURE_CONTRAST = 74;
+constexpr int YARP_FEATURE_CONTRAST_ABSOLUTE = 75;
 
 class FeatureHelper
 {
