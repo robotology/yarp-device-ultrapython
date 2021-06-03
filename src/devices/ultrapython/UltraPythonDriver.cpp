@@ -385,6 +385,10 @@ int UltraPythonDriver::remapControlYARPtoXilinx(int feature) const
 		case YARP_FEATURE_BRIGHTNESS_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "Feature " << feature << " does not support auto mode";
 			return V4L2_CID_BRIGHTNESS;
+		case YARP_FEATURE_CONTRAST:
+		case YARP_FEATURE_CONTRAST_ABSOLUTE:
+			yCDebug(ULTRAPYTHON) << "remap contrast";
+			return V4L2_CID_CONTRAST;
 		case YARP_FEATURE_SHUTTER:
 		case YARP_FEATURE_EXPOSURE:			  // shutter used
 		case YARP_FEATURE_EXPOSURE_ABSOLUTE:  // shutter used
