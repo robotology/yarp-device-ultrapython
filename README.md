@@ -319,13 +319,15 @@ Currently exposed parameters:
 |-|-|-|-|-|-|-|
 |Gain|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
 |Exposure<br>Shutter|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
-|Brightness|YARP_FEATURE_BRIGHTNESS|200|0|4055|-|R/W|
+|Brightness|YARP_FEATURE_BRIGHTNESS|50|0|4055|-|R/W|
+|Contrast|YARP_FEATURE_CONTRAST|50|0|100|-|R/W|
 |Red gain|YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
 |Blue gain|YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
 |Green gain|YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
 |Gain absolute|YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
 |Exposure absolute|YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
 |Brightness absolute|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|200|0|4055|Only read for now|R|
+|Contrast absolute|YARP_FEATURE_CONTRAST_ABSOLUTE|50|0|100|Only read for now|R|
 |Red gain absolute|YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Blue gain absolute|YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Green gain bsolute|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
