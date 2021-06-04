@@ -388,7 +388,7 @@ int UltraPythonDriver::remapControlYARPtoXilinx(int feature) const
 		case YARP_FEATURE_CONTRAST:
 		case YARP_FEATURE_CONTRAST_ABSOLUTE:
 			yCDebug(ULTRAPYTHON) << "remap contrast";
-			return V4L2_CID_CONTRAST;
+			return UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON;
 		case YARP_FEATURE_SHUTTER:
 		case YARP_FEATURE_EXPOSURE:			  // shutter used
 		case YARP_FEATURE_EXPOSURE_ABSOLUTE:  // shutter used
