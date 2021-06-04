@@ -12,6 +12,7 @@ set(SOURCES gtest_main.cc
             testControlExposition.cpp
             testControlGain.cpp
             testControlBrigthness.cpp
+            testControlContrast.cpp
             testUltraPytonRunning.cpp
             testDefalutOrNotUsedParam.cpp
             ../InterfaceForCApi.h

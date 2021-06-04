@@ -58,6 +58,8 @@ class MainWindow : public QMainWindow
 
 	void on_brightnessSlider_sliderReleased();
 
+	void on_contrastSlider_sliderReleased();
+
 	void on_redGainSlider_sliderReleased();
 
 	void on_blueGainSlider_sliderReleased();

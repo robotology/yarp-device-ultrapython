@@ -61,6 +61,7 @@ TEST(UltraPython, hasControls_ok)
 
 	// when
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_BRIGHTNESS));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_CONTRAST));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_SHUTTER));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_EXPOSURE));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GAIN));
@@ -70,6 +71,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GAIN_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_EXPOSURE_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_BRIGHTNESS_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_CONTRAST_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_FPS));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_HONOR_FPS));
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_SUBSAMPLING));
@@ -78,6 +80,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::exists(YARP_FEATURE_GREEN_GAIN_ABSOLUTE));
 
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_BRIGHTNESS));
+	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_CONTRAST));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_SHUTTER));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_EXPOSURE));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_GAIN));
@@ -87,6 +90,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_GAIN_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_EXPOSURE_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_BRIGHTNESS_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_CONTRAST_ABSOLUTE));
 	EXPECT_FALSE(FeatureHelper::existsForWrite(YARP_FEATURE_FPS));
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_HONOR_FPS));
 	EXPECT_FALSE(FeatureHelper::existsForWrite(YARP_FEATURE_SUBSAMPLING));
@@ -95,6 +99,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_GREEN_GAIN_ABSOLUTE));
 
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_BRIGHTNESS));
+	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_CONTRAST));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_SHUTTER));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_EXPOSURE));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_GAIN));
@@ -104,6 +109,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_GAIN_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_EXPOSURE_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_BRIGHTNESS_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::existsForWrite(YARP_FEATURE_CONTRAST_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_FPS));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_HONOR_FPS));
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_SUBSAMPLING));
@@ -112,6 +118,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::existsForRead(YARP_FEATURE_GREEN_GAIN_ABSOLUTE));
 
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_BRIGHTNESS));
+	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_CONTRAST));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_SHUTTER));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_EXPOSURE));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_GAIN));
@@ -121,6 +128,7 @@ TEST(UltraPython, hasControls_ok)
 	EXPECT_TRUE(FeatureHelper::isAbsolute(YARP_FEATURE_GAIN_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::isAbsolute(YARP_FEATURE_EXPOSURE_ABSOLUTE));
 	EXPECT_TRUE(FeatureHelper::isAbsolute(YARP_FEATURE_BRIGHTNESS_ABSOLUTE));
+	EXPECT_TRUE(FeatureHelper::isAbsolute(YARP_FEATURE_CONTRAST_ABSOLUTE));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_FPS));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_HONOR_FPS));
 	EXPECT_FALSE(FeatureHelper::isAbsolute(YARP_FEATURE_SUBSAMPLING));
