@@ -1099,6 +1099,7 @@ bool UltraPythonCameraHelper::internalHasControl(uint32_t v4lCtrl) const
 		case V4L2_CID_GAIN:
 		case V4L2_ANALOGGAIN_ULTRA_PYTHON:
 		case V4L2_CID_BRIGHTNESS:
+		case V4L2_CID_CONTRAST:
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	  // V4L2_CID_RED_BALANCE
 		case V4L2_GREENBALANCE_ULTRA_PYTHON:  // V4L2_CID_GREEN_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	  // V4L2_CID_BLUE_BALANCE
@@ -1119,7 +1120,8 @@ bool UltraPythonCameraHelper::setDefaultControl()
 	setControl(V4L2_EXTTRIGGGER_ULTRA_PYTHON, 1, true);		  // ext_trigger
 	setControl(V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);		  // trg_l
 	setControl(V4L2_DEADTIME_ULTRA_PYTHON, deadTime_, true);  // trg_h
-	setControl(V4L2_CID_BRIGHTNESS, 200, true);
+	setControl(V4L2_CID_CONTRAST, 50, true);
+	setControl(V4L2_CID_BRIGHTNESS, 50, true);
 	setControl(V4L2_CID_GAIN, 1, true);
 	return true;
 }
