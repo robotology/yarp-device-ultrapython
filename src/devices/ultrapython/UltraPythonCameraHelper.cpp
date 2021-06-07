@@ -897,10 +897,6 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 		case V4L2_DEADTIME_ULTRA_PYTHON:	  // trg_h
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	  // EXPOSURE trg_l
 		case V4L2_CONTRAST_ULTRA_PYTHON:
-<<<<<<< HEAD
-		case V4L2_CID_CONTRAST:
-=======
->>>>>>> dev
 			return setControl(v4lCtrl, mainSubdeviceFd_, value, absolute);
 		default:
 			return false;
