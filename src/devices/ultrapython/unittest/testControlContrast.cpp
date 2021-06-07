@@ -78,3 +78,31 @@ TEST(UltraPython, setContrast_relative_ok) {
 
   delete interface;
 }
+
+TEST(UltraPython, getContrast_relative_ok) {
+
+    // given
+    InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+    UltraPythonCameraHelper helper(interface);
+    helper.setStepPeriod(100);
+
+    struct v4l2_queryctrl queryctrl;
+    queryctrl.maximum = 0;
+    queryctrl.minimum = 100;
+    struct v4l2_control control1;
+    control1.id = V4L2_CID_CONTRAST;
+    control1.value = 50;
+
+    EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _)).
+        WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1))).
+        WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
+    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, control1)).Times(2);
+
+    // when
+    double result = helper.getControl(V4L2_CID_CONTRAST, false);
+
+    // then
+    EXPECT_EQ(result, 0.5);
+
+    delete interface;        
+}
