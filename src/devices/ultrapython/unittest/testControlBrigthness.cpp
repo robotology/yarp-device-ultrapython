@@ -77,3 +77,68 @@ TEST(UltraPython, setBrightness_relative_ok) {
 
   delete interface;
 }
+
+
+TEST(UltraPython, getBrithness_relative_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
+
+	struct v4l2_queryctrl queryctrl;
+	queryctrl.maximum = 0;
+	queryctrl.minimum = 100;
+  queryctrl.flags = 0;
+	struct v4l2_control control1;
+	control1.id = V4L2_CID_BRIGHTNESS;
+	control1.value = 50;
+  
+	EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _)).
+      WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1))).
+      WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, _)).
+      WillOnce(DoAll(SetArgReferee<2>(control1), Return(1))).
+      WillOnce(DoAll(SetArgReferee<2>(control1), Return(1)));
+
+	// when
+	double res = helper.getControl(V4L2_CID_BRIGHTNESS,false);
+
+	// then
+  //EXPECT_TRUE(res);
+	EXPECT_EQ(res,0.5);
+
+	delete interface;
+}
+
+TEST(UltraPython, getBrithness_absolute_ok)
+{
+	// given
+	InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+	UltraPythonCameraHelper helper(interface);
+	helper.setStepPeriod(100);
+
+	struct v4l2_queryctrl queryctrl;
+	queryctrl.maximum = 0;
+	queryctrl.minimum = 100;
+  queryctrl.flags = 0;
+	struct v4l2_control control1;
+	control1.id = V4L2_CID_BRIGHTNESS;
+	control1.value = 50;
+  
+	EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _)).
+      WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1))).
+      WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
+	EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, _)).
+      WillOnce(DoAll(SetArgReferee<2>(control1), Return(1))).
+      WillOnce(DoAll(SetArgReferee<2>(control1), Return(1)));
+
+	// when
+	double res = helper.getControl(V4L2_CID_BRIGHTNESS,true);
+
+	// then
+  //EXPECT_TRUE(res);
+	EXPECT_EQ(res,50);
+
+	delete interface;
+}
