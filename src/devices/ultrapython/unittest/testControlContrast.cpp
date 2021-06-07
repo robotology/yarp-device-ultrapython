@@ -37,15 +37,14 @@ TEST(UltraPython, setContrast_absolute_ok) {
     helper.setStepPeriod(100);
 
     struct v4l2_control control1;
-    control1.id = V4L2_CID_CONTRAST;
+    control1.id = UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON;
     control1.value = 20;
     EXPECT_CALL(*interface, ioctl_query_c(_, _, _))
-        .WillOnce(Return(1))
         .WillOnce(Return(1));
-    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(2);
+    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
     // when
-    bool result = helper.setControl(V4L2_CID_CONTRAST, 20, true);
+    bool result = helper.setControl(UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON, 20, true);
 
     // then
     EXPECT_TRUE(result);
@@ -62,16 +61,16 @@ TEST(UltraPython, setContrast_relative_ok) {
   struct v4l2_queryctrl queryctrl;
   queryctrl.maximum = 0;
   queryctrl.minimum = 100;
+  queryctrl.flags = 0;
   struct v4l2_control control1;
-  control1.id = V4L2_CID_CONTRAST;
+  control1.id = UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON;
   control1.value = 50;
   EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _))
-      .WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)))
       .WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
-  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(2);
+  EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_S_CTRL, control1)).Times(1);
 
   // when
-  bool res = helper.setControl(V4L2_CID_CONTRAST, 0.50, false);
+  bool res = helper.setControl(UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON, 0.50, false);
 
   // then
   EXPECT_TRUE(res);
@@ -89,20 +88,51 @@ TEST(UltraPython, getContrast_relative_ok) {
     struct v4l2_queryctrl queryctrl;
     queryctrl.maximum = 0;
     queryctrl.minimum = 100;
+    queryctrl.flags = 0;
     struct v4l2_control control1;
-    control1.id = V4L2_CID_CONTRAST;
+    control1.id = UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON;
     control1.value = 50;
 
     EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _)).
-        WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1))).
         WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
-    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, control1)).Times(2);
+    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, _)).
+        WillOnce(DoAll(SetArgReferee<2>(control1), Return(1)));
 
     // when
-    double result = helper.getControl(V4L2_CID_CONTRAST, false);
+    double result = helper.getControl(UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON, false);
 
     // then
     EXPECT_EQ(result, 0.5);
+
+    delete interface;        
+}
+
+
+TEST(UltraPython, getContrast_absolute_ok) {
+
+    // given
+    InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
+    UltraPythonCameraHelper helper(interface);
+    helper.setStepPeriod(100);
+
+    struct v4l2_queryctrl queryctrl;
+    queryctrl.maximum = 0;
+    queryctrl.minimum = 100;
+    queryctrl.flags = 0;
+    struct v4l2_control control1;
+    control1.id = UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON;
+    control1.value = 50;
+
+    EXPECT_CALL(*interface, ioctl_query_c(_, VIDIOC_QUERYCTRL, _)).
+        WillOnce(DoAll(SetArgReferee<2>(queryctrl), Return(1)));
+    EXPECT_CALL(*interface, ioctl_control_c(_, VIDIOC_G_CTRL, _)).
+        WillOnce(DoAll(SetArgReferee<2>(control1), Return(1)));
+
+    // when
+    double result = helper.getControl(UltraPythonCameraHelper::V4L2_CONTRAST_ULTRA_PYTHON, true);
+
+    // then
+    EXPECT_EQ(result, 50);
 
     delete interface;        
 }
