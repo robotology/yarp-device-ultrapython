@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 	yarp::os::Network::init();
 
   ::testing::InitGoogleTest(&argc, argv);
-  //::testing::GTEST_FLAG(filter) = "UltraPython.openAll_ko_000";
+  // ::testing::GTEST_FLAG(filter) = "UltraPython.setContrast_relative_ok";
 
   return RUN_ALL_TESTS();
 }

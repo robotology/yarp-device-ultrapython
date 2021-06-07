@@ -105,6 +105,29 @@ bool MainWindow::readAndShowValues()
 	ss << (int)brightnessAbsoluteValue;
 	ui->brightnessAbs->setText(ss.str().c_str());
 
+	feature = (int)YARP_FEATURE_CONTRAST;
+	double contrastValue;
+	res = grabber_->getFeature(feature, &contrastValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << std::setprecision(2) << contrastValue * 100 << "%";
+	ui->contrastNorm->setText(ss.str().c_str());
+	ui->contrastSlider->setValue(contrastValue * 100);
+
+	feature = (int)YARP_FEATURE_CONTRAST_ABSOLUTE;
+	double contrastAbsoluteValue;
+	res = grabber_->getFeature(feature, &contrastAbsoluteValue);
+	if (!res)
+	{
+		return false;
+	}
+	ss.str("");
+	ss << (int)contrastAbsoluteValue;
+	ui->contrastAbs->setText(ss.str().c_str());
+
 	feature = (int)YARP_FEATURE_EXPOSURE;
 	double exposureValue;
 	res = grabber_->getFeature(feature, &exposureValue);
@@ -316,6 +339,22 @@ void MainWindow::on_brightnessSlider_sliderReleased()
 	if (!res)
 	{
 		emitError("brightness");
+		return;
+	}
+	readAndShowValues();
+}
+
+void MainWindow::on_contrastSlider_sliderReleased()
+{
+	int feature = (int)YARP_FEATURE_CONTRAST;
+	auto value = ui->contrastSlider->value();
+	double contrastValue = (double)value / 100;
+	std::cout << "Slider:" << contrastValue << std::endl;
+
+	bool res = grabber_->setFeature(feature, contrastValue);
+	if (!res)
+	{
+		emitError("contrast");
 		return;
 	}
 	readAndShowValues();

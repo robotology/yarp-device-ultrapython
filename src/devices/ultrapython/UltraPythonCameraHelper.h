@@ -65,6 +65,8 @@ class UltraPythonCameraHelper
 	static constexpr unsigned int V4L2_GREENBALANCE_ULTRA_PYTHON{0x0098c9a4};  // Green Balance
 	static constexpr unsigned int V4L2_BLUEBALANCE_ULTRA_PYTHON{0x0098c9a5};   // Blue balance
 	static constexpr unsigned int V4L2_ANALOGGAIN_ULTRA_PYTHON{0x009e0903};	   // Analog gain
+	static constexpr unsigned int V4L2_CONTRAST_ULTRA_PYTHON{0x0098c9a2};	   // Contrast
+
 
    private:
 	// Main properties

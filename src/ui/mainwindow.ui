@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>966</width>
-    <height>485</height>
+    <height>509</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -26,7 +26,7 @@
       <x>10</x>
       <y>60</y>
       <width>81</width>
-      <height>351</height>
+      <height>391</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="controlsLabel">
@@ -72,6 +72,19 @@
        </property>
        <property name="text">
         <string>Brightness</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="contrastLb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Contrast</string>
        </property>
       </widget>
      </item>
@@ -122,7 +135,7 @@
       <x>90</x>
       <y>60</y>
       <width>681</width>
-      <height>351</height>
+      <height>391</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="controls">
@@ -154,6 +167,19 @@
      </item>
      <item>
       <widget class="QSlider" name="brightnessSlider">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="contrastSlider">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -212,7 +238,7 @@
       <x>780</x>
       <y>60</y>
       <width>21</width>
-      <height>351</height>
+      <height>391</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="normalizedValue">
@@ -250,6 +276,19 @@
      </item>
      <item>
       <widget class="QLabel" name="brightnessNorm">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="contrastNorm">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
          <horstretch>0</horstretch>
@@ -328,7 +367,7 @@
       <x>880</x>
       <y>60</y>
       <width>41</width>
-      <height>351</height>
+      <height>391</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="absoluteValue">
@@ -366,6 +405,19 @@
      </item>
      <item>
       <widget class="QLabel" name="brightnessAbs">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="contrastAbs">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
          <horstretch>0</horstretch>
@@ -466,7 +518,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>430</y>
+      <y>460</y>
       <width>92</width>
       <height>16</height>
      </rect>
@@ -479,7 +531,7 @@
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>430</y>
+      <y>460</y>
       <width>41</width>
       <height>19</height>
      </rect>
@@ -501,7 +553,7 @@
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>430</y>
+      <y>460</y>
       <width>26</width>
       <height>16</height>
      </rect>
@@ -520,7 +572,7 @@
     <property name="geometry">
      <rect>
       <x>300</x>
-      <y>430</y>
+      <y>460</y>
       <width>41</width>
       <height>19</height>
      </rect>
@@ -542,7 +594,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>430</y>
+      <y>460</y>
       <width>81</width>
       <height>16</height>
      </rect>

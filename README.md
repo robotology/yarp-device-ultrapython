@@ -50,7 +50,7 @@ Led after a few seconds from power on :
 
 ## 1.3. Experimental setup
 
-An experimantal setup is availabe.  
+An experimental setup is availabe.  
 <img src="img/setup.jpg" width="300px">
 
 ## 1.4. ACCESS
@@ -103,21 +103,21 @@ screen /dev/ttyUSB0 115200
 
 :exclamation:<u>To be done on iCub-head.</u>
 
-Check and modify in `Shorewall/interfaces`
+Check and modify in `shorewall/interfaces`
 
 - internet access netcard (ZONE=net) with your internet card
 - local access netcard (ZONE=lan) with your LAN net card
 
 For check netcard names `ifconfig`
 
-Do the same in `Shorewall/masq` \<internet card\>\<lan card\>
+Do the same in `shorewall/masq` \<internet card\>\<lan card\>
 
 Then
 
 ```
-sudo apt-get install Shorewall
-sudo cp Shorewall/* /etc/Shorewall
-sudo service Shorewall start
+sudo apt-get install shorewall
+sudo cp shorewall/* /etc/shorewall
+sudo service shorewall start
 ```
 
 Test from Enclustra `ping 8.8.8.8`
@@ -319,13 +319,15 @@ Currently exposed parameters:
 |-|-|-|-|-|-|-|
 |Gain|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
 |Exposure<br>Shutter|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
-|Brightness|YARP_FEATURE_BRIGHTNESS|200|0|4055|-|R/W|
+|Brightness|YARP_FEATURE_BRIGHTNESS|50|0|4055|-|R/W|
+|Contrast|YARP_FEATURE_CONTRAST|50|0|100|-|R/W|
 |Red gain|YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
 |Blue gain|YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
 |Green gain|YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
 |Gain absolute|YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
 |Exposure absolute|YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
 |Brightness absolute|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|200|0|4055|Only read for now|R|
+|Contrast absolute|YARP_FEATURE_CONTRAST_ABSOLUTE|50|0|100|Only read for now|R|
 |Red gain absolute|YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Blue gain absolute|YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
 |Green gain bsolute|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
@@ -415,7 +417,7 @@ Advantages:
 All the necessary libraries and applications for SW development should be installed. In addition:
 
 ```bash
-sudo apt-get install libudev
+sudo apt-get install libudev-dev
 ```
 
 ## 4.5. How to compile PytonCamera device
@@ -540,7 +542,7 @@ To test the stream I have developed the following procedure:
 
 - Analyze the data in `./log` using the Matlab scripts or manually, see above.
 
-## 5.1. Slow movement artefact
+## 5.1. Slow movement artifact
 
 These kind of artifacts are due to bad memory management. They should be checked by hand, looking at the singles frames.  
 <img src="img/artifacts.png" width="600px">
