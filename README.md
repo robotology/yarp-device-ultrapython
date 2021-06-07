@@ -50,7 +50,7 @@ Led after a few seconds from power on :
 
 ## 1.3. Experimental setup
 
-An experimantal setup is availabe.  
+An experimental setup is availabe.  
 <img src="img/setup.jpg" width="300px">
 
 ## 1.4. ACCESS
