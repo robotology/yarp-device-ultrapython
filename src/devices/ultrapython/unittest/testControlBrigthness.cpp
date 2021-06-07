@@ -29,7 +29,7 @@
 using namespace std::chrono_literals;
 using namespace testing;
 
-TEST(UltraPython, setBrithness_absolute_ok) {
+TEST(UltraPython, setBrightness_absolute_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
   	UltraPythonCameraHelper helper(interface);
@@ -52,7 +52,7 @@ TEST(UltraPython, setBrithness_absolute_ok) {
   delete interface;
 }
 
-TEST(UltraPython, setBrithness_relative_ok) {
+TEST(UltraPython, setBrightness_relative_ok) {
   // given
   InterfaceFoCApiMock *interface = new InterfaceFoCApiMock();
   	UltraPythonCameraHelper helper(interface);
