@@ -15,9 +15,12 @@ set(SOURCES gtest_main.cc
             testControlContrast.cpp
             testUltraPytonRunning.cpp
             testDefalutOrNotUsedParam.cpp
+            testCli.cpp
             ../InterfaceForCApi.h
             ../UltraPythonCameraHelper.h
             ../UltraPythonCameraHelper.cpp
+            ../../../cli/UltraPythonCli.h
+            ../../../cli/UltraPythonCli.cpp
             ../Statistics.cpp
             )
 
