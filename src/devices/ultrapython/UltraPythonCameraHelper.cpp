@@ -886,7 +886,7 @@ bool UltraPythonCameraHelper::setControl(uint32_t v4lCtrl, double value, bool ab
 			return setGain(value, absolute);
 		case V4L2_ANALOGGAIN_ULTRA_PYTHON:
 		case V4L2_CID_BRIGHTNESS:
-		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
+		case V4L2_EXTTRIGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 			bool out;
 			out = setControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex1_], value, absolute);
 			out = out & setControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex2_], value, absolute);
@@ -1017,7 +1017,7 @@ double UltraPythonCameraHelper::getControl(uint32_t v4lCtrl, bool absolute)
 		case V4L2_CID_GAIN:
 		case V4L2_ANALOGGAIN_ULTRA_PYTHON:
 		case V4L2_CID_BRIGHTNESS:
-		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
+		case V4L2_EXTTRIGGER_ULTRA_PYTHON:	 // EXT_TRIGGER
 		{
 			double left = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex1_], absolute);
 			double right = getControl(v4lCtrl, pipelineSubdeviceFd_[sourceSubDeviceIndex2_], absolute);
@@ -1104,7 +1104,7 @@ bool UltraPythonCameraHelper::internalHasControl(uint32_t v4lCtrl) const
 		case V4L2_REDBALANCE_ULTRA_PYTHON:	  // V4L2_CID_RED_BALANCE
 		case V4L2_GREENBALANCE_ULTRA_PYTHON:  // V4L2_CID_GREEN_BALANCE
 		case V4L2_BLUEBALANCE_ULTRA_PYTHON:	  // V4L2_CID_BLUE_BALANCE
-		case V4L2_EXTTRIGGGER_ULTRA_PYTHON:	  // EXT_TRIGGER
+		case V4L2_EXTTRIGGER_ULTRA_PYTHON:	  // EXT_TRIGGER
 		case V4L2_EXPOSURE_ULTRA_PYTHON:	  // EXPOSURE  trg_l
 		case V4L2_DEADTIME_ULTRA_PYTHON:	  // trg_h
 			ret = true;
@@ -1118,7 +1118,7 @@ bool UltraPythonCameraHelper::internalHasControl(uint32_t v4lCtrl) const
 
 bool UltraPythonCameraHelper::setDefaultControl()
 {
-	setControl(V4L2_EXTTRIGGGER_ULTRA_PYTHON, 1, true);		  // ext_trigger
+	setControl(V4L2_EXTTRIGGER_ULTRA_PYTHON, 1, true);		  // ext_trigger
 	setControl(V4L2_EXPOSURE_ULTRA_PYTHON, 20, true);		  // trg_l
 	setControl(V4L2_DEADTIME_ULTRA_PYTHON, deadTime_, true);  // trg_h
 	setControl(V4L2_CONTRAST_ULTRA_PYTHON, 50, true);

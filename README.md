@@ -208,7 +208,24 @@ the name is without rpc and the port name usually is /grabber. For name look at 
 
 `frameGrabberGui2` is not the right choice for the UltraPyhton camera system.
 
-## 2.2. The .ini files
+## 2.2 WIP - UltraPython Command Line Interface
+The user can access the camera controls on the terminal through a command line application called `ultrapythoncli`.
+
+To set a camera feature, use
+```
+ultrapythoncli --remote /name --set <YARP code>=<value>
+```
+where the YARP code for the desired feature is defined in [Section 3.6](##3.6.-YARP-V4L-feature-that-can-be-used-together-with-the-UltraPython), and the target value is expressed in absolute units.
+
+Similarly, to get the current value of a desired feature in absolute units, use
+```
+ultrapythoncli --remote /name  --get <YARP code>
+```
+
+**NOTE**:  
+Like the GUI, the port name usually is /grabber. For name look at .ini file **name** field.
+
+## 2.3. The .ini files
 
 The .ini files for the UltraPython are in:
 
@@ -241,7 +258,7 @@ honorfps false
 
 ```
 
-## 2.3. Reading the log on console
+## 2.4. Reading the log on console
 
 At run-time the log will be like this repeated:
 ```
@@ -474,12 +491,16 @@ The tests can be found in `unittest` folder.
 To activate the unit test check the following in ccmake:
 
 ```
-COMPILE_WITHUNITTEST_ULTRAPYTH   ON
+COMPILE_WITHUNITTEST_ULTRAPYTHON   ON
 ```
 
 The unit test takes advantage of the use of class `InterfaceForCApi` this class wrap low-level C API to C++ API. Also the unit test mock, with the `gmock` library, the low level working. This makes it possible to create tests without using low-level SW.
 
 <img src="img/UML004.png" width="400px">
+
+Unit tests were created also for the command-line tool. In this case, The `gmock` library is used to mock the `get` and `set` of the camera features.
+
+<img src="img/UML005.png" width="350px">
 
 ## 4.9. Development environment
 

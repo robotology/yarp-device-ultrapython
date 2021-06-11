@@ -6,6 +6,7 @@
 
 add_subdirectory(devices)
 add_subdirectory(common)
+add_subdirectory(cli)
 
 if(COMPILE_WITHUI_ULTRAPYTHON)
     add_subdirectory(ui)
