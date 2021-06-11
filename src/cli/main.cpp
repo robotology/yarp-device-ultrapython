@@ -23,71 +23,71 @@
  * @returns -1 on error, 0 if successful
  */
 int main(int argc, char* argv[]) {
-  int control_code = 0;
+  int controlCode = 0;
   double value = 0.0;
   std::string port_name = "/grabber";
-  std::map<std::string, std::string> args_map;
+  std::map<std::string, std::string> argsMap;
 
   yarp::dev::IFrameGrabberControls* grabber{nullptr};
   UltraPythonCli client(grabber);
 
-  if (!client.ParseArgs(argc, argv, args_map)) {
+  if (!client.ParseArgs(argc, argv, argsMap)) {
     return -1;
   }
-  if (!client.InitYarpCommunication(args_map["--remote"])) {
+  if (!client.InitYarpCommunication(argsMap["--remote"])) {
     return -1;
   }
 
-  if (args_map.find("--set") != args_map.end()) {
-    std::vector<std::string> set_args = client.splitString(args_map["--set"], "=");
+  if (argsMap.find("--set") != argsMap.end()) {
+    std::vector<std::string> setArgs =
+        client.splitString(argsMap["--set"], "=");
 
     // Assume control code as first string
     try {
-      control_code = std::stoi(set_args[0]);
+      controlCode = std::stoi(setArgs[0]);
     } catch (const std::exception& e) {
-      std::cout << e.what()
-                << "\nControl codes can be expressed only in integer values."
-                << std::endl;
+      std::cout << e.what() << std::endl <<
+          "Control codes can be expressed only in integer values." << std::endl;
       return -1;
     }
 
     // Assume desired value as second string
     try {
-      value = std::stoi(set_args[1]);
+      value = std::stoi(setArgs[1]);
     } catch (const std::exception& e) {
-      std::cout << e.what() << "\nInvalid set value." << std::endl;
+      std::cout << e.what() << std::endl << "Invalid set value." << std::endl;
       return -1;
     }
 
-    bool result = grabber->setFeature(control_code, value);
+    bool result = grabber->setFeature(controlCode, value);
 
     if (!result) {
-      std::cout << "Unable to set control " + std::to_string(control_code) +
-                       "=" + std::to_string(value) +
-                       ".\nCheck remote yarpdev device."
-                << std::endl;
+      std::cout << "Unable to set control " + std::to_string(controlCode) +
+                       "=" + std::to_string(value)
+                << std::endl
+                << ". Check remote yarpdev device." << std::endl;
       return -1;
     }
   }
 
-  if (args_map.find("--get") != args_map.end()) {
+  if (argsMap.find("--get") != argsMap.end()) {
     try {
-      control_code = std::stoi(args_map["--get"]);
+      controlCode = std::stoi(argsMap["--get"]);
     } catch (const std::exception& e) {
-      std::cout << e.what()
-                << "\nControl codes can be expressed only in integer values."
+      std::cout << e.what() << std::endl
+                << "Control codes can be expressed only in integer values."
                 << std::endl;
       return -1;
     }
-    bool result = grabber->getFeature(control_code, &value);
+    bool result = grabber->getFeature(controlCode, &value);
 
     if (!result) {
-      std::cout << "Unable to get control " + std::to_string(control_code) +
-                       ".\nCheck remote yarpdev device."
-                << std::endl;
+      std::cout << "Unable to get control " + std::to_string(controlCode)
+                << std::endl
+                << ". Check remote yarpdev device." << std::endl;
       return -1;
     }
-    std::cout << "Value for control code " << control_code << " is: " << value
+    std::cout << "Value for control code " << controlCode << " is: " << value
               << std::endl;
   }
 

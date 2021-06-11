@@ -23,7 +23,7 @@ UltraPythonCli::UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber){};
 UltraPythonCli::~UltraPythonCli() {}
 
 bool UltraPythonCli::ParseArgs(int argc, char* argv[],
-                               std::map<std::string, std::string>& args_map) {
+                               std::map<std::string, std::string>& argsMap) {
   if (argc > 5 || argc < 2) {
     std::cout << "Use 'ultrapythoncli --help'" << std::endl;
     return false;
@@ -32,7 +32,7 @@ bool UltraPythonCli::ParseArgs(int argc, char* argv[],
   if (std::string(argv[1]) == "--help") {
     std::cout << "Usage 'ultrapythoncli [--help] [--remote portname] "
                  "[--get controlcode] [--set "
-                 "controlcode value]'\n"
+                 "controlcode value]'" << std::endl <<
                  "NOTE: the name is without rpc and "
                  "port name usually is /grabber"
               << std::endl;
@@ -40,7 +40,7 @@ bool UltraPythonCli::ParseArgs(int argc, char* argv[],
   }
 
   if (argc >= 3 && std::string(argv[1]) == "--remote") {
-    args_map.insert({argv[1], argv[2]});
+    argsMap.insert({argv[1], argv[2]});
   } else {
     std::cout << "Remote port not found. Please select the appropriate remote "
                  "port or set it as first argument."
@@ -49,7 +49,7 @@ bool UltraPythonCli::ParseArgs(int argc, char* argv[],
   }
 
   if (std::string(argv[3]) == "--set" || std::string(argv[3]) == "--get") {
-    args_map.insert({argv[3], argv[4]});
+    argsMap.insert({argv[3], argv[4]});
   }
 
   return true;
@@ -58,7 +58,8 @@ bool UltraPythonCli::ParseArgs(int argc, char* argv[],
 bool UltraPythonCli::InitYarpCommunication(const std::string& remotePort) {
   if (!yarp::os::NetworkBase::checkNetwork(2)) {
     std::cout
-        << "Yarp yarpserver not found.\nPlease activate yarpserver and retry."
+        << "Yarp yarpserver not found." << std::endl <<
+        "Please activate yarpserver and retry."
         << std::endl;
     return false;
   }

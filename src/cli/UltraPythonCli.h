@@ -52,10 +52,10 @@ class UltraPythonCli {
    *
    * @param argc
    * @param argv
-   * @param args_map map of arguments: can be --help, --remote, --set, --get.
+   * @param argsMap map of arguments: can be --help, --remote, --set, --get.
    * @return true if arguments could be parsed correctly, false otherwise.
    */
-  bool ParseArgs(int argc, char* argv[], std::map<std::string, std::string>& args_map_);
+  bool ParseArgs(int argc, char* argv[], std::map<std::string, std::string>& argsMap);
 
   /**
    * @brief Verifies the status of the Yarp network and sets the properties
