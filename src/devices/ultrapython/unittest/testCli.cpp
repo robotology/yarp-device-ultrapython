@@ -25,33 +25,33 @@
 using namespace testing;
 
 TEST(UltraPyCli, setFeature_ok) {
-    IFrameGrabberControlsMock *grabber_mock = new IFrameGrabberControlsMock();
-    UltraPythonCli mock_client(grabber_mock);
+    IFrameGrabberControlsMock *grabberMock = new IFrameGrabberControlsMock();
+    UltraPythonCli mockClient(grabberMock);
 
-    EXPECT_CALL(*grabber_mock, setFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, 10))
+    EXPECT_CALL(*grabberMock, setFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, 10))
         .WillOnce(DoAll(Return<bool>(true)));
 
-    bool result = grabber_mock->setFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, 10);
+    bool result = grabberMock->setFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, 10);
 
     EXPECT_TRUE(result);
 
-    delete grabber_mock;
+    delete grabberMock;
 }
 
 TEST(UltraPyCli, getFeature_ok) {
-    IFrameGrabberControlsMock *grabber_mock = new IFrameGrabberControlsMock();
-    UltraPythonCli mock_client(grabber_mock);
+    IFrameGrabberControlsMock *grabberMock = new IFrameGrabberControlsMock();
+    UltraPythonCli mockClient(grabberMock);
 
     double value = 10;
 
-    EXPECT_CALL(*grabber_mock, getFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, &value))
+    EXPECT_CALL(*grabberMock, getFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, &value))
         .WillOnce(DoAll(SetArgPointee<1>(value), Return<bool>(true)));
 
-    bool result = grabber_mock->getFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, &value);
+    bool result = grabberMock->getFeature(YARP_FEATURE_BRIGHTNESS_ABSOLUTE, &value);
 
     EXPECT_EQ(value, 10);
     EXPECT_TRUE(result);
-    delete grabber_mock;
+    delete grabberMock;
 }
 
 TEST(UltraPyCli, split_string_ok) {
@@ -62,21 +62,21 @@ TEST(UltraPyCli, split_string_ok) {
     std::string test4 = "a;b c";
     std::string test5 = "a\nb;c";
 
-    IFrameGrabberControlsMock *grabber_mock = new IFrameGrabberControlsMock();
-    UltraPythonCli mock_client(grabber_mock);
+    IFrameGrabberControlsMock *grabberMock = new IFrameGrabberControlsMock();
+    UltraPythonCli mockClient(grabberMock);
 
-    std::vector<std::string> result1 = mock_client.splitString(test1, ";");
+    std::vector<std::string> result1 = mockClient.splitString(test1, ";");
     ASSERT_THAT(result1, ElementsAre("a", "b"));
 
-    std::vector<std::string> result2 = mock_client.splitString(test2, ";");
+    std::vector<std::string> result2 = mockClient.splitString(test2, ";");
     ASSERT_THAT(result2, ElementsAre("a", "b", "c"));
 
-    std::vector<std::string> result3 = mock_client.splitString(test3, ";");
+    std::vector<std::string> result3 = mockClient.splitString(test3, ";");
     ASSERT_THAT(result3, ElementsAre("a b"));
 
-    std::vector<std::string> result4 = mock_client.splitString(test4, ";");
+    std::vector<std::string> result4 = mockClient.splitString(test4, ";");
     ASSERT_THAT(result4, ElementsAre("a", "b c"));
 
-    std::vector<std::string> result5 = mock_client.splitString(test5, ";");
+    std::vector<std::string> result5 = mockClient.splitString(test5, ";");
     ASSERT_THAT(result5, ElementsAre("a\nb", "c"));
 }
