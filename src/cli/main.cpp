@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Value for control code " << controlCode << " is: " << value
               << std::endl;
     return value;
+    
   }
 
   return 0;
