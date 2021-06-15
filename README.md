@@ -208,16 +208,20 @@ the name is without rpc and the port name usually is /grabber. For name look at 
 
 `frameGrabberGui2` is not the right choice for the UltraPyhton camera system.
 
-## 2.2 WIP - UltraPython Command Line Interface
+## 2.2. WIP - UltraPython Command Line Interface
+
 The user can access the camera controls on the terminal through a command line application called `ultrapythoncli`.
 
 To set a camera feature, use
+
 ```
 ultrapythoncli --remote /name --set <YARP code>=<value>
 ```
+
 where the YARP code for the desired feature is defined in [Section 3.6](##3.6.-YARP-V4L-feature-that-can-be-used-together-with-the-UltraPython), and the target value is expressed in absolute units.
 
 Similarly, to get the current value of a desired feature in absolute units, use
+
 ```
 ultrapythoncli --remote /name  --get <YARP code>
 ```
@@ -234,8 +238,6 @@ cd ~/icubtech/yarp-device-ultrapython/ini
 ```
 
 The ini files for lowres
-
-
 
 ```
 device grabberDual
@@ -261,6 +263,7 @@ honorfps false
 ## 2.4. Reading the log on console
 
 At run-time the log will be like this repeated:
+
 ```
 [INFO] |yarp.dev.Drivers| device active in background...
 [DEBUG] |yarp.device.UltraPython| not remapped feature: 70
@@ -268,6 +271,7 @@ At run-time the log will be like this repeated:
 [INFO] |yarp.device.UltraPythonStatistics| frames read by YARP  frame number: 84  fps: 16.8  interval: 5.03997  sec.  exposition: 0  msec.
 
 ```
+
 Every 5 seconds a statistic is issued with current FPS.
 
 # 3. UltraPython specifications for yarpdev
@@ -332,25 +336,25 @@ The subdevices:
 ## 3.6. YARP-V4L feature that can be used together with the UltraPython
 
 Currently exposed parameters:  
-|Name|YARP Code|Default|Min|Max|Note|Read-write|
-|-|-|-|-|-|-|-|
-|Gain|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
-|Exposure<br>Shutter|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
-|Brightness|0: YARP_FEATURE_BRIGHTNESS|50|0|4055|-|R/W|
-|Contrast|74: YARP_FEATURE_CONTRAST|50|0|100|-|R/W|
-|Red gain|50: YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
-|Blue gain|51: YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
-|Green gain|52: YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
-|Gain absolute|60: YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
-|Exposure absolute|61: YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
-|Brightness absolute|62: YARP_FEATURE_BRIGHTNESS_ABSOLUTE|200|0|4055|Only read for now|R|
-|Contrast absolute|75: YARP_FEATURE_CONTRAST_ABSOLUTE|50|0|100|Only read for now|R|
-|Red gain absolute|63: YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
-|Blue gain absolute|64: YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
-|Green gain bsolute|65: YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
-|Fps|70: YARP_FEATURE_FPS|-|-|-|-|R|
-|Subsampling|72: YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented<br>set only via config file|-|
-|Honor fps|73: YARP_FEATURE_HONOR_FPS|0|0|1|When set at runtime exposition is set to minimum|R/W|
+|Name|Code|YARP Feature|Default|Min|Max|Note|Read-write|
+|-|-|-|-|-|-|-|-|
+|Gain|8|YARP_FEATURE_GAIN|1|1|11|mapped to a combination of digital and analog gain of the board|R/W|
+|Exposure<br>Shutter|1|YARP_FEATURE_SHUTTER<br>YARP_FEATURE_EXPOSURE|20ms|1ms|50ms|mapped on **tag_l**|R/W|
+|Brightness|0|YARP_FEATURE_BRIGHTNESS|50|0|4055|-|R/W|
+|Contrast|74|YARP_FEATURE_CONTRAST|50|0|100|-|R/W|
+|Red gain|50|YARP_FEATURE_RED_GAIN|50|0|99|-|R/W|
+|Blue gain|51|YARP_FEATURE_BLUE_GAIN|50|0|99|-|R/W|
+|Green gain|52|YARP_FEATURE_GREEN_GAIN|50|0|99|-|R/W|
+|Gain absolute|60|YARP_FEATURE_GAIN_ABSOLUTE|1|1|11|Only read for now|R|
+|Exposure absolute|61|YARP_FEATURE_EXPOSURE_ABSOLUTE|20ms|1ms|50ms|Only read for now|R|
+|Brightness absolute|62|YARP_FEATURE_BRIGHTNESS_ABSOLUTE|200|0|4055|Only read for now|R|
+|Contrast absolute|75|YARP_FEATURE_CONTRAST_ABSOLUTE|50|0|100|Only read for now|R|
+|Red gain absolute|63|YARP_FEATURE_RED_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Blue gain absolute|64|YARP_FEATURE_BLUE_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Green gain bsolute|65|YARP_FEATURE_GREEN_GAIN_ABSOLUTE|50|0|99|Only read for now|R|
+|Fps|70|YARP_FEATURE_FPS|-|-|-|-|R|
+|Subsampling|72|YARP_FEATURE_SUBSAMPLING|0|0|1|Not yet implemented<br>set only via config file|R|
+|Honor fps|73|YARP_FEATURE_HONOR_FPS|0|0|1|When set at runtime exposition is set to minimum|R/W|
 
 Internal parameters setted by default:
 |Name|Code|Default|Min|Max|Note|R/W|
@@ -359,12 +363,12 @@ Internal parameters setted by default:
 |tag_h|0x0098cb02|10ms|-|-|Dead time between exposures|-|
 
 Only manual parameters are available for now no auto settings.  
-:exclamation: _Important note_: for not ```_ABSOLUTE_``` can only be accepted parameters normalized between 0-1.
+:exclamation: _Important note_: for not `_ABSOLUTE_` can only be accepted parameters normalized between 0-1.
 
 ## 3.7. How programmatially set YARP-V4L feature
-For a complete example, please reference to the UI project folder:  
- ```https://github.com/robotology/yarp-device-ultrapython/tree/master/src/ui```
 
+For a complete example, please reference to the UI project folder:  
+ `https://github.com/robotology/yarp-device-ultrapython/tree/master/src/ui`
 
 ## 3.8. FPS (frame per seconds)
 
@@ -389,6 +393,7 @@ The following table is calculated.
 **Note** that the yarpdev parameter `period` is used by YARP to sample images from the drive at the given period in msec. Fps can be calculated as `1/period`
 
 ### 3.8.1. Avoid FPS oscillations
+
 Due to the band limits on the TCP, the following hints should be followed.
 The min `period` value for UltraPyton, for an uncompressed stream, to avoid FPS oscillations is:
 |Resolution|period|FPS|
@@ -549,352 +554,16 @@ rm /root/.vscode-server/.*
 
 # 5. Testing the video stream
 
-To test the stream I have developed the following procedure:
-
-- execute on **iCubHead** yarpserver
-- execute on **Enclustra** yarpdev
-- execute on **iCubHead** the following commands
-
-  ```
-  yarpdatadumper --name /log --rxTime --txTime --type image
-  yarp connect /grabber /log fast_tcp
-
-  ```
-
-- Analyze the data in `./log` using the Matlab scripts or manually, see above.
-
-## 5.1. Slow movement artifact
-
-These kind of artifacts are due to bad memory management. They should be checked by hand, looking at the singles frames.  
-<img src="img/artifacts.png" width="600px">
-
-## 5.2. Frames per second (FPS)
-
-Fps behaviour should be analyzed with the Matlab script in `matlabscript` folder, script name `FPS_check.m`.
-Once the script is executed choose the yarpdaadumper log.  
-Result example:  
-<img src="img/fps.png" width="600px">
-
-## 5.3. Latency
-
-Latency can be check manually, with a specific test. It is the delay between what is seen on YarpView and the real movement.  
-<br>
-It is possible also to check the latency between Enclustra and iCub-head: with the Matlab script in `matlabscript` folder, script name `Latency_check.m`.
-Once the script is executed choose the yarpdaadumper log.  
-<img src="img/latency.png" width="600px">
+For testing the stream look at [testing](TESTING.md).
 
 # 6. Useful
 
-## 6.1. V4L bash interface
+For usefull look at [usefull](USEFULL.md).
 
-It is possible to use `v4l` command for checking the board status:
-
-```
-v4l2-ctl -l
-```
-That shows the available low-level controls:
-```
-User Controls
-
-                     brightness 0x00980900 (int)    : min=1 max=4096 step=1 default=128 value=82 flags=slider
-                       exposure 0x00980911 (int)    : min=1 max=100000 step=1 default=50 value=50 flags=inactive
-                           gain 0x00980913 (int)    : min=1 max=4 step=1 default=1 value=1
-        test_pattern_color_mask 0x0098c903 (bitmask): max=0x00000007 default=0x00000000 value=0x00000000
-      test_pattern_motion_speed 0x0098c907 (int)    : min=0 max=255 step=1 default=4 value=4 flags=slider
-   test_pattern_cross_hairs_row 0x0098c908 (int)    : min=0 max=4095 step=1 default=100 value=100 flags=slider
- test_pattern_cross_hairs_colum 0x0098c909 (int)    : min=0 max=4095 step=1 default=100 value=100 flags=slider
- test_pattern_zplate_horizontal 0x0098c90a (int)    : min=0 max=65535 step=1 default=30 value=30 flags=slider
- test_pattern_zplate_horizontal 0x0098c90b (int)    : min=0 max=65535 step=1 default=0 value=0 flags=slider
- test_pattern_zplate_vertical_s 0x0098c90c (int)    : min=0 max=65535 step=1 default=1 value=1 flags=slider
- test_pattern_zplate_vertical_s 0x0098c90d (int)    : min=0 max=65535 step=1 default=0 value=0 flags=slider
-          test_pattern_box_size 0x0098c90e (int)    : min=0 max=4095 step=1 default=50 value=50 flags=slider
- test_pattern_box_color_rgb_ycb 0x0098c90f (int)    : min=0 max=16777215 step=1 default=0 value=0
- test_pattern_foreground_patter 0x0098c912 (menu)   : min=0 max=2 default=0 value=0
-                 csc_brightness 0x0098c9a1 (int)    : min=0 max=100 step=1 default=50 value=50 flags=slider
-                   csc_contrast 0x0098c9a2 (int)    : min=0 max=100 step=1 default=50 value=50 flags=slider
-                   csc_red_gain 0x0098c9a3 (int)    : min=0 max=100 step=1 default=50 value=0 flags=slider
-                 csc_green_gain 0x0098c9a4 (int)    : min=0 max=100 step=1 default=50 value=99 flags=slider
-                  csc_blue_gain 0x0098c9a5 (int)    : min=0 max=100 step=1 default=50 value=99 flags=slider
-           low_latency_controls 0x0098ca21 (int)    : min=2 max=8 step=1 default=4 value=4
-                  remapper_mode 0x0098cb01 (menu)   : min=0 max=1 default=0 value=1
-                          trg_h 0x0098cb02 (int)    : min=0 max=100000 step=1 default=50 value=10
-                          trg_l 0x0098cb03 (int)    : min=0 max=100000 step=1 default=50 value=50
-                    subsampling 0x0098cc01 (bool)   : default=0 value=1
-                          debug 0x0098cc02 (int)    : min=0 max=7 step=1 default=0 value=0
-                    ext_trigger 0x0098cc03 (bool)   : default=0 value=1
-                      test_mode 0x0098cd01 (menu)   : min=0 max=6 default=0 value=0
-
-Image Source Controls
-
-              vertical_blanking 0x009e0901 (int)    : min=3 max=8159 step=1 default=100 value=100
-            horizontal_blanking 0x009e0902 (int)    : min=3 max=8159 step=1 default=100 value=100
-                  analogue_gain 0x009e0903 (int)    : min=1 max=9 step=1 default=1 value=1
-
-Image Processing Controls
-
-                   test_pattern 0x009f0903 (menu)   : min=0 max=16 default=9 value=0
-```
-
-
-The controls can be set:
-
-```
-v4l2-ctl -d /dev/video0 -c "testmode=5"
-```
-
-## 6.2. Password and users
-
-usr:root  
-pwd:iCub
-
-:warning: **This is obsolete as private/public keys are preferred.**
-
-## 6.3. Filesystem
-
-Sometimes happens that the file system became read-only. It has been corrupted:
-
-```
-fsck / -y
-```
-
-Would resolve the problem.
-
-## 6.4. Yarp bash command
-
-```
-  echo "fgc set feat 33 0.5" | yarp rpc /grabber
-```
-
-:warning: **Not properly tested.**
-
-## 6.5. Certificates
-If problems on certificates on git:
-```
-sudo apt-get install apt-transport-https ca-certificates -y
-```
-:warning: **Workaround.**
 # 7. Ubuntu SD card creation for Enclustra
 
-:exclamation:**Disclaimed:**
-
-- This procedure can be used only if the new Ubuntu system kernel is 5.4.0 version.
-- Enclustra is an Arm64 board, do not try the x86 Linux version.
-
-## 7.1. Download and flash
-
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
-
-Create an ubuntu SD card.  
-Suggested site:
-https://ubuntu.com/tutorials/how-to-install-ubuntu-on-your-raspberry-pi#1-overview
-
-Download prebuild Ubuntu 20.04.1 for Arm64:
-
-```bash
-wget https://cdimage.ubuntu.com/releases/20.04.1/release/ubuntu-20.04.1-preinstalled-server-arm64+raspi.img.xz?_ga=2.193426350.2036444557.1610970210-2073042528.1610970210
-
-https://ubuntu.com/download/raspberry-pi/thank-you?version=20.04.1&architecture=server-arm64+raspi
-
-unxz ubuntu-20.04.1-preinstalled-server-arm64+raspi.img.xz
-
-```
-
-Use https://www.balena.io/etcher/ application to flash the SD card with the above file.
-
-:exclamation:Use `gparted` application to enlarge partition up to 16GB
-
-## 7.2. Override Ubuntu Kernel
-
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
-
-Copy from `yarp-device-ultrapython/ubuntu-files/system-boot` to new card `/system-boot` (**not /boot**)
-
-The following files can be removed from /system-boot.  
-//TODO
-
-## 7.3. Delete locked password
-
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
-
-Modify shadows file.
-
-```
-sudo vi /mount/<mount location>/etc/shadows
-```
-
-Follow link:
-https://www.justdocloud.com/2020/05/10/how-to-remove-password-from-etc-shadow/
-
-and remove the password for the root user.
-
-## 7.4. Network config
-
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
-
-Follow link:
-https://linuxize.com/post/how-to-configure-static-ip-address-on-ubuntu-18-04/
-
-Copy file:
-
-```bash
- cp <myroot>/yarp-device-ultrapython/ubuntu-files/config/01-netcfg.yaml /mount/<mountpoint>/etc/netplan/01-netcfg.yaml
-```
-
-In case the configuration is done on running Enclustra
-
-```
-sudo netplan apply
-```
-
-## 7.5. Generate ssh key for root access on Enclustra
-
-:exclamation:<u>To be done on SD card mounted on iCub-head.</u>
-
-```bash
-su <your user or root>
-ssh-keygen
-```
-
-For ssh-keygen keep all default suggestions.
-
-Copy and paste contents of `/home/<your user>/.ssh/id_rsa.pub` from local Linux machine to `/root/.ssh/authorized_keys`
-in SD card (as root user).
-
-Note that you can generate the key also for other accounts on iCub-head.
-
-Add board hostname on iCub-head (not mandatory)
-
-```bash
-cd ~\.ssh
-mkdir config
-```
-
-Paste in the file config
-
-```bash
-Host enclustra
-     Hostname 10.0.1.233
-     port 22
-     user root
-```
-
-## 7.6. Missing package
-
-:exclamation:<u>To be done on running Enclustra.</u>
-
-Use the serial connection if ssh won't work.
-
-```bash
-apt update
-apt remove initramfs-tools cryptsetup snapd
-install net-tools g++ build-essential cmake cmake-curses-gui v4l-utils mplayer netcat pv ssh clang libssl-dev git libncurses5-dev libace-dev libv4l-dev libv4lconvert0 libopencv-dev cppcheck clang-format libudev-dev ntpdate
-
-```
-
-Execute:
-`apt upgrade`
-It can give some errors, you can ignore and in this case again:
-`apt remove initramfs-tools cryptsetup`
-
-Add root pwd:
-
-```bash
-pwd
-```
-
-## 7.7. Others
-
-:exclamation:<u>To be done on running Enclustra.</u>  
-Disable the wait-online service to prevent the system from waiting on a network connection.
-
-```
-systemctl disable systemd-networkd-wait-online.service
-systemctl mask systemd-networkd-wait-online.services
-```
-
-## 7.8. YARP
-
-:exclamation:<u>To be done on running Enclustra.</u>
-
-```bash
-cd icubtech
-
-git clone https://github.com/robotology/ycm.git
-mkdir build
-cd build
-cmake ..
-make
-
-git clone https://github.com/robotology/yarp.git
-mkdir build
-cd build
-cmake ..
-make
-```
-
-Select as `YCM_DIR`
-`/root/icubtech/ycm/build` for YARP
-
-Select as `CMAKE_INSTALL_PREFIX`
-`/root/icubtech/install` for both YCM and YARP
-
-Add to .bashrc:
-
-```bash
-export YARP_DIR=/root/icubtech/install
-export YARP_DATA_DIRS=${YARP_DIR}/share/yarp
-export PATH=$PATH:${YARP_DIR}/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${YARP_DIR}/lib
-```
-
-Get and install kernel modules.
-
-```bash
-cd /root/icubtech/python-camera/
-git clone https://github.com/icub-tech-iit/yarp-device-ultrapython.git
-cp /root/icubtech/python-camera/ubuntu-files/config/rc.local /etc
-chmod +x /etc/rc.local
-```
-
-Now `reboot`
+For SD-card setup look at [SD-card creation](SDSETUP.md).
 
 # 8. OBSOLETE
 
-## 8.1. Merello test
-
-:exclamation:<u>To be done on iCub-head.</u>
-
-```bash
-cd /root/icubtech
-git clone https://github.com/icub-tech-iit/yarp-device-ultrapython.git
-git clone https://github.com/robotology/yarp.git
-cd /root/icubtech/python-camera/ubuntu-files/obsolete
-ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.h PythonCameraHelper.h
-ln -s /root/icubtech/yarp/src/devices/usbCamera/linux/PythonCameraHelper.cpp PythonCameraHelper.cpp
-```
-
-:exclamation:<u>To be done on running Enclustra.</u>
-
-```bash
-cd /root/icubtech/python-camera/
-git clone https://github.com/icub-tech-iit/yarp-device-ultrapython.git
-mkdir build
-cd build
-ccmake ..
-```
-
-Select install dir:`/root/icubtech/yarp-device-ultrapython/ubuntu-files`  
-Then press `c` and `g`. Exit and:
-
-```
-make install
-```
-
-:exclamation:<u>To be done on iCub-head.</u>
-
-In folder test execute:
-
-```
-cd ~/icubtech/yarp-device-ultrapython/obsolete/test
-./testScript.sh
-```
+For obsolete procedures look at [obsolete](OBSOLETE.md).
