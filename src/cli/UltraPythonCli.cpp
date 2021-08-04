@@ -20,7 +20,9 @@
 
 UltraPythonCli::UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber){};
 
-UltraPythonCli::~UltraPythonCli() {}
+UltraPythonCli::~UltraPythonCli() {
+  device_.close();
+}
 
 bool UltraPythonCli::ParseArgs(int argc, char* argv[],
                                std::map<std::string, std::string>& argsMap) {

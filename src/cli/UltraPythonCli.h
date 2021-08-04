@@ -28,70 +28,73 @@
 
 #include "../common/common.h"
 
-struct CliArg {
-  int code;
-  double value;
+struct CliArg
+{
+	int code;
+	double value;
 };
 
-class UltraPythonCli {
- public:
-  /**
-   * @brief Construct a new Ultra Python Cli object
-   * @param grabber Pointer to object representing the camera features
-   * controller
-   */
-  UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber);
+class UltraPythonCli
+{
+   public:
+	/**
+	 * @brief Construct a new Ultra Python Cli object
+	 * @param grabber Pointer to object representing the camera features
+	 * controller
+	 */
+	UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber);
 
-  /**
-   * @brief Destroy the Ultra Python Cli object
-   */
-  ~UltraPythonCli();
+	/**
+	 * @brief Destroy the Ultra Python Cli object
+	 */
+	~UltraPythonCli();
 
-  /**
-   * @brief Used to parse command line arguments
-   *
-   * @param argc
-   * @param argv
-   * @param argsMap map of arguments: can be --help, --remote, --set, --get.
-   * @return true if arguments could be parsed correctly, false otherwise.
-   */
-  bool ParseArgs(int argc, char* argv[], std::map<std::string, std::string>& argsMap);
+	/**
+	 * @brief Used to parse command line arguments
+	 *
+	 * @param argc
+	 * @param argv
+	 * @param argsMap map of arguments: can be --help, --remote, --set, --get.
+	 * @return true if arguments could be parsed correctly, false otherwise.
+	 */
+	bool ParseArgs(int argc, char* argv[], std::map<std::string, std::string>& argsMap);
 
-  /**
-   * @brief Verifies the status of the Yarp network and sets the properties
-   *        of the frame grabber
-   * @param remotePort string containing the port at which the grabber connects
-   * to
-   * @param grabber pointer to the frame grabber object to be filled
-   * @return true if successful, false otherwise.
-   */
-  bool InitYarpCommunication(const std::string& remotePort);
+	/**
+	 * @brief Verifies the status of the Yarp network and sets the properties
+	 *        of the frame grabber
+	 * @param remotePort string containing the port at which the grabber connects
+	 * to
+	 * @param grabber pointer to the frame grabber object to be filled
+	 * @return true if successful, false otherwise.
+	 */
+	bool InitYarpCommunication(const std::string& remotePort);
 
-  /**
-   * @brief Splits a string according to a custom separator
-   *
-   * @param c string to be split
-   * @param separator character delimiter
-   * @return The separated substrings in a vector
-   */
-  std::vector<std::string> splitString(const std::string& c,
-                                       const char* separator);
+	/**
+	 * @brief Splits a string according to a custom separator
+	 *
+	 * @param c string to be split
+	 * @param separator character delimiter
+	 * @return The separated substrings in a vector
+	 */
+	static std::vector<std::string> splitString(const std::string& c, const char* separator);
 
- private:
-  /**
-   * @brief Device object containing connection properties needed to instantiate
-   *        the frame grabber.
-   */
-  yarp::dev::PolyDriver device_;
+	yarp::dev::IFrameGrabberControls* getGrabber(){return grabber_;};
 
-  /**
-   * @brief Container of connection properties of the device.
-   */
-  yarp::os::Property property_;
+   private:
+	/**
+	 * @brief Device object containing connection properties needed to instantiate
+	 *        the frame grabber.
+	 */
+	yarp::dev::PolyDriver device_;
 
-  /**
-   * @brief Pointer to camera features grabber
-   *
-   */
-  yarp::dev::IFrameGrabberControls* grabber_;
+	/**
+	 * @brief Container of connection properties of the device.
+	 */
+	yarp::os::Property property_;
+
+	/**
+	 * @brief Pointer to camera features grabber
+	 *
+	 */
+	yarp::dev::IFrameGrabberControls* grabber_;
 };
