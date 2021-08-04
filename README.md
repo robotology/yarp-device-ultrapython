@@ -44,6 +44,10 @@ Power and switch-on button:
 
 <img src="img/power.jpg" width="300px">
 
+Fan:
+
+<img src="img/fan.jpg" width="300px">
+
 Led after a few seconds from power on :
 
 <img src="img/led.jpg" width="300px">
