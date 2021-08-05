@@ -18,7 +18,7 @@
 
 #include "UltraPythonCli.h"
 
-UltraPythonCli::UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber){};
+UltraPythonCli::UltraPythonCli(){};
 
 UltraPythonCli::~UltraPythonCli() {
   device_.close();
