@@ -68,7 +68,9 @@ class MainWindow : public QMainWindow
 
 	void on_honorFPS_stateChanged(int arg1);
 
-   private:
+    void on_actionAbout_triggered();
+
+private:
 	Ui::MainWindow* ui;
 
 	bool readAndShowValues();

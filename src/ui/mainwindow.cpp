@@ -450,3 +450,14 @@ void MainWindow::showFps()
 		ui->fps->setText(ss.str().c_str());
 	}
 }
+void MainWindow::on_actionAbout_triggered()
+{
+	std::stringstream ss;
+	ss<<"This UI can only be used to control the UltraPython board."<<std::endl; 
+	ss<<std::endl; 
+	ss<<"luca.tricerri@iit.it, 2021"<<std::endl; 
+    QMessageBox msgBox;
+    msgBox.setText(ss.str().c_str());
+    msgBox.exec();
+}
+
