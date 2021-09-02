@@ -4,16 +4,24 @@
 # This software may be modified and distributed under the terms of the
 # BSD-3-Clause license. See the accompanying LICENSE file for details.
 
-
 #!/bin/bash
 
+killall yarpserver
+killall yarpview
+
 ####YARPSERVER
-yarp server --write &
-echo "yarp server"
+yarpserver --write &
+sleep 2
+echo    "------------------------------------------"
+echo    "------------------------------------------"
+echo    "PRESS ENTER when ultrapython is ready....."
+echo    "------------------------------------------"
+echo    "------------------------------------------"
+read -p "."
 
 ####ULTRAPYTHONUI
 #ultrapythonui --remote /grabber &
-sleep 1
+#sleep 1
 
 ####YARPVIEW
 yarpview &
