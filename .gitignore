@@ -14,11 +14,6 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
 
 # Compiled Static libraries
 *.lai
@@ -27,9 +22,16 @@
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
 
 # Build directory
 build/
+
+# Other
+*.img
+SDCard/
+.vscode/
+*.zip
+*.make
+*.user

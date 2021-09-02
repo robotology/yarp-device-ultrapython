@@ -8,28 +8,13 @@
 #!/bin/bash
 
 ####YARPSERVER
-#yarp server --write &
-#echo "yarp server"
-
-####ULTRAPYTHONUI
-#ultrapythonui --remote /grabber &
-sleep 1
-
-####YARPVIEW
-yarpview &
-sleep 1
-yarp connect /grabber /yarpview/img:i fast_tcp
-sleep 1
+yarp server --write &
+echo "yarp server"
 
 ####YARPDATADUMPER
-#/home/triccyx/Documents/tmp/yarp/build/bin/yarpdatadumper --name /log --rxTime --txTime --type image --connect /grabber fast_tcp
-#yarpdatadumper --name /log --rxTime --txTime --type image &
-#sleep 2
-#yarp connect /grabber /log
-
-####FRAMEGRABBER
-#frameGrabberGui2 --local /pippo --remote /grabber/rpc &
-#sleep 1
+yarpdatadumper --name /log --rxTime --txTime --type image &
+sleep 2
+yarp connect /grabber /log
 
 ####REMOTE
 #REMOTE_HOST=10.0.1.233
