@@ -10,6 +10,7 @@ killall yarpserver
 killall yarpview
 
 ####YARPSERVER
+yarp conf 10.0.1.104 10000
 yarpserver --write &
 sleep 2
 echo    "------------------------------------------"
@@ -20,8 +21,8 @@ echo    "------------------------------------------"
 read -p "."
 
 ####ULTRAPYTHONUI
-#ultrapythonui --remote /grabber &
-#sleep 1
+ultrapythonui --remote /grabber &
+sleep 1
 
 ####YARPVIEW
 yarpview &
