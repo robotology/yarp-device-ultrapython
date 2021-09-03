@@ -1,10 +1,4 @@
-# Define input options
-ARG START_IMG
-ARG ROBOTOLOGY_SUPERBUILD_RELEASE
-ARG ULTRAPYTHON_RELEASE
-ARG BUILD_TYPE
-
-FROM ${START_IMG}
+FROM icubteamcode/ubuntu2004mesa:master_sources
 
 LABEL org.opencontainers.image.title="YARP UltraPython Device Docker Image"
 LABEL org.opencontainers.image.description="Infrastructure to deal with the UltraPython YARP device"
@@ -70,6 +64,9 @@ RUN mkdir -p /etc/bash_completion.d/ &&\
     dos2unix 
 
 # Select options
+ARG ROBOTOLOGY_SUPERBUILD_RELEASE
+ARG ULTRAPYTHON_RELEASE
+ARG BUILD_TYPE
 ARG PROJECTS_DIR=/projects
 ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG CMAKE_EXTRA_OPTIONS=-j4
