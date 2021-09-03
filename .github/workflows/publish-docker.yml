@@ -40,7 +40,7 @@ jobs:
         START_IMG: ${{ github.event.inputs.start_image }}
         ROBOTOLOGY_SUPERBUILD_RELEASE: ${{ github.event.inputs.superbuild_release }}
         ULTRAPYTHON_RELEASE: ${{ github.event.inputs.ultrapython_release }}
-        BUILD_TYPE:  ${{ github.event.inputs.build_type }}
+        BUILD_TYPE: ${{ github.event.inputs.build_type }}
       with:
         name: robotology/yarp-device-ultrapython
         username: ${{ github.actor }}
