@@ -106,7 +106,7 @@ ENV CMAKE_PREFIX_PATH=${INSTALL_DIR}
 
 # ultrapython
 RUN cd ${PROJECTS_DIR} &&\
-    git clone https://github.com/robotology/yarp-device-ultrapython.git && --branch ${ULTRAPYTHON_RELEASE}\
+    git clone https://github.com/robotology/yarp-device-ultrapython.git --branch ${ULTRAPYTHON_RELEASE} &&\
     cd yarp-device-ultrapython &&\
     mkdir build && cd build &&\
     cmake .. \
