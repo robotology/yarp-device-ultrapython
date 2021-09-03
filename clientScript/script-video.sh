@@ -12,7 +12,8 @@ killall yarpview
 ####YARPSERVER
 yarp conf 10.0.1.104 10000
 yarpserver --write &
-sleep 2
+sleep 1
+#ssh root@10.0.1.233 ". ~/.bashrc;cd /root/icubtech/yarp-device-ultrapython/ini;/root/icubtech/install/bin/yarpdev --from lowultra.ini & "
 echo    "------------------------------------------"
 echo    "------------------------------------------"
 echo    "PRESS ENTER when ultrapython is ready....."
