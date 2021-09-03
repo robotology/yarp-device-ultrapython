@@ -30,9 +30,9 @@ screen -mS relay bash -lc '
     sleep 1
     yarp connect /grabber /yarpview/img:i fast_tcp
     sleep 1
-    while true
-    do
-            sleep 1
-    done
-
+    read -p "PRESS ENTER TO EXIT"
+    #while true
+    #do
+    #        sleep 1
+    #one
 '
