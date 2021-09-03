@@ -1,8 +1,12 @@
-# 1. Create the image
-
+# 1. Create/pull the image
 Use the following command in the docker folder:
 ```console
-docker build . --build-arg "START_IMG=icubteamcode/ubuntu2004mesa:master_sources" --tag "WHAT_EVER_NAME_YOU_WANT"
+docker build . --build-arg "ROBOTOLOGY_SUPERBUILD_RELEASE=v2021.08" --build-arg "ULTRAPYTHON_RELEASE=master" --tag "WHAT_EVER_NAME_YOU_WANT"
+```
+
+Alternatively, you can pull the image from GHCR:
+```console
+docker pull ghcr.io/robotology/yarp-device-ultrapython:latest
 ```
 
 # 2. Using the docker
@@ -26,7 +30,6 @@ ssh root@10.0.1.233
 - To end press again ENTER on your docker host. All the GUI will be closed
 
 # 3. Access to the docker
-
 Use the command:
 ```console
 docker run -rm -it --network host --privileged --env DISPLAY=${DISPLAY} --env XAUTHORITY=/root/.Xauthority --mount type=bind,source=${XAUTHORITY},target=/root/.Xauthority --mount type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix --mount type=bind,source=${HOME}/.config/yarp,target=/root/.config/yarp --name ultrapython ultrapythonimg bash
