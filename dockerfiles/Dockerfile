@@ -41,7 +41,7 @@ RUN git config --global user.name "GitHub Actions" && \
 # Install dependencies through robotology-superbuild
 RUN cd ${PROJECTS_DIR} &&\
     git clone https://github.com/robotology/robotology-superbuild.git --branch ${ROBOTOLOGY_SUPERBUILD_RELEASE} &&\
-    sudo robotology-superbuild/scripts/install_apt_dependencies.sh
+    robotology-superbuild/scripts/install_apt_dependencies.sh
 
 RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
     mkdir build && cd build &&\
