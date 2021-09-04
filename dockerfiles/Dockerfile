@@ -3,65 +3,9 @@ FROM icubteamcode/ubuntu2004mesa:master_sources
 LABEL org.opencontainers.image.title="YARP UltraPython Device Docker Image"
 LABEL org.opencontainers.image.description="Infrastructure to deal with the UltraPython YARP device"
 LABEL org.opencontainers.image.source="https://github.com/robotology/yarp-device-ultrapython"
-LABEL org.opencontainers.image.authors="valentina.gaggero@iit.it, daniele.domenichelli@iit.it, vadim.tikhanoff@iit.it, luca.tricerri@iit.it"
+LABEL org.opencontainers.image.authors="Luca Tricerri <luca.tricerri@iit.it>"
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Install dependencies given in documentation in superbuild
-# https://github.com/robotology/robotology-superbuild#linux
-RUN mkdir -p /etc/bash_completion.d/ &&\
-    apt update &&\
-    apt install -y \
-    # MISC
-    bash-completion \
-    qt5-default \
-    git \
-    cmake \
-    cmake-curses-gui \ 
-    build-essential \
-    vim \
-    htop \
-    net-tools \
-    psmisc \
-    #core
-    coinor-libipopt-dev \ 
-    libboost-system-dev \
-    libboost-filesystem-dev \
-    libboost-thread-dev \
-    libopencv-dev \
-    libode-dev \
-    liblua5.1-dev \
-    lua5.1 \ 
-    swig \ 
-    libsdl1.2-dev \
-    libxml2-dev\
-    wget \
-    # YARP
-    libace-dev \
-    libeigen3-dev \
-    libgsl0-dev \
-    libedit-dev \
-    libqcustomplot-dev \
-    qtmultimedia5-dev \
-    qtdeclarative5-dev \    
-    libqt5opengl5-dev \
-    qttools5-dev \
-    libtinyxml-dev \
-    #yarp-gui
-    qtbase5-dev \
-    qtdeclarative5-dev \
-    qtmultimedia5-dev \
-    qml-module-qtquick2 \
-    qml-module-qtquick-window2 \
-    qml-module-qtmultimedia \
-    qml-module-qtquick-dialogs \
-    qml-module-qtquick-controls \
-    qml-module-qt-labs-folderlistmodel \
-    qml-module-qt-labs-settings \
-    #ultrapython
-    libudev-dev \
-    screen \
-    dos2unix 
 
 # Select options
 ARG ROBOTOLOGY_SUPERBUILD_RELEASE
@@ -72,13 +16,33 @@ ARG CMAKE_GENERATOR="Unix Makefiles"
 ARG CMAKE_EXTRA_OPTIONS=-j4
 ARG INSTALL_DIR=/usr/local
 
+RUN mkdir -p ${PROJECTS_DIR}
+
+# Install initial dependencies
+RUN mkdir -p /etc/bash_completion.d/ &&\
+    apt update &&\
+    apt install -y \
+    # misc
+    vim \
+    htop \
+    net-tools \
+    psmisc \
+    wget \
+    dos2unix \
+    # ultrapython
+    libudev-dev \
+    screen
+
 # Set up git (required by superbuild)
 RUN git config --global user.name "GitHub Actions" && \
     git config --global user.email "actions@github.com"
 
-RUN mkdir -p ${PROJECTS_DIR} && cd ${PROJECTS_DIR} &&\
+# Install dependencies through robotology-superbuild
+RUN cd ${PROJECTS_DIR} &&\
     git clone https://github.com/robotology/robotology-superbuild.git --branch ${ROBOTOLOGY_SUPERBUILD_RELEASE} &&\
-    cd robotology-superbuild &&\
+    sudo robotology-superbuild/scripts/install_apt_dependencies.sh
+
+RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
     mkdir build && cd build &&\
     cmake .. \
     -G "${CMAKE_GENERATOR}" \
