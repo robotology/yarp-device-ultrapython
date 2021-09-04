@@ -23,6 +23,7 @@ RUN mkdir -p /etc/bash_completion.d/ &&\
     apt update &&\
     apt install -y \
     # misc
+    git \
     vim \
     htop \
     net-tools \
