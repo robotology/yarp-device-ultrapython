@@ -556,18 +556,22 @@ A remote terminal is also available from the `Terminal` menu.
 rm /root/.vscode-server/.*
 ```
 
-# 5. Testing the video stream
+# 5. Using UltraPython with a prebuild Docker
+
+[Docker instructions](DOCKER.md)
+
+# 6. Testing the video stream
 
 For testing the stream look at [testing](TESTING.md).
 
-# 6. Useful
+# 7. Useful
 
 For usefull look at [usefull](USEFULL.md).
 
-# 7. Ubuntu SD card creation for Enclustra
+# 8. Ubuntu SD card creation for Enclustra
 
 For SD-card setup look at [SD-card creation](SDSETUP.md).
 
-# 8. OBSOLETE
+# 9. OBSOLETE
 
 For obsolete procedures look at [obsolete](OBSOLETE.md).
