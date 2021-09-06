@@ -81,7 +81,8 @@ RUN cd ${PROJECTS_DIR} &&\
     -DCOMPILE_WITHUI_ULTRAPYTHON=ON \
     -DNON_INTERACTIVE_BUILD:BOOL=ON &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
-ENV PATH=${PATH}:${PROJECTS_DIR}/yarp-device-ultrapython/clientScript:${PROJECTS_DIR}/yarp-device-ultrapython/build/bin
+
+RUN echo "export PATH=\${PATH}:${PROJECTS_DIR}/yarp-device-ultrapython/clientScript:${PROJECTS_DIR}/yarp-device-ultrapython/build/bin" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
 
 # Clean up git configuration
 RUN git config --global --unset-all user.name && \
