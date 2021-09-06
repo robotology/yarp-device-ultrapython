@@ -50,5 +50,9 @@ Use the command:
 docker run --rm -it --network host --privileged --env DISPLAY=${DISPLAY} --env XAUTHORITY=/root/.Xauthority --mount type=bind,source=${XAUTHORITY},target=/root/.Xauthority --mount type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix --mount type=bind,source=${HOME}/.config/yarp,target=/root/.config/yarp --name ultrapython  ghcr.io/robotology/yarp-device-ultrapython bash
 ```
 
-
+# 6. Create (only if you need it)
+Use the following command in the docker folder:
+```console
+docker build . --build-arg "ROBOTOLOGY_SUPERBUILD_RELEASE=v2021.08" --build-arg "ULTRAPYTHON_RELEASE=master" --tag "WHAT_EVER_NAME_YOU_WANT"
+```
 
