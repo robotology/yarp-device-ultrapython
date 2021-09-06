@@ -58,8 +58,9 @@ RUN cd ${PROJECTS_DIR}/robotology-superbuild &&\
 
 # Setup entrypoint
 ARG ROBOTOLOGY_INITIALIZATION_FILE=/usr/local/bin/setup_robotology_tdd.sh
-RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
-
+RUN echo "source ${INSTALL_DIR}/share/robotology-superbuild/setup.sh" >> ${ROBOTOLOGY_INITIALIZATION_FILE} &&\
+    chmod +x ${ROBOTOLOGY_INITIALIZATION_FILE}
+    
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN  dos2unix /usr/local/bin/entrypoint.sh &&\
      chmod +x /usr/local/bin/entrypoint.sh
