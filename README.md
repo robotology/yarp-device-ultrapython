@@ -558,7 +558,7 @@ rm /root/.vscode-server/.*
 
 # 5. Using UltraPython with a prebuild Docker
 
-[Docker instructions](DOCKER.md)
+[Docker instructions](dockerfiles/README.md)
 
 # 6. Testing the video stream
 
