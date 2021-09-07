@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	std::map<std::string, std::string> argsMap;
 
 	yarp::dev::IFrameGrabberControls* grabber{nullptr};
-	UltraPythonCli client(grabber);
+	UltraPythonCli client;
 
 	if (!client.ParseArgs(argc, argv, argsMap))
 	{

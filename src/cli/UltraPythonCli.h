@@ -39,10 +39,8 @@ class UltraPythonCli
    public:
 	/**
 	 * @brief Construct a new Ultra Python Cli object
-	 * @param grabber Pointer to object representing the camera features
-	 * controller
 	 */
-	UltraPythonCli(yarp::dev::IFrameGrabberControls* grabber);
+	UltraPythonCli();
 
 	/**
 	 * @brief Destroy the Ultra Python Cli object
