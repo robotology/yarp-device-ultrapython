@@ -82,6 +82,7 @@ RUN cd ${PROJECTS_DIR} &&\
     -DNON_INTERACTIVE_BUILD:BOOL=ON &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
+RUN mkdir /root/.config/yarp
 COPY yarp.conf /root/.config/yarp
 RUN echo "export PATH=\${PATH}:${PROJECTS_DIR}/yarp-device-ultrapython/clientScript:${PROJECTS_DIR}/yarp-device-ultrapython/build/bin" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
 
