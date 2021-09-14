@@ -47,7 +47,7 @@ ssh root@10.0.1.233
 
 Use the command:
 ```bash
-docker run --rm -it --network host --privileged --env DISPLAY=${DISPLAY} --env XAUTHORITY=/root/.Xauthority --mount type=bind,source=${XAUTHORITY},target=/root/.Xauthority --mount type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix --mount type=bind,source=${HOME}/.config/yarp,target=/root/.config/yarp --name ultrapython  ghcr.io/robotology/yarp-device-ultrapython bash
+docker run --rm -it --network host --privileged --env DISPLAY=${DISPLAY} --env XAUTHORITY=/root/.Xauthority --mount type=bind,source=${XAUTHORITY},target=/root/.Xauthority --mount type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix --name ultrapython  ghcr.io/robotology/yarp-device-ultrapython bash
 ```
 
 # 6. Create (only if you need it)
