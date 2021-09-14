@@ -83,7 +83,7 @@ RUN cd ${PROJECTS_DIR} &&\
     cmake --build . -- ${CMAKE_EXTRA_OPTIONS}
 
 RUN mkdir -p /root/.config/yarp
-COPY yarp.conf /root/.config/yarp
+COPY yarp.conf /root/.config/yarp/yarp.conf
 RUN echo "export PATH=\${PATH}:${PROJECTS_DIR}/yarp-device-ultrapython/clientScript:${PROJECTS_DIR}/yarp-device-ultrapython/build/bin" >> ${ROBOTOLOGY_INITIALIZATION_FILE}
 
 # Clean up git configuration
