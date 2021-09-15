@@ -566,7 +566,7 @@ For testing the stream look at [testing](TESTING.md).
 
 # 7. Useful
 
-For usefull look at [usefull](USEFULL.md).
+For useful look at [useful](USEFUL.md).
 
 # 8. Ubuntu SD card creation for Enclustra
 
