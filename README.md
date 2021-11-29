@@ -93,6 +93,8 @@ Connect iCub-head to the Enclustra board via micro-USB and execute:
 screen /dev/ttyUSB1 115200
 ```
 
+Login as root, no password.
+
 <img src="img/USB.jpg" width="300px">  
 <br><br><br>
 
