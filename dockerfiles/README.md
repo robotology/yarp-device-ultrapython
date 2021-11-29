@@ -35,7 +35,7 @@ docker run --rm -it --network host --privileged --env DISPLAY=${DISPLAY} --env X
 ie:
 ```bash
 ssh root@10.0.1.233
-/root/icubtech/yarp-device-ultrapython/ini;
+cd /root/icubtech/yarp-device-ultrapython/ini  
 /root/icubtech/install/bin/yarpdev --from lowultra.ini
 ```
 
