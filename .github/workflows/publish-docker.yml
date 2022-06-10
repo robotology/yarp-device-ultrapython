@@ -23,14 +23,14 @@ jobs:
     - uses: actions/checkout@main
     - name: Require tag latest
       id: add_tag_latest
-      if: ${{ github.event.inputs.add_tag_latest == 'yes' }}
+      if: ${{ inputs.add_tag_latest == 'yes' }}
       run: |
         echo "::set-output name=tag::, latest"
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@main
       env:
-        ROBOTOLOGY_SUPERBUILD_RELEASE: ${{ github.event.inputs.superbuild_release }}
-        ULTRAPYTHON_RELEASE: ${{ github.event.inputs.ultrapython_release }}
+        ROBOTOLOGY_SUPERBUILD_RELEASE: ${{ inputs.superbuild_release }}
+        ULTRAPYTHON_RELEASE: ${{ inputs.ultrapython_release }}
       with:
         name: robotology/yarp-device-ultrapython
         username: ${{ github.actor }}
@@ -38,4 +38,4 @@ jobs:
         workdir: dockerfiles
         buildargs: ROBOTOLOGY_SUPERBUILD_RELEASE, ULTRAPYTHON_RELEASE
         registry: ghcr.io
-        tags: "${{ github.event.inputs.superbuild_release }}_${{ github.event.inputs.ultrapython_release }}${{ steps.add_tag_latest.outputs.tag }}"
+        tags: "${{ inputs.superbuild_release }}_${{ inputs.ultrapython_release }}${{ steps.add_tag_latest.outputs.tag }}"
