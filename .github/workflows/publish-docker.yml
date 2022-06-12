@@ -12,6 +12,7 @@ on:
         required: true
         default: 'master'
       add_tag_latest:
+        type: boolean
         description: 'Add tag latest to the docker image'
         required: true
         default: true
