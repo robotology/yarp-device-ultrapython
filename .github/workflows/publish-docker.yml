@@ -14,7 +14,7 @@ on:
       add_tag_latest:
         description: 'Add tag latest to the docker image'
         required: true
-        default: 'yes'
+        default: true
 
 jobs:
   publish:
@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@main
     - name: Require tag latest
       id: add_tag_latest
-      if: ${{ inputs.add_tag_latest == 'yes' }}
+      if: ${{ inputs.add_tag_latest }}
       run: |
         echo "::set-output name=tag::, latest"
     - name: Publish to Registry
